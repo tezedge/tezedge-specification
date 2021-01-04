@@ -6,7 +6,9 @@
 *SnapShot*
 *.tlaps
 *.launch
+*.project
 20-*
 21-*
 /other
 /Utils.toolbox
+.gitignore

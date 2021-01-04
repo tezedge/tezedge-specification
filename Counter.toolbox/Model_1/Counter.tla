@@ -24,6 +24,16 @@ empty == [ avg |-> None, curr |-> None, total |-> None ]
 
 fresh == [ avg |-> 0, curr |-> 0, total |-> 0 ]
 
+RECURSIVE _divide(_, _, _)
+_divide(n, m, p) ==
+    IF n < m
+    THEN IF m <= 2 * n
+         THEN p + 1
+         ELSE p
+    ELSE _divide(n - m, m, p + 1)
+
+divide(a, b) == _divide(a, b, 0)
+
 ----------------------------------------------------------------------------
 
 (* Actions *)

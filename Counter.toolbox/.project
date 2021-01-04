@@ -23,7 +23,7 @@
 		<link>
 			<name>Utils.tla</name>
 			<type>1</type>
-			<locationURI>PARENT-1-PROJECT_LOC/Utils.tla</locationURI>
+			<location>/home/isaac/Documents/SimpleStaking/model-p2p/Utils.tla</location>
 		</link>
 	</linkedResources>
 </projectDescription>
