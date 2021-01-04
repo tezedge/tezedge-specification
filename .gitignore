@@ -1,0 +1,12 @@
+*/.settings
+*.aux
+*.pdf
+*.log
+*.out
+*SnapShot*
+*.tlaps
+*.launch
+20-*
+21-*
+/other
+/Utils.toolbox
