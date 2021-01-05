@@ -1,0 +1,40 @@
+@!@!@STARTMSG 2262:0 @!@!@
+TLC2 Version 2.15 of Day Month 20?? (rev: eb3ff99)
+@!@!@ENDMSG 2262 @!@!@
+@!@!@STARTMSG 2187:0 @!@!@
+Running breadth-first search Model-Checking with fp 0 and seed 143290470925493695 with 6 workers on 12 cores with 949MB heap and 2134MB offheap memory [pid: 31447] (Linux 4.19.0-13-amd64 amd64, AdoptOpenJDK 14.0.1 x86_64, OffHeapDiskFPSet, DiskStateQueue).
+@!@!@ENDMSG 2187 @!@!@
+@!@!@STARTMSG 2220:0 @!@!@
+Starting SANY...
+@!@!@ENDMSG 2220 @!@!@
+Parsing file /home/isaac/Documents/SimpleStaking/model-p2p/Counter.toolbox/Model_1/MC.tla
+Parsing file /home/isaac/Documents/SimpleStaking/model-p2p/Counter.toolbox/Model_1/Counter.tla
+Parsing file /home/isaac/Documents/TLA+/toolbox/plugins/org.lamport.tlatools_1.0.0.202004251858/tla2sany/StandardModules/TLC.tla
+Parsing file /home/isaac/Documents/SimpleStaking/model-p2p/Counter.toolbox/Model_1/Utils.tla
+Parsing file /usr/local/lib/tlaps/FiniteSets.tla
+Parsing file /home/isaac/Documents/TLA+/toolbox/plugins/org.lamport.tlatools_1.0.0.202004251858/tla2sany/StandardModules/Integers.tla
+Parsing file /home/isaac/Documents/TLA+/toolbox/plugins/org.lamport.tlatools_1.0.0.202004251858/tla2sany/StandardModules/Naturals.tla
+Parsing file /home/isaac/Documents/TLA+/toolbox/plugins/org.lamport.tlatools_1.0.0.202004251858/tla2sany/StandardModules/Sequences.tla
+Semantic processing of module Naturals
+Semantic processing of module Sequences
+Semantic processing of module FiniteSets
+Semantic processing of module Integers
+Semantic processing of module TLC
+Semantic processing of module Utils
+Semantic processing of module Counter
+Semantic processing of module MC
+@!@!@STARTMSG 2219:0 @!@!@
+SANY finished.
+@!@!@ENDMSG 2219 @!@!@
+@!@!@STARTMSG 2185:0 @!@!@
+Starting... (2021-01-04 11:18:35)
+@!@!@ENDMSG 2185 @!@!@
+@!@!@STARTMSG 2189:0 @!@!@
+Computing initial states...
+@!@!@ENDMSG 2189 @!@!@
+@!@!@STARTMSG 2190:0 @!@!@
+Finished computing initial states: 1 distinct state generated at 2021-01-04 11:18:35.
+@!@!@ENDMSG 2190 @!@!@
+@!@!@STARTMSG 2200:0 @!@!@
+Progress(7) at 2021-01-04 11:18:38: 101,753 states generated (101,753 s/min), 25,608 distinct states found (25,608 ds/min), 21,693 states left on queue.
+@!@!@ENDMSG 2200 @!@!@
