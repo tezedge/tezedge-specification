@@ -36,7 +36,7 @@ CONSTANTS NumNodes,             \* number of established nodes
 (* - secured: record of tuples of nodes' sets of secure connections               *)
 (* - sent: set of messages sent to the given node                                 *)
 (* - recv: sequence of messages received by the given node                        *)
-(* - expect:                *)
+(* - expect: set of expected responses to messages sent by the given node         *)
 (* - joined: set of joining nodes that have successfully joined the Tezos network *)
 (* - peers: tuple of the set of peers each joining node obtains from the DNS      *)
 (* - phase: tuple of the phase each joining node is in                            *)
@@ -49,23 +49,20 @@ VARIABLE state
 
 VARIABLE secured
     \* secured \in [ join : [ joining -> SUBSET nodes ], node : [ nodes -> SUBSET joining ] ]
-    \* join : set of nodes with which the given joining node has a secure connection
-    \* node : set of nodes with which the given established node has a secure connection
+    \* set of nodes with which the given node has a secure connection
+    \* As a simplification, established nodes only connect to joining nodes.
 
 VARIABLE sent
     \* sent \in [ join : [ joining -> SUBSET NodeMsgs ], node : [ nodes -> SUBSET JoinMsgs ] ]
-    \* join : set of messages sent to the given joining node, deleted once they are received
-    \* node : set of messages sent to the given establlished node, deleted once they are received
+    \* set of messages sent to the given node, either deleted once they are received or dropped
 
 VARIABLE recv
     \* recv \in [ join : [ joining -> Seq(NodeMsgs) ], node : [ nodes -> Seq(JoinMsgs) ] ]
-    \* join : seq of messages received by the given joining node, deleted as they are used
-    \* node : seq of messages received by the given established node, deleted as they are used
+    \* sequence of messages received by the given node, deleted as they are handled
 
 VARIABLE expect
     \* expect \in [ join : [ joining -> SUBSET PartialNodeMsgs ], node : [ nodes -> SUBSET JoinMsgs ] ]
-    \* join : set of expected responses to messages sent by the given joining node
-    \* node : set of expected responses to messages sent by the given established node
+    \* set of expected responses to messages sent by the given node
 
 VARIABLES joined,   \* set of joining nodes who have joined successfully
           peers,    \* set of peers for the given joining node
@@ -131,17 +128,17 @@ check_expect(label, m) ==
     CASE label = "join" /\ m \in joining -> Cardinality(expect.join[m]) < sizeBound
       [] label = "node" /\ m \in nodes   -> Cardinality(expect.node[m]) < sizeBound
 
-\*
+\* Check that the cardinality of the sent set does not exceed the sizeBound
 ok_sent(label, m) ==
     CASE label = "join" /\ m \in joining -> Cardinality(sent.join[m]) <= sizeBound
       [] label = "node" /\ m \in nodes   -> Cardinality(sent.node[m]) <= sizeBound
 
-\*
+\* Check that the length of the recv queue does not exceed the sizeBound
 ok_recv(label, m) ==
     CASE label = "join" /\ m \in joining -> Len(recv.join[m]) <= sizeBound
       [] label = "node" /\ m \in nodes   -> Len(recv.node[m]) <= sizeBound
 
-\*
+\* Check that the cardinality of the expect set does not exceed the sizeBound
 ok_expect(label, m) ==
     CASE label = "join" /\ m \in joining -> Cardinality(expect.join[m]) <= sizeBound
       [] label = "node" /\ m \in nodes   -> Cardinality(expect.node[m]) <= sizeBound
@@ -149,6 +146,7 @@ ok_expect(label, m) ==
 ---------------------------------------------------------------------------------------------
 
 (* Phases of joining nodes *)
+(* - init: init joining nodes can only request peers from the DNS *)
 
 (* Joining nodes in init only request peers from DNS. *)
 (* Joining nodes in handshaking only attempt to make connections with peers (established nodes). *)
@@ -212,14 +210,23 @@ Messages == JoinMsgs \cup NodeMsgs \cup PartialNodeMsgs
 (* Handshaking Actions *)
 (***********************)
 
+(*****************)
+(* Request_peers *)
+(*****************)
 (* Requesting peers from the DNS *)
 (* Joining nodes in the "init" phase request peers and transition to the "handshake" phase *)
 (* This step is atomic in this model *)
-RequestPeers(j) ==
+Request_peers(j) ==
     /\ phase' = [ phase EXCEPT ![j] = "handshake" ]
     /\ peers' = [ peers EXCEPT ![j] = PickOfSize(nodes, peerThreshold) ]
     /\ UNCHANGED <<expect, joined, recv, secured, sent, state>>
 
+\* An init node requests peers from the DNS
+InitRequestPeers == \E j \in init : Request_peers(j)
+
+(*************)
+(* Handshake *)
+(*************)
 (* Once peers have been obtained (i.e. the joining node is in the "handshake" phase *)
 (* and they are peerSaturated), these joining nodes attempt to handshake with their peers *)
 Handshake(j, n) ==
@@ -228,17 +235,31 @@ Handshake(j, n) ==
     /\ secured' = [ secured EXCEPT !.join[j] = @ \cup {n}, !.node[n] = @ \cup {j} ]
     /\ UNCHANGED <<expect, joined, peers, phase, recv, sent, state>>
 
+\* A handshaking node makes a secure connection with a peer
+HandshakesHappen ==
+    \E j \in handshaking :
+        \E n \in peers[j] : Handshake(j, n)
+
+(**************)
+(* Transition *)
+(**************)
 (* Once a handshaking node is connectionSaturated, they can start bootstrapping *)
 Transition(j) ==
     /\ connectionSaturated(j)
     /\ phase' = [ phase EXCEPT ![j] = "bootstrap" ]
     /\ UNCHANGED <<expect, joined, peers, recv, secured, sent, state>>
 
+\* A connectionSaturated handshaking node transitions to bootstrapping
+TransitionHappen == \E j \in handshaking : Transition(j)
+
 
 (*************************)
 (* Bootstrapping Actions *)
 (*************************)
 
+(*************)
+(* Bootstrap *)
+(*************)
 (* Once a joining node is bootstrapping, they can request state from their connections *)
 Bootstrap(j, n) ==
     /\ connected(j, n)                          \* j and n are connected
@@ -255,6 +276,14 @@ Bootstrap(j, n) ==
          /\ expect' = [ expect EXCEPT !.join[j] = @ \cup {exp} ]
     /\ UNCHANGED <<joined, peers, phase, recv, secured, state>>
 
+\* A bootstrapping node can request state from a connection
+GettingBootstrap ==
+    \E j \in bootstrapping :
+        \E n \in secured.join[j] : Bootstrap(j, n)
+
+(***********)
+(* Receive *)
+(***********)
 (* If a message has been sent to a node and they can receive it, they do *)
 Receive_node(n) ==
     /\ check_recv("node", n)            \* the node can receive a message
@@ -263,7 +292,7 @@ Receive_node(n) ==
            from == msg.from
            type == msg.msg
        IN
-         /\ recv' = [ recv EXCEPT !.node[n] = Append(@, msg) ]  \* append msg to the end of recv queue
+         /\ recv' = [ recv EXCEPT !.node[n] = Append(@, msg) ]  \* receive the sent message
          /\ sent' = [ sent EXCEPT !.node[n] = @ \ {msg} ]       \* delete msg from sent
          /\ expect' =
               [ expect EXCEPT !.node[n] =                       \* if expected, delete from expect
@@ -286,6 +315,14 @@ Receive_join(j) ==
                     [] OTHER -> @ ]                             \* else, do nothing
     /\ UNCHANGED <<joined, peers, phase, secured, state>>
 
+\* If a message has been sent to a node, they can receive it
+Receive ==
+    \/ \E j \in bootstrapping : Receive_join(j)
+    \/ \E n \in nodes : Receive_node(n)
+
+(**********)
+(* Handle *)
+(**********)
 (* Joining node incorporates state message into state *)
 Handle_join(j) ==
     /\ recv.join[j] # <<>>              \* the node has received messages
@@ -313,6 +350,14 @@ Handle_node(n) ==
          /\ expect' = [ expect EXCEPT !.node[n] = @ \cup {Msg(to, "Ack_current_state")} ]
     /\ UNCHANGED <<joined, peers, phase, recv, secured, state>>
 
+\* If a node has received a message, they can respond to it
+Handle ==
+    \/ \E j \in bootstrapping : Handle_join(j)
+    \/ \E n \in nodes : Handle_node(n)
+
+(*************)
+(* Advertise *)
+(*************)
 (* An established node can advertise their state to their bootstrapping connections *)
 (* Since these messages are not specifically requested by the bootstrapping nodes,
    nothing is added to the established node's expect set *)
@@ -329,7 +374,13 @@ Advertise_state(n) ==
                    [] OTHER -> sent.join[j] ] ]   \* otherwise, nothing happens
     /\ UNCHANGED <<expect, joined, peers, phase, recv, secured, state>>
 
-(* If a node is expecting a message, they can send the corresponding message again *)
+\* An established node can advertise their state to their connections
+Advertise == \E n \in nodes : Advertise_state(n)
+
+(**************)
+(* Send_again *)
+(**************)
+(* If a node is expecting a response, they can send the corresponding message again *)
 Send_again_join(j) ==
     /\ expect.join[j] # {}
     /\ LET exp  == Pick(expect.join[j])
@@ -355,6 +406,14 @@ Send_again_node(n) ==
                [] OTHER -> @ ]
     /\ UNCHANGED <<expect, joined, peers, phase, recv, secured, state>>
 
+\* If an expected response has not been received, send original message again
+Send_again ==
+    \/ \E j \in bootstrapping : Send_again_join(j)
+    \/ \E n \in nodes : Send_again_node(n)
+
+(********)
+(* Drop *)
+(********)
 (* Messages can be dropped only before they are received *)
 Drop_join(j) ==
     /\ sent.join[j] # {}
@@ -366,6 +425,14 @@ Drop_node(n) ==
     /\ sent' = [ sent EXCEPT !.node[n] = @ \ {Pick(@)} ] \* an rbitrary message is dropped
     /\ UNCHANGED <<expect, joined, peers, phase, recv, secured, state>>
 
+\* Either an established or joining node drops a message
+Drop ==
+    \/ \E j \in joining : Drop_join(j)
+    \/ \E n \in nodes : Drop_node(n)
+
+(********)
+(* Join *)
+(********)
 (* Once a joining node has sufficiently many peers and connections and *)
 (* has bootstrapped state, they are ready and able to join the network *)
 Join(j) ==
@@ -373,105 +440,11 @@ Join(j) ==
     /\ joined' = joined \union {j}
     /\ UNCHANGED <<expect, peers, recv, secured, sent, state>>
 
---------------------------------------------------------------------------------
-
-(* Invariants *)
-
-(* All init nodes have no peers. *)
-(* All non-init nodes are peer saturated. *)
-PeersOK ==
-    /\ \A j \in init : peers[j] = {}
-    /\ \A j \in handshaking \cup bootstrapping \cup joined :
-        /\ peers[j] # {}
-        /\ peerSaturated(j)
-    /\ peers \in [ joining -> SUBSET nodes ]
-
-(* Joining nodes can only be in one of the four specified phases: "init","handshake","bootstrap","joined". *)
-(* Each joining node can be in only one phase at a time. *)
-PhasePartition ==
-    /\ disjoint(init, handshaking)
-    /\ disjoint(init, bootstrapping)
-    /\ disjoint(init, joined)
-    /\ disjoint(handshaking, bootstrapping)
-    /\ disjoint(handshaking, joined)
-    /\ disjoint(bootstrapping, joined)
-    /\ joining = init \cup handshaking \cup bootstrapping \cup joined
-
-PhaseOK ==
-    /\ PhasePartition
-    /\ \A j \in joining : phase[j] = "joined" <=> j \in joined
-    /\ phase \in [ joining -> PossiblePhases ]
-
-(* Established nodes must have a valid state.                                  *)
-(* Init and handshaking nodes must have an empty sequenece of states.          *)
-(* Bootsrapping nodes can have an empty or non-empty sequence of valid states. *)
-(* Joined nodes must have a non-empty seq of valid states.                     *)
-InitHandshakeEmptyStateOK ==
-    \A j \in init \cup handshaking : state.join[j] = <<>>
-
-BootstrapStateOK ==
-    \A j \in bootstrapping :
-        state.join[j] # <<>> => \E n \in nodes : hasSeenMostRecentStateFrom(j, n)
-
-JoinedStateOK ==
-    \A j \in joined:
-        /\ state.join[j] # <<>>
-        /\ \E n \in nodes : hasSeenMostRecentStateFrom(j, n)
-
-StateOK ==
-    /\ InitHandshakeEmptyStateOK
-    /\ BootstrapStateOK
-    /\ JoinedStateOK
-    /\ state \in [ join : [ joining -> Seq(ValidStates) ]
-                 , node : [ nodes   -> ValidStates ] ]
-
-(* Init nodes have no secure connections. *)
-(* Handshaking nodes may only be connected to established nodes. *)
-(* Bootstrapping and joined nodes are connection saturated to established nodes. *)
-(* Established nodes must have sufficiently many connections to other established and non-init nodes. *)
-SecuredJoinOK ==
-    \* init
-    /\ \A j \in init : secured.join[j] = {}
-    \* handshaking
-    /\ \A j \in handshaking : secured.join[j] \subseteq nodes
-    \* bootstrapping and joined
-    /\ \A j \in bootstrapping \cup joined : connectionSaturated(j)
-
-SecuredOK ==
-    /\ SecuredJoinOK
-    /\ secured \in [ join : [ joining -> SUBSET nodes ]
-                   , node : [ nodes   -> SUBSET (joining \ init) ] ]
-
-SentOK ==
-    /\ sent \in [ join : [ joining -> SUBSET NodeMsgs ]
-                , node : [ nodes   -> SUBSET JoinMsgs ] ]
-    /\ \A j \in init \cup handshaking : sent.join[j] = {}
-    /\ \A j \in bootstrapping \cup joined : ok_sent("join", j)
-    /\ \A n \in nodes : ok_sent("node", n)
-
-RecvOK ==
-    /\ recv \in [ join : [ joining -> Seq(NodeMsgs) ]
-                , node : [ nodes   -> Seq(JoinMsgs) ] ]
-    /\ \A j \in init \cup handshaking : recv.join[j] = <<>>
-    /\ \A j \in bootstrapping \cup joined : ok_recv("join", j)
-    /\ \A n \in nodes : ok_recv("node", n)
-
-ExpectOK ==
-    /\ expect \in [ join : [ joining -> SUBSET PartialNodeMsgs ]
-                  , node : [ nodes   -> SUBSET JoinMsgs ] ]
-    /\ \A j \in init \cup handshaking : expect.join[j] = {}
-    /\ \A j \in bootstrapping \cup joined : ok_expect("join", j)
-    /\ \A n \in nodes : ok_expect("node", n)
-
-(* Type invariant *)
-TypeOK ==
-    /\ PeersOK
-    /\ PhaseOK
-    /\ StateOK
-    /\ SecuredOK
-    /\ SentOK
-    /\ RecvOK
-    /\ ExpectOK
+\* Once a bootstrapping node has successfully bootstrapped, they can join the network
+BootstrapperJoin ==
+    \E j \in bootstrapping :
+        /\ saturatedAndBootstrapped(j)
+        /\ Join(j)
 
 ---------------------------------------------------------------------------------------
 
@@ -530,56 +503,6 @@ Init ==
 (* - Drop: a message sent to them is dropped before being received  *)
 (********************************************************************)
 
-\* An init node requests peers from the DNS
-InitRequestPeers == \E j \in init : RequestPeers(j)
-
-\* A handshaking node makes a secure connection with a peer
-HandshakesHappen ==
-    \E j \in handshaking :
-        \E n \in peers[j] : Handshake(j, n)
-
-\* A connectionSaturated handshaking node transitions to bootstrapping
-TransitionHappen == \E j \in handshaking : Transition(j)
-
-\* A bootstrapping node can request state from a connection
-GettingBootstrap ==
-    \E j \in bootstrapping :
-        \E n \in secured.join[j] : Bootstrap(j, n)
-
-\* Once a bootstrapping node has successfully bootstrapped, they can join the network
-BootstrapperJoin ==
-    \E j \in bootstrapping :
-        /\ saturatedAndBootstrapped(j)
-        /\ Join(j)
-
-\* If a message has been sent to a node, they can receive it
-Receive ==
-    \/ \E j \in bootstrapping : Receive_join(j)
-    \/ \E n \in nodes : Receive_node(n)
-
-\* If a node has received a message, they can respond to it
-Handle ==
-    \/ \E j \in bootstrapping : Handle_join(j)
-    \/ \E n \in nodes : Handle_node(n)
-
-\* An established node can advertise their state to their connections
-Advertise == \E n \in nodes : Advertise_state(n)
-
-\* If an expected response has not been received, send original message again
-Send_again ==
-    \/ \E j \in bootstrapping : Send_again_join(j)
-    \/ \E n \in nodes : Send_again_node(n)
-
-\* Either an established or joining node drops a message
-Drop ==
-    \/ \E j \in joining : Drop_join(j)
-    \/ \E n \in nodes : Drop_node(n)
-
-\* Nothing left to do as far as this model is concerned (not a "real" deadlock)
-Nothing ==
-    /\ joining = joined
-    /\ UNCHANGED vars
-
 Next ==
     \/ InitRequestPeers
     \/ HandshakesHappen
@@ -591,7 +514,6 @@ Next ==
     \/ Advertise
     \/ Send_again
     \/ Drop
-    \/ Nothing
 
 (* Weak fairness of Next actions *)
 WFairness ==
@@ -612,11 +534,120 @@ WFairness ==
 (* - WF of Next actions                       *)
 (* - Next are the only non-stuttering actions *)
 (**********************************************)
+
 Spec == Init /\ WFairness /\ [][Next]_vars
 
 ------------------------------------------------------------------------
 
 (* Invariants *)
+
+(* All init nodes have no peers.          *)
+(* All non-init nodes are peer saturated. *)
+(* Only established nodes can be peers.   *)
+PeersOK ==
+    /\ \A j \in init : peers[j] = {}
+    /\ \A j \in handshaking \cup bootstrapping \cup joined : peerSaturated(j)
+    /\ peers \in [ joining -> SUBSET nodes ]
+
+(* Joining nodes can be in one and only one of the four specified phases at a time. *)
+PhasePartition ==
+    /\ disjoint(init, handshaking)
+    /\ disjoint(init, bootstrapping)
+    /\ disjoint(init, joined)
+    /\ disjoint(handshaking, bootstrapping)
+    /\ disjoint(handshaking, joined)
+    /\ disjoint(bootstrapping, joined)
+    /\ joining = init \cup handshaking \cup bootstrapping \cup joined
+
+PhaseOK ==
+    /\ PhasePartition
+    /\ \A j \in joining : phase[j] = "joined" <=> j \in joined
+    /\ phase \in [ joining -> PossiblePhases ]
+
+\* TODO valid and invalid states
+(* Established nodes have a valid state.                              *)
+(* Init and handshaking nodes must have an empty sequenece of states. *)
+(* Bootsrapping nodes may only get states from established nodes.     *)
+(* Joined nodes must have gotten states from established nodes.       *)
+InitHandshakeEmptyStateOK ==
+    \A j \in init \cup handshaking : state.join[j] = <<>>
+
+BootstrapStateOK ==
+    \A j \in bootstrapping :
+        state.join[j] # <<>> => \E n \in nodes : hasSeenMostRecentStateFrom(j, n)
+
+JoinedStateOK ==
+    \A j \in joined:
+        /\ state.join[j] # <<>>
+        /\ \E n \in nodes : hasSeenMostRecentStateFrom(j, n)
+
+StateOK ==
+    /\ InitHandshakeEmptyStateOK
+    /\ BootstrapStateOK
+    /\ JoinedStateOK
+    /\ state \in [ join : [ joining -> Seq(ValidStates) ]
+                 , node : [ nodes   -> ValidStates ] ]
+
+(* Joining nodes only make connections with established nodes.        *)
+(* Init nodes have no connections.                                    *)
+(* Handshaking nodes may be connected to established nodes.           *)
+(* Bootstrapping and joined nodes are connection saturated.           *)
+(* Established nodes may only be connected to non-init joining nodes. *)
+SecuredJoinOK ==
+    \* init
+    /\ \A j \in init : secured.join[j] = {}
+    \* handshaking
+    /\ \A j \in handshaking : secured.join[j] \subseteq nodes
+    \* bootstrapping and joined
+    /\ \A j \in bootstrapping \cup joined : connectionSaturated(j)
+
+SecuredOK ==
+    /\ SecuredJoinOK
+    /\ secured \in [ join : [ joining -> SUBSET nodes ]
+                   , node : [ nodes   -> SUBSET (joining \ init) ] ]
+
+(* Init and handshaking nodes cannot have messages sent to them.                    *)
+(* Bootstrapping and joined nodes can have at most sizeBound messages sent to them. *)
+(* Established nodes can have at most sizeBound messages sent to them.              *)
+(* Joining nodes only send messages to established nodes and vice versa.            *)
+SentOK ==
+    /\ \A j \in init \cup handshaking : sent.join[j] = {}
+    /\ \A j \in bootstrapping \cup joined : ok_sent("join", j)
+    /\ \A n \in nodes : ok_sent("node", n)
+    /\ sent \in [ join : [ joining -> SUBSET NodeMsgs ]
+                , node : [ nodes   -> SUBSET JoinMsgs ] ]
+
+(* Init and handshaking nodes cannot receive any messages (because no one sends them messages). *)
+(* Bootstrapping and joined nodes can receive at most sizeBound messages.                       *)
+(* Established nodes can receive at most sizeBound messages.                                    *)
+(* Joining nodes can only receive messages from established nodes and vice versa.               *)
+RecvOK ==
+    /\ \A j \in init \cup handshaking : recv.join[j] = <<>>
+    /\ \A j \in bootstrapping \cup joined : ok_recv("join", j)
+    /\ \A n \in nodes : ok_recv("node", n)
+    /\ recv \in [ join : [ joining -> Seq(NodeMsgs) ]
+                , node : [ nodes   -> Seq(JoinMsgs) ] ]
+
+(* Init and handshaking nodes do not expect any messages (because they cannot send messages). *)
+(* Bootstrapping and joined nodes can expect at most sizeBound messages.                      *)
+(* Established nodes can expect at most sizeBound messages.                                   *)
+(* Joining nodes can only expect (partial) messages from established nodes and vice versa.    *)
+ExpectOK ==
+    /\ \A j \in init \cup handshaking : expect.join[j] = {}
+    /\ \A j \in bootstrapping \cup joined : ok_expect("join", j)
+    /\ \A n \in nodes : ok_expect("node", n)
+    /\ expect \in [ join : [ joining -> SUBSET PartialNodeMsgs ]
+                  , node : [ nodes   -> SUBSET JoinMsgs ] ]
+
+(* Type invariant *)
+TypeOK ==
+    /\ PeersOK
+    /\ PhaseOK
+    /\ StateOK
+    /\ SecuredOK
+    /\ SentOK
+    /\ RecvOK
+    /\ ExpectOK
 
 \* Every joining node joins the network
 AllNodesJoined == joining = joined
