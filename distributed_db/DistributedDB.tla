@@ -2,46 +2,46 @@
 
 EXTENDS Utils
 
-CONSTANTS NumNodes,     \* number of nodes
-          MaxQueueSize, \* bound on size of message queues
-          NumChains,    \* initial number of chain ids
-          N             \* bound on many things **to make model finite**
+CONSTANTS numNodes,     \* number of nodes
+          numChains,    \* number of chains
+          sizeBound     \* bound on many things **to make model finite**
 
 VARIABLES \* local information
-          node_info,    \* record fields:
-                        \* active   : [ Nodes -> SUBSET Chains ]
+          node_info,    \* active   : [ Nodes -> SUBSET Chains ]
                         \* messages : [ Nodes -> [ Chains -> Seq(Messages) ] ]
-                        \* branch   : [ Nodes -> [ Chains -> Branches ] ]
+                        \* branches : [ Nodes -> [ Chains -> Seq(Branches) ] ]
                         \* blocks   : [ Nodes -> [ Chains -> [ Branches -> Seq(Blocks) ] ] ] ]
           \* global view of network
-          network_info  \* [ chains   : Chains
-                        \* , branches : [ Chains -> Branches ]
-                        \* , heights  : [ Chains -> [ Branches -> Nat ] ]
-                        \* , blocks   : [ Chains -> [ Branches -> Seq(Blocks) ] ]
-                        \* , protocol : Protocols
-                        \* , active   : [ Chains -> SUBSET Nodes ]
-                        \* , sent     : [ Chains -> [ Nodes -> Seq(Messages) ] ]
-                        \* , recv     : [ Chains -> [ Nodes -> Seq(Messages) ] ] ]
+          network_info  \* chains   : Chains
+                        \* branch   : [ Chains -> Branches ]
+                        \* height   : [ Chains -> [ Branches -> Heights ] ]
+                        \* blocks   : [ Chains -> [ Branches -> Seq(Blocks) ] ]
+                        \* protocol : Protocols
+                        \* active   : [ Chains -> SUBSET Nodes ]
+                        \* sent     : [ Chains -> [ Nodes -> SUBSET Messages ] ]
+                        \* recv     : [ Chains -> [ Nodes -> Seq(Messages) ] ] ]
 
 vars == <<network_info, node_info>>
 
 ----------------------------------------------------------------------------
 
-Nodes == 1..NumNodes
+Nodes == 1..numNodes
 
-Chains == 1..NumChains
+Chains == 1..numChains
 
-Branches == 0..N
+Branches == 0..sizeBound
 
-Heights == 0..N
+Heights == 0..sizeBound
 
-Protocols == 0..N
+Protocols == 0..sizeBound
+
+Op_nums == 0..sizeBound
 
 Headers ==
     [ height : Heights, chain : Chains, branch : Branches
-    , protocol : Protocols, num_ops : 0..N ]
+    , protocol : Protocols, num_ops : Op_nums ]
 
-Operations == [ 0..N -> Pairs(Heights, 0..N) ]
+Operations == [ Op_nums -> Pairs(Heights, 0..sizeBound) ]
 
 Blocks == [ header : Headers, ops : Operations ]
 
@@ -49,94 +49,57 @@ Blocks == [ header : Headers, ops : Operations ]
 
 (* Module-specific helper functions *)
 \* check that [node]'s message queue on [chain] is not full
-checkNodeQueue[node \in Nodes] ==
-    [ chain \in Chains |-> Len(node_info.messages[chain][node]) < MaxQueueSize ]
+checkMessages[node \in Nodes] ==
+    [ chain \in Chains |-> Len(node_info.messages[chain][node]) < sizeBound ]
 
 \* check that there is space to send [node] a message on [chain]
-checkNetQueue[chain \in Chains] ==
-    [ node \in Nodes |-> Len(network_info.sent[chain][node]) < MaxQueueSize ]
+checkSent[chain \in Chains] ==
+    [ node \in Nodes |-> Cardinality(network_info.sent[chain][node]) < sizeBound ]
 
-RECURSIVE _update_msgs(_, _, _)
-_update_msgs(msgs, msg, to_update) ==
-    CASE to_update = {} -> msgs
-    [] OTHER ->
-         LET p == Pick(to_update)
-             new == [ msgs EXCEPT ![p] = Append(@, msg) ]
-         IN  _update_msgs(new, msg, to_update \ {p})
-
-update_msgs(msgs, chain, msg) ==
-    LET from == msg.from
-        active == network_info.active[chain] \ {from}
-        receivers ==
-          { node \in active : checkNetQueue[chain][node] }
-    IN  _update_msgs(msgs, msg, receivers)
-
-(* check that queue is not full before appending the message *)
-checkAppend(queue, msg) ==
-    CASE Len(queue) < MaxQueueSize -> Append(queue, msg)
-      [] OTHER -> queue
+(* check that set is not full before including the message *)
+checkUnion(set, msg) ==
+    CASE Cardinality(set) < sizeBound -> set \cup {msg}
+      [] OTHER -> set
 
 (* Blocks *)
-Header(_height, _chain, _branch, _protocol, _num_ops) ==
-    [ height |-> _height, chain |-> _chain, branch |-> _branch
-    , protocol |-> _protocol, num_ops |-> _num_ops ]
+Header(height, chain, branch, protocol, num_ops) ==
+    [ height |-> height, chain |-> chain, branch |-> branch
+    , protocol |-> protocol, num_ops |-> num_ops ]
 
-Block(_header, _ops) == [ header |-> _header, ops |-> _ops ]
+Block(header, ops) == [ header |-> header, ops |-> ops ]
 
-mkOps(_height, _num_ops) == [ x \in 1.._num_ops |-> <<_height, x>> ]
+mkOps(height, num_ops) == [ x \in 1..num_ops |-> <<height, x>> ]
 
 isNetwork(info) == DOMAIN info =
-    { "active", "branches", "blocks", "chains", "protocol", "recv", "sent" }
+    { "active", "branch", "blocks", "chains", "height", "protocol", "recv", "sent" }
 
-isNode(info) == DOMAIN info = { "active", "branch", "blocks", "messages" }
+isNode(info) == DOMAIN info = { "active", "branches", "blocks", "messages" }
 
-\* If info = node_info, check that checkNodeQueue[node][chain] is satisified
-\* If info = network_info, check that checkNetQueue[chain][node] is satisified
-Recv(info, node, chain, msg) ==
-    \* node_info
-    CASE isNode(info)
-        -> [ info EXCEPT !.messages =
-               [ @ EXCEPT ![node] =
-                   [ @ EXCEPT ![chain] = Append(@, msg) ] ] ]
-    \* network_info
-      [] isNetwork(info)
-        -> [ info EXCEPT !.recv =
-               [ @ EXCEPT ![chain] =
-                   [ @ EXCEPT ![node] = <<msg>> \o @ ] ] ]
+\* If info = node_info, check that checkMessages[node][chain] is satisified
+\* If info = network_info, check that checkSent[chain][node] is satisified
+Recv(info, chain, node, msg) ==
+    CASE isNode(info)    -> [ info EXCEPT !.messages[node][chain] = Append(@, msg) ]
+      [] isNetwork(info) -> [ info EXCEPT !.recv[chain][node] = <<msg>> \o @ ]
 
-\* If info = network_info, must check that network_info.sent[chain][node] # <<>>
-\* If info = node_info, must check that node_info.sent[node][chain] # <<>>
-Consume(info, node, chain) ==
-    \* network_info
-    CASE isNetwork(info)
-        -> [ info EXCEPT !.sent =
-               [ @ EXCEPT ![chain] =
-                   [ @ EXCEPT ![node] = Tail(@) ] ] ]
-    \* node_info
-      [] isNode(info) ->
-           [ info EXCEPT !.messages =
-               [ @ EXCEPT ![node] =
-                   [ @ EXCEPT ![chain] = Tail(@) ] ] ]
+\* If info = network_info, must check that network_info.sent[chain][node] # {}
+\* If info = node_info, must check that node_info.messages[node][chain] # <<>>
+Consume(info, chain, node, msg) ==
+    CASE isNetwork(info) -> [ info EXCEPT !.sent[chain][node] = @ \ {msg} ]
+      [] isNode(info)    -> [ info EXCEPT !.messages[node][chain] = Tail(@) ]
 
-\* Must check that checkNetQueue[chain][node] is satisfied
+\* Must check that checkSent[chain][node] is satisfied
 Sent(info, node, chain, msg) ==
-    CASE isNetwork(info)
-        -> [ info EXCEPT !.sent =
-               [ @ EXCEPT ![chain] =
-                   [ @ EXCEPT ![node] = Append(@, msg) ] ] ]
+    CASE isNetwork(info) -> [ info EXCEPT !.sent[chain][node] = @ \cup {msg} ]
 
-\* 
-CheckSent(info, node, chain, msg) ==
-    CASE isNetwork(info)
-        -> [ info EXCEPT !.sent =
-               [ @ EXCEPT ![chain] =
-                   [ to \in Nodes |->
-                       LET curr == @[to]
-                       IN \* if active and has queue space, append msg
-                         CASE to \in info.active[chain] \ {node}
-                             -> checkAppend(curr, msg)
-                          \* otherwise, do nothing
-                           [] OTHER -> curr ] ] ]
+\* Sends [msg] to all active nodes who can recieve it
+SendToActive(info, from, chain, msg) ==
+    CASE isNetwork(info) -> [ info EXCEPT !.sent[chain] =
+      [ to \in Nodes |->
+          LET curr == @[to]
+          IN  \* if node is active and has sent space, add msg to sent
+            CASE to \in info.active[chain] \ {from} -> checkUnion(curr, msg)
+              \* else, do nothing
+              [] OTHER -> curr ] ]
 
 ----------------------------------------------------------------------------
 
@@ -172,8 +135,8 @@ AdParams ==
     \cup
     [ protocol : Protocols ]
     \cup
-    [ height : Heights, (*branch?,*) ops : NESeq_n(Operations, N)
-    , ops_hash : NESeq_n(Heights, N) ]
+    [ height : Heights, (*branch?,*) ops : NESeq_n(Operations, sizeBound)
+    , ops_hash : NESeq_n(Heights, sizeBound) ]
     \cup
     [ chain : Chains, header : Headers ]
     \cup
@@ -203,13 +166,13 @@ AdMsgs == [ from : Nodes, type : AdMsgTypes, params : AdParams ]
 ReqParams ==
     [ chain : Chains ]                                     \* current_branch, current_head, checkpoint
     \cup
-    [ chain : Chains, branch : 1..N ]                      \* branch? for Get_protocol_branch
+    [ chain : Chains, branch : 0..sizeBound ]              \* branch? for Get_protocol_branch
     \cup
-    [ heights : NESeq_n(Heights, N) ]                      \* headers, operations, protocols
+    [ heights : NESeq_n(Heights, sizeBound) ]              \* headers, operations, protocols
     \cup
-    [ height_num_list : NESeq_n(Pairs(Heights, 1..N), N) ] \* num?
+    [ height_num_list : NESeq_n(Pairs(Heights, 1..sizeBound), sizeBound) ] \* num?
     \cup
-    [ height : Heights, num : 1..N ]                       \* num?
+    [ height : Heights, num : 1..sizeBound ]                       \* num?
 
 OnlyChain == { "Get_current_branch", "Get_current_head", "Get_checkpoint" }
 
@@ -230,7 +193,7 @@ ReqMsgs == [ from : Nodes, type : ReqMsgTypes, params : ReqParams ]
 Messages == AdMsgs \cup ReqMsgs
 
 \* Queues can have size at most MaxQueueSize
-PossibleQueueStates == Seq_n(Messages, MaxQueueSize)
+PossibleQueueStates == Seq_n(Messages, sizeBound)
 
 (* validates _type matches _params and creates the message *)
 (* invalid type/param pairs will return a TLC error *)
@@ -249,28 +212,33 @@ Msg(_from, _type, _params) ==
 
 ----------------------------------------------------------------------------
 
-(* Activate/Deactivate messages are not explicitly passed between nodes in this model *)
+(* Activate/Deactivate actions *)
+(* These messages are not explicitly passed between nodes in this model *)
 
-(* An inactive node becomes active on given chain *)
+\* An inactive node becomes active on given chain
 Activate(node, chain) ==
-    /\ network_info' =
-         [ network_info EXCEPT !.active = [ @ EXCEPT ![chain] = @ \cup {node} ] ]
-    /\ node_info' =
-         [ node_info EXCEPT !.active = [ @ EXCEPT ![node] = @ \cup {chain} ] ]
+    /\ network_info' = [ network_info EXCEPT !.active[chain] = @ \cup {node} ]
+    /\ node_info' = [ node_info EXCEPT !.active[node] = @ \cup {chain} ]
 
-(* An active node becomes inactive on given chain *)
+Activation ==
+    \E chain \in Chains :
+        \E node \in Nodes \ network_info.active[chain] : Activate(node, chain)
+
+\* An active node becomes inactive on given chain
 Deactivate(node, chain) ==
-    /\ network_info' =
-         [ network_info EXCEPT !.active = [ @ EXCEPT ![chain] = @ \ {node} ] ]
-    /\ node_info' =
-         [ node_info EXCEPT !.active = [ @ EXCEPT ![node] = @ \ {chain} ] ]
+    /\ network_info' = [ network_info EXCEPT !.active[chain] = @ \ {node} ]
+    /\ node_info' = [ node_info EXCEPT !.active[node] = @ \ {chain} ]
+
+Deactivation ==
+    \E chain \in Chains :
+        \E node \in network_info.active[chain] : Deactivate(node, chain)
 
 ----------------------------------------------------------------------------
 
 (* Request actions *)
-(* Messages are sent to a queue where the receipient can receive the message *)
+(* Messages are sent to a set where the receipient can receive it later *)
 
-(* Request the current branch from one active peer *)
+\* Request the current branch from one active peer
 \* must check that [to] has room left in their queue
 Get_current_branch_1(from, chain, to) ==
     LET msg == Msg(from, "Get_current_branch", [ chain |-> chain ])
@@ -278,26 +246,55 @@ Get_current_branch_1(from, chain, to) ==
       /\ network_info' = Sent(network_info, to, chain, msg)
       /\ UNCHANGED node_info
 
-(* Request the current branch from all active peers *)
+\* Request current branch from an active peer who can receive a message
+Get_current_branch_one ==
+    \E from \in Nodes, chain \in Chains :
+        \E to \in network_info.active[chain] \ {from} :
+            /\ checkSent[chain][to]
+            /\ Get_current_branch_1(from, chain, to)
+
+\* Request the current branch from all active peers
+\* The request is only sent to active nodes that have room in their sent sets
 Get_current_branch_n(from, chain) ==
     LET msg == Msg(from, "Get_current_branch", [ chain |-> chain ])
     IN
-      /\ network_info' = CheckSent(network_info, from, chain, msg)
+      /\ network_info' = SendToActive(network_info, from, chain, msg)
       /\ UNCHANGED node_info
 
-(* Request the current head from one active peer *)
+Get_current_branch_all ==
+    \E from \in Nodes :
+        \E chain \in node_info.active[from] :
+            /\ network_info.active[chain] \ {from} # {}
+            /\ Get_current_branch_n(from, chain)
+
+\* Request the current head from one active peer
+\* must check that 
 Get_current_head_1(from, chain, to) ==
     LET msg == Msg(from, "Get_current_head", [ chain |-> chain ])
     IN
       /\ network_info' = Sent(network_info, to, chain, msg)
       /\ UNCHANGED node_info
 
+Get_current_head_one ==
+    \E from \in Nodes :
+        \E chain \in node_info.active[from] :
+            \E to \in network_info.active[chain] \ {from} :
+                /\ checkSent[chain][to]
+                /\ Get_current_head_1(from, chain, to)
+
 (* Request the current head from all active peers *)
 Get_current_head_n(from, chain) ==
     LET msg == Msg(from, "Get_current_head", [ chain |-> chain ])
     IN
-      /\ network_info' = CheckSent(network_info, from, chain, msg)
+      /\ network_info' = SendToActive(network_info, from, chain, msg)
       /\ UNCHANGED node_info
+
+(* Request current head from all active peers *)
+Get_current_head_all ==
+    \E from \in Nodes :
+        \E chain \in node_info.active[from] :
+            /\ network_info.active[chain] \ {from} # {}
+            /\ Get_current_head_n(from, chain)
 
 ----------------------------------------------------------------------------
 
@@ -310,147 +307,92 @@ Get_current_head_n(from, chain) ==
 
 ----------------------------------------------------------------------------
 
-(* Receiving messages *)
+(* Receive action *)
+
+\* An active [node] on [chain] receives a message
 Receive_msg(node, chain) ==
-    LET recv_q == network_info.sent[chain][node]
+    LET msgs == network_info.sent[chain][node]
         in_q == node_info.messages[node][chain]
+        msg  == Pick(msgs)
     IN
-      /\ recv_q # <<>>                  \* there are messages for [node] to receive
-      /\ checkNodeQueue[node][chain]    \* [node] has space for incoming messages
-      /\ LET msg == Head(recv_q)
-         IN
-           \* [msg] is added to the end of [node]'s queue
-           /\ node_info' =
-                [ node_info EXCEPT !.messages =
-                    [ @ EXCEPT ![node] = [ @ EXCEPT ![chain] = Append(@, msg) ] ] ]
-           \* [msg] is removed from [node]'s sent and add to the beginning of recv
-           /\ LET new == Consume(network_info, node, chain)
-                  new_info == Recv(new, node, chain, msg)
-              IN network_info' = new_info
+      \* [msg] is added to the end of [node]'s queue
+      /\ node_info' = [ node_info EXCEPT !.messages[node][chain] = Append(@, msg) ]
+      \* [msg] is removed from [node]'s sent and added to the beginning of recv
+      /\ LET new_net == Consume(network_info, chain, node, msg)
+         IN network_info' = Recv(new_net, chain, node, msg)
+
+\* If [node] has messages waiting on [chain] and room in their queue, they can receive a message
+Receive ==
+    \E chain \in Chains :
+        \E node \in network_info.active[chain] :
+            /\ network_info.sent[chain][node] # {} \* there are [chain] messages for [node] to receive
+            /\ checkMessages[node][chain]          \* [node] has space for incoming [chain] messages
+            /\ Receive_msg(node, chain)
 
 ----------------------------------------------------------------------------
 
-(* Protocol upgrade *)
+(* Maintanence actions *)
+
+\* Protocol upgrade
 Protocol_upgrade ==
-    /\ network_info.protocol < N
+    /\ network_info.protocol < sizeBound
     /\ network_info' = [ network_info EXCEPT !.protocol = @ + 1 ]
     /\ UNCHANGED node_info
 
-(* Block production *)
+\* Block production
 Produce_block(chain, branch, num_ops) ==
-    LET proto == network_info.protocol                    \* current protocol
-        height == network_info.heights[chain][branch] + 1 \* next block height
-        ops == mkOps(height, num_ops)
+    LET proto  == network_info.protocol                  \* current protocol
+        height == network_info.height[chain][branch] + 1 \* next block height on branch
+        ops    == mkOps(height, num_ops)                 \* block operations
         header == Header(height, chain, branch, proto, num_ops)
     IN
-      /\ height <= N
       /\ network_info' =
-           [ network_info EXCEPT
-               !.blocks = [ c \in Chains |-> [ b \in network_info.branches[c] |->
-                 CASE b = branch -> Append(@, Block(header, ops))
-                   [] OTHER -> @ ] ] ]
+           [ network_info EXCEPT !.blocks =
+               [ c \in Chains |->
+                   [ b \in Branches |->
+                       LET blocks == network_info.blocks[c][b] IN
+                       CASE b = branch -> <<Block(header, ops)>> \o blocks
+                         [] OTHER -> blocks ] ] ]
       /\ UNCHANGED node_info
 
-(* New branch *)
-New_branch_for(chain) ==
-    /\ network_info.branches[chain] < N
-    /\ network_info' =
-         [ network_info EXCEPT !.branches = [ @ EXCEPT ![chain] = @ + 1 ] ]
-    /\ UNCHANGED node_info
-
-----------------------------------------------------------------------------
-
-\* TODO
-(* A node that is inactive on a chain becomes active *)
-Activation ==
-    \E chain \in Chains :
-        \E node \in Nodes \ network_info.active[chain] : Activate(node, chain)
-
-(* A node that is active on a chain becomes inactive *)
-Deactivation ==
-    \E chain \in Chains :
-        \E node \in network_info.active[chain] : Deactivate(node, chain)
-
-(* Request current branch from an active peer who can receive a message *)
-Get_current_branch_one ==
-    \E from \in Nodes, chain \in Chains :
-        \E to \in network_info.active[chain] \ {from} :
-            /\ checkNetQueue[chain][to]
-            /\ Get_current_branch_1(from, chain, to)
-
-(* Request current branch from all active peers *)
-Get_current_branch_all ==
-    \E from \in Nodes :
-        \E chain \in node_info.active[from] :
-            /\ network_info.active[chain] \ {from} # {}
-            /\ Get_current_branch_n(from, chain)
-
-(* Request current head from an active peer *)
-Get_current_head_one ==
-    \E from \in Nodes :
-        \E chain \in node_info.active[from] :
-            \E to \in network_info.active[chain] \ {from} :
-                /\ checkNetQueue[chain][to]
-                /\ Get_current_head_1(from, chain, to)
-
-(* Request current head from all active peers *)
-Get_current_head_all ==
-    \E from \in Nodes :
-        \E chain \in node_info.active[from] :
-            /\ network_info.active[chain] \ {from} # {}
-            /\ Get_current_head_n(from, chain)
-
-(* Receive a message *)
-Receive ==
-    \E chain \in Chains :
-        \E node \in network_info.active[chain] : Receive_msg(node, chain)
-
-----------------------------------------------------------------------------
-
-(* A block is produced on an existing chain *)
+\* A block is produced on an existing branch of an existing chain
 Block_production ==
     \E chain \in 1..network_info.chains :
-        \E branch \in 1..network_info.branches[chain], num_ops \in 0..N :
-            Produce_block(chain, branch, num_ops)
+        \E branch \in 0..network_info.branch[chain], num_ops \in Op_nums :
+            /\ network_info.height[chain][branch] < sizeBound
+            /\ Produce_block(chain, branch, num_ops)
+
+\* Start a new branch on chain
+New_branch_for(chain) ==
+    /\ network_info' = [ network_info EXCEPT !.branch[chain] = @ + 1 ]
+    /\ UNCHANGED node_info
+
+\* Start a new branch on an existing chain
+New_branch ==
+    \E chain \in Chains :
+        /\ network_info.branch[chain] < sizeBound
+        /\ New_branch_for(chain)
 
 ----------------------------------------------------------------------------
 
-(* Type invariant *)
-TypeOK ==
-    \* active nodes
-    /\ \A node \in Nodes, chain \in Chains :
-         node \in network_info.active[chain] <=> chain \in node_info.active[node]
-    /\ network_info \in
-         [ chains   : Chains
-         , branches : [ Chains -> Branches ]
-         , blocks   : [ Chains -> [ Branches -> Seq(Blocks) ] ]
-         , protocol : Protocols
-         , active   : [ Chains -> SUBSET Nodes ]
-         , sent     : [ Chains -> [ Nodes -> Seq(Messages) ] ]
-         , recv     : [ Chains -> [ Nodes -> Seq(Messages) ] ] ]
-    /\ node_info \in
-         [ active   : [ Nodes -> SUBSET Chains ]
-         , messages : [ Nodes -> [ Chains -> Seq(Messages) ] ]
-         , branches : [ Nodes -> [ Chains -> SUBSET Branches ] ]
-         , blocks   : [ Nodes -> [ Chains -> [ Branches -> Seq(Blocks) ] ] ] ]
-
-----------------------------------------------------------------------------
-
+(* Initial predicate *)
 Init ==
     /\ network_info =
          [ chains   |-> 1
-         , branches |-> [ c \in Chains |-> 0 ]
+         , branch   |-> [ c \in Chains |-> 0 ]
          , blocks   |-> [ c \in Chains |-> [ b \in Branches |-> <<>> ] ]
          , protocol |-> 0
+         , height   |-> [ c \in Chains |-> [ b \in Branches |-> -1 ] ]
          , active   |-> [ c \in Chains |-> {} ]
-         , sent     |-> [ c \in Chains |-> [ n \in Nodes |-> <<>> ] ]
+         , sent     |-> [ c \in Chains |-> [ n \in Nodes |-> {} ] ]
          , recv     |-> [ c \in Chains |-> [ n \in Nodes |-> <<>> ] ] ]
     /\ node_info =
          [ active   |-> [ n \in Nodes |-> {} ]
          , messages |-> [ n \in Nodes |-> [ c \in Chains |-> <<>> ] ]
-         , branches |-> [ n \in Nodes |-> [ c \in Chains |-> {} ] ]
+         , branches |-> [ n \in Nodes |-> [ c \in Chains |-> <<>> ] ]
          , blocks   |-> [ n \in Nodes |-> [ c \in Chains |-> [ b \in Branches |-> <<>> ] ] ] ]
 
+(* Next actions *)
 Next ==
     \/ Activation
     \/ Deactivation
@@ -460,16 +402,72 @@ Next ==
     \/ Get_current_head_all
     \/ Receive
     \/ Protocol_upgrade
+    \/ Block_production
+    \/ New_branch
     \* TODO finish
 
-Spec == Init /\ [][Next]_vars
+(* Fairness conditions *)
+WFairness ==
+    /\ WF_vars(Activation)
+    /\ WF_vars(Deactivation)
+    /\ WF_vars(Get_current_branch_one)
+    /\ WF_vars(Get_current_branch_all)
+    /\ WF_vars(Get_current_head_one)
+    /\ WF_vars(Get_current_head_all)
+    /\ WF_vars(Receive)
+    /\ WF_vars(Protocol_upgrade)
+    /\ WF_vars(Block_production)
+    /\ WF_vars(New_branch)
+
+(* Specification *)
+Spec == Init /\ WFairness /\ [][Next]_vars
 
 ----------------------------------------------------------------------------
 
 (* Invariants *)
 \* TODO
 
+\* Avoid silliness
+TypeOK ==
+    /\ network_info \in
+         [ chains   : Chains
+         , branch   : [ Chains -> Branches ]
+         , blocks   : [ Chains -> [ Branches -> Seq(Blocks) ] ]
+         , protocol : Protocols
+         , height   : [ Chains -> [ Branches -> Heights \cup {-1} ] ]
+         , active   : [ Chains -> SUBSET Nodes ]
+         , sent     : [ Chains -> [ Nodes -> SUBSET Messages ] ]
+         , recv     : [ Chains -> [ Nodes -> Seq(Messages) ] ] ]
+    /\ node_info \in
+         [ active   : [ Nodes -> SUBSET Chains ]
+         , messages : [ Nodes -> [ Chains -> Seq(Messages) ] ]
+         , branches : [ Nodes -> [ Chains -> Seq(Branches) ] ]
+         , blocks   : [ Nodes -> [ Chains -> [ Branches -> Seq(Blocks) ] ] ] ]
+
+\* network_info & node_info are in agreement
+ActiveAgreement ==
+    \A node \in Nodes, chain \in Chains :
+        \* actives
+        /\ node \in network_info.active[chain] <=> chain \in node_info.active[node]
+        \* messages
+        /\ ToSet(network_info.recv[chain][node]) = ToSet(node_info.messages[node][chain])
+        \* branches
+        /\ node_info.branches[node][chain] # <<>> =>
+             Head(node_info.branches[node][chain]) <= network_info.branch[chain]
+        \* blocks
+        /\ \A branch \in ToSet(node_info.branches[node][chain]) :
+               isSubSeq(node_info.blocks[node][chain][branch], network_info.blocks[chain][branch])
+
+(* Properties *)
+
 \* Once a message is sent, it is eventually received by the intended recipient
-\* A [msg] to a [node] ends up in recv[chain][node] iff msg \in in_messages[chain][node]
+\* A [msg] sent to a [node] ends up in recv[chain][node]
+SentMessagesAreReceived ==
+    \A chain \in Chains :
+        \A node \in network_info.active[chain] :
+            \A msg \in Messages :
+                msg \in network_info.sent[chain][node] ~>
+                  /\ msg \in ToSet(network_info.recv[chain][node])
+                  /\ msg \in ToSet(node_info.messages[node][chain])
 
 =============================================================================
