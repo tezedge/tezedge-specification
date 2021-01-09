@@ -104,7 +104,7 @@ Work ==
              CASE c \in registered ->
                  LET curr == state[c].curr IN
                  [ state[c] EXCEPT
-                     !.avg = alpha * curr + divide((1000 - alpha) * @, 1000),
+                     !.avg = alpha * curr + divide[(1000 - alpha) * @, 1000],
                      !.curr = 0 ]
                [] OTHER -> state[c] ]
     /\ UNCHANGED registered

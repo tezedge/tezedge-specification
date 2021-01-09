@@ -17,30 +17,30 @@ NESubsets(S) == SUBSET S \ {{}}
 
 ----------------------------------------------------------------------------
 
-(* Common functions *)
+(* Common functions/operators *)
 
 \* minimum
-min(m, n) == IF m > n THEN n ELSE m
+min[m, n \in Int] == IF m > n THEN n ELSE m
 
 \* maximum
-max(m, n) == IF m > n THEN m ELSE n
+max[m, n \in Int] == IF m > n THEN m ELSE n
 
 \* integer division
-RECURSIVE _divide(_, _, _)
-_divide(n, m, p) ==
-    IF n < m
-    THEN IF m <= 2 * n
-         THEN p + 1
-         ELSE p
-    ELSE _divide(n - m, m, p + 1)
-
-divide(a, b) == _divide(a, b, 0)
+divide[a, b \in Nat] ==
+    LET _divide[n, m \in Nat, p \in Nat] ==
+        IF n < m
+        THEN IF m <= 2 * n
+             THEN p + 1
+             ELSE p
+        ELSE _divide[n - m, m, p + 1]
+    IN
+      _divide[a, b, 0]
 
 \* maximum element of a nonempty finite set
 RECURSIVE _max_set(_, _)
 _max_set(S, curr) ==
     CASE S = {} -> curr
-      [] OTHER -> LET x == Pick(S) IN _max_set(S \ {x}, max(x, curr))
+      [] OTHER -> LET x == Pick(S) IN _max_set(S \ {x}, max[x, curr])
 
 max_set(S) == CASE S # {} -> LET x == Pick(S) IN _max_set(S \ {x}, x)
 
@@ -48,7 +48,7 @@ max_set(S) == CASE S # {} -> LET x == Pick(S) IN _max_set(S \ {x}, x)
 RECURSIVE _min_set(_, _)
 _min_set(S, curr) ==
     CASE S = {} -> curr
-      [] OTHER -> LET x == Pick(S) IN _min_set(S \ {x}, min(x, curr))
+      [] OTHER -> LET x == Pick(S) IN _min_set(S \ {x}, min[x, curr])
 
 min_set(S) == CASE S # {} -> LET x == Pick(S) IN _min_set(S \ {x}, x)
 
@@ -73,7 +73,7 @@ Pairs(S1, S2) == { <<x1, x2>> : x1 \in S1, x2 \in S2 }
 \* Nonempty sequences of elements from set S
 NESeq(S) == Seq(S) \ {<<>>}
 
-\* remove an element from a sequence
+\* remove (all occurrences of) an element from a sequence
 RECURSIVE _remove(_, _, _)
 _remove(s, e, acc) ==
     CASE s = <<>> -> acc
@@ -82,7 +82,7 @@ _remove(s, e, acc) ==
 
 Remove(s, e) == _remove(s, e, <<>>)
 
-\* subsequence predicate
+\* (finite) subsequence predicate
 RECURSIVE isSubSeq(_, _)
 isSubSeq(s1, s2) ==
     \/ s1 = <<>>

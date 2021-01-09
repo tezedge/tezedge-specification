@@ -49,7 +49,7 @@ sum(f) ==
 avg(f) ==
     LET tot == sum(f)
         num == Cardinality(some(f))
-    IN  divide(tot, num)
+    IN  divide[tot, num]
 
 -----------------------------------------------------------------------------
 
@@ -126,16 +126,16 @@ Reset_quota ==
                     /\ WriteScheduler!Update_quota
               /\ UNCHANGED <<in_state, out_state>>
          ELSE
-           LET fair_r == divide(inflow, nb_conn)
-               fair_w == divide(outflow, nb_conn)
+           LET fair_r == divide[inflow, nb_conn]
+               fair_w == divide[outflow, nb_conn]
            IN
              /\ in_state' = [ in_state EXCEPT !.quota =
                    [ id \in 0..M |->
-                       CASE id \in connections -> min(@[id], 0) + fair_r
+                       CASE id \in connections -> min[@[id], 0] + fair_r
                          [] OTHER -> @[id] ] ]
              /\ out_state' = [ out_state EXCEPT !.quota =
                    [ id \in 0..M |->
-                       CASE id \in connections -> min(@[id], 0) + fair_w
+                       CASE id \in connections -> min[@[id], 0] + fair_w
                          [] OTHER -> @[id] ] ]
              /\ \/ /\ ReadScheduler!Update_quota
                    /\ UNCHANGED <<out_high_q, out_low_q, out_quota>>

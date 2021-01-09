@@ -160,7 +160,7 @@ Waiter(id) ==
 (* When the scheduler quota < 0, we can update the quota and rearrange the queues *)
 Update_quota ==
     /\ quota < 0
-    /\ quota' = min(quota, 0) + Max_speed
+    /\ quota' = min[quota, 0] + Max_speed
     /\ IF low_q # <<>>
        THEN /\ high_q' = SelectSeq(low_q, PosQuota)
             /\ low_q'  = SelectSeq(low_q, NonPosQuota)
