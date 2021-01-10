@@ -15,6 +15,9 @@ ToSet(f) == { f[i] : i \in DOMAIN f }
 \* Nonempty subsets of S
 NESubsets(S) == SUBSET S \ {{}}
 
+\* Subsets of size <= n
+Subsets_n(S, n) == { s \in SUBSET S : Cardinality(s) <= n }
+
 ----------------------------------------------------------------------------
 
 (* Common functions/operators *)
