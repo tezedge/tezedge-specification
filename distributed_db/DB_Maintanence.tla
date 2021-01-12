@@ -31,7 +31,7 @@ Produce_block(chain, branch, num_ops) ==
                LET msg  == SysMsg("New_block", [ block |-> block ])
                    curr == @[n]
                IN
-                 CASE n \in network_info.active[chain] -> checkUnion(curr, msg) \* can only send to them if they have space
+                 CASE n \in network_info.active[chain] -> checkAdd(curr, msg) \* can only send to them if they have space
                    [] OTHER -> curr ] ]
       /\ UNCHANGED node_info
 
@@ -51,7 +51,7 @@ New_branch_for(chain) ==
                    msg    == SysMsg("New_branch", [ branch |-> branch ])
                    curr   == @[n]
                IN
-                 CASE n \in network_info.active[chain] -> checkUnion(curr, msg)
+                 CASE n \in network_info.active[chain] -> checkAdd(curr, msg)
                    [] OTHER -> curr ] ]
     /\ UNCHANGED node_info
 

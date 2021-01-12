@@ -20,7 +20,7 @@ Branches == 0..sizeBound
 
 Heights == 0..sizeBound
 
-Op_nums == 1..sizeBound
+Op_nums == 0..sizeBound
 
 -----------------------------------------------------------------------------
 
@@ -42,7 +42,7 @@ Block(header, ops) == [ header |-> header, ops |-> ops ]
 
 \* Header "constructor"
 Header(chain, branch, height, num_ops) ==
-    [ height |-> height, chain |-> chain, branch |-> branch, num_ops |-> num_ops ]
+    [ chain |-> chain, branch |-> branch, height |-> height, num_ops |-> num_ops ]
 
 \* Operations "constructor"
 mkOps(height, num_ops) == [ x \in 1..num_ops |-> <<height, x>> ]
@@ -71,9 +71,14 @@ checkSent[ chain \in Chains ] ==
     [ node \in Nodes |-> Cardinality(network_info.sent[chain][node]) < sizeBound ]
 
 \* check that [set] is not full before including the message
-checkUnion(set, msg) ==
+checkAdd(set, msg) ==
     CASE Cardinality(set) < sizeBound -> set \cup {msg}
       [] OTHER -> set
+
+\* check that [set1] is not full before unioning the [set2]
+checkUnion(set1, set2) ==
+    CASE Cardinality(set1 \cup set2) <= sizeBound -> set1 \cup set2
+      [] OTHER -> set1
 
 \* check that [queue] is not full before including the message at the end
 checkAppend(queue, msg) ==
