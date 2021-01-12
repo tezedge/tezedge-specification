@@ -97,4 +97,12 @@ isSubSeq(s1, s2) ==
             IN
               isSubSeq(Tail(s1), s)
 
+\* Selects the first element that satisfies the predicate
+\* if no element satisfies the predicate, then return <<>>
+RECURSIVE Select(_, _)
+Select(seq, test) ==
+    CASE seq = <<>> -> <<>>
+      [] test[Head(seq)] -> Head(seq)
+      [] OTHER -> Select(Tail(seq), test)
+
 =============================================================================
