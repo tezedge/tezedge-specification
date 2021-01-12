@@ -13,9 +13,9 @@ LOCAL INSTANCE Utils
 (*********************)
 (* Advertise actions *)
 (*********************)
+
 (* Advertise messages are explicitly passed between nodes *)
 
-\* TODO
 \* Advertise messages can serve as responses to specific requests, i.e. one recipient,
 \* or they can be broadcast to all active nodes on a chain
 
@@ -49,22 +49,5 @@ Advertise_head ==
            node \in network_info.active[chain] :
             /\ node_info.blocks[node][chain][branch] # <<>> \* [node] knows about a block on [branch] of [chain]
             /\ Ad_current_head(node, chain, branch)         \* [node] advertises their current head
-
-\* [node] must have a block on [chain] [branch] in order to advertise
-\* Headers in node_info.headers are NOT advertised because "they have not been validated yet"
-Ad_current_header(node, chain, branch) ==
-    LET header == Head(node_info.blocks[node][chain][branch]).header
-        msg    == Msg(node, "Current_header", [ chain |-> chain, branch |-> branch, header |-> header ])
-    IN
-        /\ network_info' = BroadcastToActive(node, chain, msg)
-        /\ UNCHANGED node_info
-
-\* An active node on some chain advertises their current header
-Advertise_header ==
-    \E chain \in 1..network_info.chains :
-        \E branch \in 0..network_info.branch[chain],
-           node \in network_info.active[chain] :
-            /\ node_info.blocks[node][chain][branch] # <<>> \* [node] knows about a block on [branch] of [chain]
-            /\ Ad_current_header(node, chain, branch)       \* [node] advertises their current header
 
 =============================================================================

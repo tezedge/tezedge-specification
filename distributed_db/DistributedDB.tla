@@ -68,10 +68,8 @@ Init ==
 (* - Deactivation: an active node becomes inactive on a chain                                  *)
 (* - Advertise_branch: a node advertises their current branch                                  *)
 (* - Advertise_head: a node advertises their current head height                               *)
-(* - Advertise_header: a node advertises their current head's header                           *)
-(* - Handle_sys_msg: a node reacts to a system message                                         *)
 (* - Handle_offchain_msg: a node reacts to an offchain message                                 *)
-(* - Handle_node_msg: a node reacts to a message from another node                             *)
+(* - Handle_onchain_msg: a node reacts to a message from another node                          *)
 (* - Block_production: a new block is produced and broadcast to active nodes                   *)
 (* - New_branch: a new branch is created and braodcast to active nodes                         *)
 (* - New_chain: a new chain is created and broadcast to nodes offchain                         *)
@@ -94,11 +92,9 @@ Next ==
     \* Advertise actions
     \/ Advertise_branch
     \/ Advertise_head
-    \/ Advertise_header
     \* Handle actions
-    \/ Handle_sys_msg
     \/ Handle_offchain_msg
-    \/ Handle_node_msg
+    \/ Handle_onchain_msg
     \* Maintanence actions
     \/ Block_production
     \/ New_branch
