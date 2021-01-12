@@ -23,8 +23,8 @@ LOCAL INSTANCE Utils
 Get_current_branch_1(from, chain, to) ==
     LET msg == Msg(from, "Get_current_branch", [ chain |-> chain ])
     IN
-      /\ network_info' = Send(network_info, to, chain, msg) \* send [msg] to [to]
-      /\ node_info' = Send(node_info, to, chain, msg)       \* register expectation
+      /\ network_info' = Send(to, chain, msg) \* send [msg] to [to]
+      /\ node_info' = Expect(to, chain, msg)  \* register expected response if possible
 
 \* A node requests the current branch on a chain from an active peer who can have a message sent to them
 Get_current_branch_one ==
@@ -55,8 +55,8 @@ Get_current_branch_all ==
 Get_current_head_1(from, chain, branch, to) ==
     LET msg == Msg(from, "Get_current_head", [ branch |-> branch ])
     IN
-      /\ network_info' = Send(network_info, to, chain, msg) \* 
-      /\ node_info' = Send(node_info, to, chain, msg)       \* 
+      /\ network_info' = Send(to, chain, msg) \* send [msg] to [to]
+      /\ node_info' = Expect(to, chain, msg)  \* register expected response if possible
 
 \* A node who knows about branches on a chain requests the current head from one active peer on that chain
 Get_current_head_one ==
@@ -93,8 +93,8 @@ Get_current_head_all ==
 Get_block_header_1(from, chain, branch, height, to) ==
     LET msg == Msg(from, "Get_block_header", [ branch |-> branch, height |-> height ])
     IN
-      /\ network_info' = Send(network_info, to, chain, msg) \* [from] sends the [msg] to [to]
-      /\ node_info' = Send(node_info, to, chain, msg)       \* register expected response if possible
+      /\ network_info' = Send(to, chain, msg) \* [from] sends the [msg] to [to]
+      /\ node_info' = Expect(to, chain, msg)  \* register expected response if possible
 
 \* A node requests a block header on some branch at some height from an active peer on some chain
 Get_block_header_one ==
@@ -141,17 +141,13 @@ Get_block_header_all ==
 (******************)
 (* Get_operations *)
 (******************)
-\* TODO Get_operations_one
-\* TODO Get_operations_n
-\* TODO Get_operations_all
-
 \* The requester must have the block's header before requesting its operations
 \* [from] requests the operations of the block on [branch] at [height] on [chain] from active peer [to]
 Get_operations_1(from, chain, branch, height, to) ==
     LET msg == Msg(from, "Get_operations", [ branch |-> branch, height |-> height ])
     IN
-      /\ network_info' = Send(network_info, to, chain, msg) \* send [msg] to [to]
-      /\ node_info' = Send(node_info, to, chain, msg)       \* register expectation
+      /\ network_info' = Send(to, chain, msg) \* send [msg] to [to]
+      /\ node_info' = Expect(to, chain, msg)  \* register expected response if possible
 
 \* A node requests the operations of a block on a chain from an active peer who can have a message sent to them
 Get_operations_one ==
@@ -175,7 +171,7 @@ Get_operations_one ==
 Get_operations_n(from, chain, branch, height) ==
     LET msg == Msg(from, "Get_operations", [ branch |-> branch, height |-> height ])
     IN
-      /\ network_info' = BroadcastToActive(from, chain, msg) \* no expect message for a braodcast
+      /\ network_info' = BroadcastToActive(from, chain, msg) \* braodcast [msg] to active nodes on [chain]
       /\ UNCHANGED node_info
 
 \* A node requests the operations of a block on a chain from all active peers who can have a message sent to them
