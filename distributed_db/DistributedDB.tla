@@ -32,7 +32,7 @@ LOCAL INSTANCE DB_Activation   \* Activation and Deactivation actions
 LOCAL INSTANCE DB_Advertise    \* Advertisement actions
 LOCAL INSTANCE DB_Defs         \* ubiquitous definitions
 LOCAL INSTANCE DB_Handle       \* Message handling actions
-LOCAL INSTANCE DB_Maintanence  \* Block production, new chain, new branch actions
+LOCAL INSTANCE DB_Maintenance  \* Block production, new chain, new branch actions
 LOCAL INSTANCE DB_Messages     \* Message constructors, functions, actions
 LOCAL INSTANCE DB_Receive      \* Receive and drop actions
 LOCAL INSTANCE DB_Request      \* Request actions
@@ -56,7 +56,7 @@ Init ==
          , blocks   |-> [ n \in Nodes |-> [ c \in Chains |-> [ b \in Branches |-> <<>> ] ] ]
          , branches |-> [ n \in Nodes |-> [ c \in Chains |-> <<>> ] ]
          , expect   |-> [ n \in Nodes |-> [ c \in Chains |-> {} ] ]
-         , headers  |-> [ n \in Nodes |-> [ c \in Chains |-> [ b \in Branches |-> <<>> ] ] ]
+         , headers  |-> [ n \in Nodes |-> [ c \in Chains |-> [ b \in Branches |-> {} ] ] ]
          , messages |-> [ n \in Nodes |-> [ c \in Chains |-> <<>> ] ]
          , offchain |-> [ n \in Nodes |-> <<>> ] ]
 
@@ -70,11 +70,13 @@ Init ==
 (* - Advertise_head: a node advertises their current head height                               *)
 (* - Handle_offchain_msg: a node reacts to an offchain message                                 *)
 (* - Handle_onchain_msg: a node reacts to a message from another node                          *)
+(* - Send_again: a node sends a message again because they have not gotten a response          *)
 (* - Block_production: a new block is produced and broadcast to active nodes                   *)
-(* - New_branch: a new branch is created and braodcast to active nodes                         *)
+(* - New_branch: a new branch is created and broadcast to active nodes                         *)
 (* - New_chain: a new chain is created and broadcast to nodes offchain                         *)
 (* - Receive: a message is received, i.e. added to the queue of messages the node can react to *)
 (* - Drop: a message sent to a node is dropped and the node is none the wiser                  *)
+(* - Drop_offchain: a message sent to a node offchain is dropped                               *)
 (* - Get_current_branch_one: a node requests the current branch from another active node       *)
 (* - Get_current_branch_all: a node requests the current branch from all other active nodes    *)
 (* - Get_current_head_one: a node requests the current head from another active node           *)
@@ -95,13 +97,15 @@ Next ==
     \* Handle actions
     \/ Handle_offchain_msg
     \/ Handle_onchain_msg
-    \* Maintanence actions
+    \/ Send_again
+    \* Maintenance actions
     \/ Block_production
     \/ New_branch
     \/ New_chain
     \* Receive actions
     \/ Receive
     \/ Drop
+    \/ Drop_offchain
     \* Request actions
     \/ Get_current_branch_one
     \/ Get_current_branch_all
@@ -116,27 +120,21 @@ Next ==
 (* Liveness conditions *)
 (***********************)
 \* TODO
-WFairness ==
-    /\ WF_vars(Activation)
-    /\ WF_vars(Deactivation)
-    /\ WF_vars(Get_current_branch_one)
-    /\ WF_vars(Get_current_branch_all)
-    /\ WF_vars(Get_current_head_one)
-    /\ WF_vars(Get_current_head_all)
-    /\ WF_vars(Receive)
-    /\ WF_vars(Block_production)
-    /\ WF_vars(New_branch)
+Fairness == {}
 
 ----------------------------------------------------------------------------
 
 (*****************)
 (* Specification *)
 (*****************)
-Spec == Init /\ WFairness /\ [][Next]_vars
+Spec == Init /\ [][Next]_vars
 
 ----------------------------------------------------------------------------
 
+(**************)
 (* Invariants *)
+(**************)
+
 \* TODO
 
 \* Avoid silliness
@@ -147,8 +145,8 @@ TypeOK ==
          , blocks   : [ Chains -> [ Branches -> Seq_n(Blocks, sizeBound) ] ]
          , chains   : Chains
          , height   : [ Chains -> [ Branches -> Heights \cup {-1} ] ]
-         , recv     : [ Chains -> [ Nodes -> Seq_n(FullMsgs \cup SysMsgs, sizeBound) ] ]
-         , sent     : [ Chains -> [ Nodes -> Subsets_n(FullMsgs \cup SysMsgs, sizeBound) ] ] ]
+         , recv     : [ Chains -> [ Nodes -> Seq_n(Messages \cup ExpectMsgs, sizeBound) ] ]
+         , sent     : [ Chains -> [ Nodes -> Subsets_n(Messages \cup ExpectMsgs, sizeBound) ] ] ]
     /\ node_info \in
          [ active   : [ Nodes -> SUBSET Chains ]
          , blocks   : [ Nodes -> [ Chains -> [ Branches -> Seq_n(Blocks, sizeBound) ] ] ]
@@ -172,7 +170,11 @@ ActiveAgreement ==
         /\ \A branch \in ToSet(node_info.branches[node][chain]) :
                isSubSeq(node_info.blocks[node][chain][branch], network_info.blocks[chain][branch])
 
+----------------------------------------------------------------------------
+
+(**************)
 (* Properties *)
+(**************)
 
 \* Once a message is sent, it is eventually received by the intended recipient
 \* A [msg] sent to a [node] ends up in recv[chain][node]

@@ -83,17 +83,20 @@ FullMsgs == AdMsgs \cup ReqMsgs
 (* Acknowledgement messages *)
 (* Used to acknowlegde the receipt of a message from a node *)
 
+\* Error message params
+ErrorMsgParams == [ branch : Branches, height : Heights ]
+
 \* Error message types
-ErrorMsgTypes == { "Unkown_block" }
+ErrorMsgTypes == { "Err_block_header", "Err_operations" }
 
 \* Error messages
-ErrorMsgs == [ from : Nodes, type : ErrorMsgTypes ]
+ErrorMsgs == [ from : Nodes, type : ErrorMsgTypes, error : ErrorMsgParams ]
 
 \* Acknowledgement message types
-AckMsgTypes == { "Ack_current_branch", "Ack_current_head", "Ack_block_header", "Ack_operation" }
+AckMsgTypes == { "Ack_current_branch", "Ack_current_head", "Ack_block_header", "Ack_operations" }
 
 \* Acknowledgement/error messages
-AckMsgs == [ from : Nodes, type : AckMsgTypes ] \cup ErrorMsgs
+AckMsgs == [ from : Nodes, type : AckMsgTypes ]
 
 (* Expect messages *)
 (* Used to register an expected response from a node *)
@@ -108,7 +111,7 @@ ExpectMsgTypes == AdMsgTypes \cup AckMsgTypes \cup ErrorMsgTypes
 ExpectMsgs == [ from : Nodes, type : ExpectMsgTypes, expect : ExpectParams ]
 
 \* A sync message is either an ack or expect message
-SyncMsgs == AckMsgs \cup ExpectMsgs
+SyncMsgs == AckMsgs \cup ExpectMsgs \cup ErrorMsgs
 
 -----------------------------------------------------------------------------
 
@@ -152,6 +155,9 @@ isFullMsg[ msg \in Messages ] == DOMAIN msg = { "from", "params", "type" }
 \* ack message predicate
 isAckMsg[ msg \in Messages ] == DOMAIN msg = { "from", "type" }
 
+\* error message predicate
+isErrorMsg[ msg \in Messages ] == DOMAIN msg = { "error", "from", "type" }
+
 \* expect message predicate
 isExpectMsg[ msg \in Messages ] == DOMAIN msg = { "expect", "from", "type" }
 
@@ -193,8 +199,8 @@ ExpectMsg(from, type, expect) ==
 AckMsg(from, type) ==
     CASE type \in AckMsgTypes -> [ from |-> from, type |-> type ]
 
-ErrorMsg(from, type) ==
-    CASE type \in ErrorMsgTypes -> [ from |-> from, type |-> type ]
+ErrorMsg(from, type, error) ==
+    CASE type \in ErrorMsgTypes -> [ from |-> from, type |-> type, error |-> error ]
 
 \* System message "constructor"
 SysMsg(type, params) ==
@@ -235,6 +241,24 @@ expect_msg[ to \in Nodes, msg \in FullMsgs ] ==
            \* Acknowledgement messages
         [] type \in AckMsgTypes -> {} \* no response expected from an acknowledgement
 
+type_of_expect[ type \in ExpectMsgTypes ] ==
+    \* advertise messages are expected as responses to request messages
+    CASE type = "Current_branch" -> "Get_current_branch"
+      [] type = "Current_head" -> "Get_current_head"
+      [] type = "Block_header" -> "Get_block_header"
+      [] type = "Operations" -> "Get_operations"
+      \* acknowledgements are expected as responses to advertise messages
+      [] type = "Ack_current_branch" -> "Current_branch"
+      [] type = "Ack_current_head" -> "Current_head"
+      [] type = "Ack_block_header" -> "Block_header"
+      [] type = "Ack_operations" -> "Operations"
+
+msg_of_expect[ node \in Nodes, chain \in Chains, exp \in ExpectMsgs ] ==
+    LET from   == exp.from
+        params == exp.expect
+        type   == exp.type
+    IN Msg(from, type_of_expect[type], params)
+
 -----------------------------------------------------------------------------
 
 (* Network/Node info predicates *)
@@ -260,7 +284,7 @@ Consume(info, chain, node, msg) ==
       [] isNode(info)    -> [ info EXCEPT !.messages[node][chain] = Tail(@),
                                           !.expect[node][chain] = @ \ expect_msg[node, msg] ]
 
-\* must check that checkSent[chain][node] is satisfied
+\* Send [msg] to [to] on [chain]
 Send(to, chain, msg) == [ network_info EXCEPT !.sent[chain][to] = checkAdd(@, msg) ]
 
 \* Register an expectation

@@ -190,4 +190,40 @@ Get_operations_all ==
                           IN
                             Get_operations_n(from, chain, branch, height)
 
+----------------------------------------------------------------------------
+
+\* Request multiple branch heads
+\* used when a node receives a branch at a higher level than expected
+Request_branch_heads(node, chain, branches) ==
+    LET RECURSIVE Req_heads(_, _, _, _)
+        Req_heads(n, c, bs, acc) ==
+          CASE bs = {} -> acc
+            [] OTHER ->
+               LET b == Pick(bs)
+                   m == Msg(n, "Get_current_head", [ branch |-> b ])
+                   a == [ acc EXCEPT !.sent[chain] = [ to \in Nodes |->
+                          LET curr == @[to]
+                          IN
+                            CASE to \in network_info.active[chain] \ {n} -> checkAdd(curr, m)
+                              [] OTHER -> curr ] ]
+               IN Req_heads(n, c, bs \ {b}, a)
+    IN Req_heads(node, chain, branches, network_info)
+
+\* Request multiple block headers
+\* used when a node receives a block at a higher height than expected
+Request_block_headers(node, chain, branch, block_heights) ==
+    LET RECURSIVE Req_headers(_, _, _, _, _)
+        Req_headers(n, c, b, heights, acc) ==
+          CASE heights = {} -> acc
+            [] OTHER ->
+               LET h == Pick(heights)
+                   m == Msg(n, "Get_block_header", [ branch |-> b, height |-> h ])
+                   a == [ acc EXCEPT !.sent[chain] = [ to \in Nodes |->
+                          LET curr == @[to]
+                          IN
+                            CASE to \in network_info.active[chain] \ {n} -> checkAdd(curr, m)
+                              [] OTHER -> curr ] ]
+               IN Req_headers(n, c, b, heights \ {h}, a)
+    IN Req_headers(node, chain, branch, block_heights, network_info)
+
 =============================================================================

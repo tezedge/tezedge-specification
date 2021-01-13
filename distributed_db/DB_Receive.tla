@@ -48,4 +48,13 @@ Drop ==
             /\ network_info.sent[chain][node] # {} \* [node] has a message to drop
             /\ Drop_msg(node, chain)               \* [node] drops a message
 
+\* [node] drops an offchain message
+Drop_offchain_msg(node) == node_info' = [ node_info EXCEPT !.offchain[node] = Tail(@) ]
+
+\* A node drops an offchain message
+Drop_offchain ==
+    \E node \in Nodes :
+        /\ node_info.offchain[node] # <<>> \* [node] has an offchain message
+        /\ Drop_offchain_msg(node)         \* [node] drops an offchain message
+
 =============================================================================
