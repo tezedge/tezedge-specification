@@ -308,7 +308,7 @@ Handle_onchain(node, chain, msg) ==
         [] type \in ReqMsgTypes -> Handle_request(node, chain, msg.from, type, params)
            \* Advertise messages
         [] type \in AdMsgTypes  -> Handle_advertise(node, chain, msg.from, type, params)
-           \* Acknowledgement messages
+           \* Acknowledgment messages
         [] type \in AckMsgTypes -> Handle_ack(node, chain, msg)
 
 \* A node handles an onchain message on some chain

@@ -11,7 +11,7 @@ LOCAL INSTANCE Utils
 
 \* There 3 types of messages:
 \* - Full (advertise/request)
-\* - Synchronization (expect/acknowledge)
+\* - Synchronization (expect/acknowledge/error)
 \* - System
 
 -----------------------------------------------------------------------------
@@ -77,10 +77,10 @@ FullMsgs == AdMsgs \cup ReqMsgs
 (***************************************)
 (* Synchronization messages (2 kinds): *)
 (* - Expect messages                   *)
-(* - Acknowledgement/error messages    *)
+(* - Acknowledgment/error messages     *)
 (***************************************)
 
-(* Acknowledgement messages *)
+(* Acknowledgment messages *)
 (* Used to acknowlegde the receipt of a message from a node *)
 
 \* Error message params
@@ -92,10 +92,10 @@ ErrorMsgTypes == { "Err_block_header", "Err_operations" }
 \* Error messages
 ErrorMsgs == [ from : Nodes, type : ErrorMsgTypes, error : ErrorMsgParams ]
 
-\* Acknowledgement message types
+\* Acknowledgment message types
 AckMsgTypes == { "Ack_current_branch", "Ack_current_head", "Ack_block_header", "Ack_operations" }
 
-\* Acknowledgement/error messages
+\* Acknowledgment/error messages
 AckMsgs == [ from : Nodes, type : AckMsgTypes ]
 
 (* Expect messages *)
@@ -238,16 +238,16 @@ expect_msg[ to \in Nodes, msg \in FullMsgs ] ==
         [] type = "Current_head"   -> {AckMsg(to, "Ack_current_head")}
         [] type = "Block_header"   -> {AckMsg(to, "Ack_block_header")}
         [] type = "Operations"     -> {AckMsg(to, "Ack_operations")}
-           \* Acknowledgement messages
+           \* Acknowledgment messages
         [] type \in AckMsgTypes -> {} \* no response expected from an acknowledgement
 
 type_of_expect[ type \in ExpectMsgTypes ] ==
-    \* advertise messages are expected as responses to request messages
+      \* advertise messages are expected as responses to request messages
     CASE type = "Current_branch" -> "Get_current_branch"
       [] type = "Current_head" -> "Get_current_head"
       [] type = "Block_header" -> "Get_block_header"
       [] type = "Operations" -> "Get_operations"
-      \* acknowledgements are expected as responses to advertise messages
+      \* acknowledgments are expected as responses to advertise messages
       [] type = "Ack_current_branch" -> "Current_branch"
       [] type = "Ack_current_head" -> "Current_head"
       [] type = "Ack_block_header" -> "Block_header"
