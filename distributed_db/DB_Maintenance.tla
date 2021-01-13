@@ -1,4 +1,4 @@
--------------------------- MODULE DB_Maintanence ---------------------------
+-------------------------- MODULE DB_Maintenance ---------------------------
 
 CONSTANTS numChains, numNodes, sizeBound
 
@@ -11,7 +11,7 @@ LOCAL INSTANCE Utils
 ----------------------------------------------------------------------------
 
 (***********************)
-(* Maintanence actions *)
+(* Maintenance actions *)
 (***********************)
 
 (* Block production/notification *)
@@ -30,8 +30,8 @@ Produce_block(chain, branch, num_ops) ==
            !.sent[chain] = [ n \in Nodes |->
                LET msg  == SysMsg("New_block", [ block |-> block ])
                    curr == @[n]
-               IN
-                 CASE n \in network_info.active[chain] -> checkAdd(curr, msg) \* can only send to them if they have space
+               IN   \* only send to them if they have space
+                 CASE n \in network_info.active[chain] -> checkAdd(curr, msg)
                    [] OTHER -> curr ] ]
       /\ UNCHANGED node_info
 
@@ -39,7 +39,8 @@ Produce_block(chain, branch, num_ops) ==
 Block_production ==
     \E chain \in 1..network_info.chains :
         \E branch \in 0..network_info.branch[chain], num_ops \in Op_nums :
-            /\ network_info.height[chain][branch] < sizeBound
+            /\ network_info.height[chain][branch] < sizeBound \* another block can be produced
+            /\ network_info.active[chain] # {}                \* there are active nodes on [chain]
             /\ Produce_block(chain, branch, num_ops)
 
 \* Start a new branch on an existing [chain]
