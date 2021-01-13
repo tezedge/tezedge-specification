@@ -24,15 +24,15 @@ Op_nums == 0..sizeBound
 
 -----------------------------------------------------------------------------
 
-(**********)
-(* Blocks *)
-(**********)
+(***********************)
+(* Blocks & Operations *)
+(***********************)
 
 \* The set of all block headers
 Headers == [ height : Heights, chain : Chains, branch : Branches, num_ops : Op_nums ]
 
 \* The set of all block operations
-Operations == [ Op_nums -> Pairs(Heights, Op_nums) ]
+Operations == UNION { [ 1..num_ops -> Pairs({h}, 1..num_ops) ] : h \in Heights, num_ops \in Op_nums }
 
 \* The set of all blocks
 Blocks == [ header : Headers, ops : Operations ]
@@ -49,10 +49,9 @@ mkOps(height, num_ops) == [ x \in 1..num_ops |-> <<height, x>> ]
 
 -----------------------------------------------------------------------------
 
+(********************)
 (* Helper functions *)
-
-\* the set of active nodes on [chain]
-active[ chain \in Chains ] == network_info.active[chain]
+(********************)
 
 \* check that [node]'s message queue on [chain] is not full
 checkMessages[ node \in Nodes ] ==
@@ -61,6 +60,9 @@ checkMessages[ node \in Nodes ] ==
 \* check that there is space to register an expectation [node] a message on [chain]
 checkExpect[ node \in Nodes ] ==
     [ chain \in Chains |-> Cardinality(node_info.expect[node][chain]) < sizeBound ]
+
+\* check that there is space to send [node] a message [offchain]
+checkOffchain[ node \in Nodes ] == Cardinality(node_info.offchain[node]) < sizeBound
 
 \* check that there is space to receive a message on [chain]
 checkRecv[ chain \in Chains ] ==
@@ -75,10 +77,12 @@ checkAdd(set, msg) ==
     CASE Cardinality(set) < sizeBound -> set \cup {msg}
       [] OTHER -> set
 
-\* check that [set1] is not full before unioning the [set2]
+\* check that [set1] \cup [set2] is not full before unioning [set2] with [set1]
 checkUnion(set1, set2) ==
-    CASE Cardinality(set1 \cup set2) <= sizeBound -> set1 \cup set2
-      [] OTHER -> set1
+    LET union == set1 \cup set2
+    IN
+      CASE Cardinality(union) <= sizeBound -> union
+        [] OTHER -> set1
 
 \* check that [queue] is not full before including the message at the end
 checkAppend(queue, msg) ==
