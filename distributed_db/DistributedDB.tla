@@ -11,7 +11,7 @@ VARIABLE node_info
     \* blocks   : [ Nodes -> [ Chains -> [ Branches -> Seq(Blocks) ] ] ]
     \* branches : [ Nodes -> [ Chains -> Seq(Branches) ] ]
     \* expect   : [ Nodes -> [ Chains -> SUBSET Messages ] ]
-    \* headers  : [ Nodes -> [ Chains -> [ Branches -> SUBSET Headers ] ] ]
+    \* headers  : [ Nodes -> [ Chains -> Seq(Headers) ] ]
     \* messages : [ Nodes -> [ Chains -> Seq(Messages) ] ]
     \* offchain : [ Nodes -> Seq(SysMsgs) ]
 
@@ -49,14 +49,13 @@ Init ==
          , branch   |-> [ c \in Chains |-> 0 ]
          , chains   |-> 1
          , height   |-> [ c \in Chains |-> [ b \in Branches |-> -1 ] ]
-         , recv     |-> [ c \in Chains |-> [ n \in Nodes |-> <<>> ] ]
          , sent     |-> [ c \in Chains |-> [ n \in Nodes |-> {} ] ] ]
     /\ node_info =
          [ active   |-> [ n \in Nodes |-> {} ]
          , blocks   |-> [ n \in Nodes |-> [ c \in Chains |-> [ b \in Branches |-> <<>> ] ] ]
          , branches |-> [ n \in Nodes |-> [ c \in Chains |-> <<>> ] ]
          , expect   |-> [ n \in Nodes |-> [ c \in Chains |-> {} ] ]
-         , headers  |-> [ n \in Nodes |-> [ c \in Chains |-> [ b \in Branches |-> {} ] ] ]
+         , headers  |-> [ n \in Nodes |-> [ c \in Chains |-> <<>> ] ]
          , messages |-> [ n \in Nodes |-> [ c \in Chains |-> <<>> ] ]
          , offchain |-> [ n \in Nodes |-> <<>> ] ]
 
@@ -90,7 +89,7 @@ Init ==
 Next ==
     \* Activation actions
     \/ Activation
-    \/ Deactivation
+\*    \/ Deactivation
     \* Advertise actions
     \/ Advertise_branch
     \/ Advertise_head
@@ -104,8 +103,8 @@ Next ==
     \/ New_chain
     \* Receive actions
     \/ Receive
-    \/ Drop
-    \/ Drop_offchain
+\*    \/ Drop
+\*    \/ Drop_offchain
     \* Request actions
     \/ Get_current_branch_one
     \/ Get_current_branch_all
@@ -145,14 +144,13 @@ TypeOK ==
          , blocks   : [ Chains -> [ Branches -> Seq_n(Blocks, sizeBound) ] ]
          , chains   : Chains
          , height   : [ Chains -> [ Branches -> Heights \cup {-1} ] ]
-         , recv     : [ Chains -> [ Nodes -> Seq_n(Messages \cup ExpectMsgs, sizeBound) ] ]
          , sent     : [ Chains -> [ Nodes -> Subsets_n(Messages \cup ExpectMsgs, sizeBound) ] ] ]
     /\ node_info \in
          [ active   : [ Nodes -> SUBSET Chains ]
          , blocks   : [ Nodes -> [ Chains -> [ Branches -> Seq_n(Blocks, sizeBound) ] ] ]
          , branches : [ Nodes -> [ Chains -> Seq_n(Branches, sizeBound) ] ]
          , expect   : [ Nodes -> [ Chains -> Subsets_n(ExpectMsgs, sizeBound) ] ]
-         , headers  : [ Nodes -> [ Chains -> [ Branches -> Subsets_n(Headers, sizeBound) ] ] ]
+         , headers  : [ Nodes -> [ Chains -> Seq_n(Headers, sizeBound) ] ]
          , messages : [ Nodes -> [ Chains -> Seq_n(FullMsgs \cup SysMsgs, sizeBound) ] ]
          , offchain : [ Nodes -> Seq_n(SysMsgs, sizeBound) ] ]
 
@@ -161,8 +159,6 @@ ActiveAgreement ==
     \A node \in Nodes, chain \in Chains :
         \* actives
         /\ node \in network_info.active[chain] <=> chain \in node_info.active[node]
-        \* messages
-        /\ ToSet(network_info.recv[chain][node]) = ToSet(node_info.messages[node][chain])
         \* branches
         /\ node_info.branches[node][chain] # <<>> =>
              Head(node_info.branches[node][chain]) <= network_info.branch[chain]
@@ -177,13 +173,11 @@ ActiveAgreement ==
 (**************)
 
 \* Once a message is sent, it is eventually received by the intended recipient
-\* A [msg] sent to a [node] ends up in recv[chain][node]
+\* A [msg] sent to a [node] ends up in messages[node][chain]
 SentMessagesAreReceived ==
     \A chain \in Chains :
         \A node \in network_info.active[chain] :
             \A msg \in Messages :
-                msg \in network_info.sent[chain][node] ~>
-                  /\ msg \in ToSet(network_info.recv[chain][node])
-                  /\ msg \in ToSet(node_info.messages[node][chain])
+                msg \in network_info.sent[chain][node] ~> msg \in ToSet(node_info.messages[node][chain])
 
 =============================================================================
