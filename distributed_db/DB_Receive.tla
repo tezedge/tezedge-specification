@@ -21,11 +21,10 @@ Receive_msg(node, chain) ==
     LET msgs == network_info.sent[chain][node]
         in_q == node_info.messages[node][chain]
         msg  == Pick(msgs)
-    IN
-      \* [msg] is added to the end of [node]'s queue
-      /\ Recv(node, chain, msg)
-      \* [msg] is removed from [node]'s sent set
-      /\ Consume_sent(chain, node, msg)
+    IN \* [msg] is added to the end of [node]'s queue
+       /\ node_info' = [ node_info EXCEPT !.messages[node][chain] = checkAppend(@, msg) ]
+       \* [msg] is removed from [node]'s sent set
+       /\ network_info' = [ network_info EXCEPT !.sent[chain][node] = @ \ {msg} ]
 
 \* A node with messages on some chain and room in their queue, receives a message
 Receive ==
@@ -46,16 +45,5 @@ Drop ==
         \E node \in activeNodes[chain] :
             /\ network_info.sent[chain][node] # {} \* [node] has a message to drop
             /\ Drop_msg(node, chain)               \* [node] drops a message
-
-\* [node] drops an offchain message
-Drop_offchain_msg(node) ==
-    /\ node_info' = [ node_info EXCEPT !.offchain[node] = Tail(@) ]
-    /\ UNCHANGED network_info
-
-\* A node drops an offchain message
-Drop_offchain ==
-    \E node \in Nodes :
-        /\ node_info.offchain[node] # <<>> \* [node] has an offchain message
-        /\ Drop_offchain_msg(node)         \* [node] drops an offchain message
 
 =============================================================================
