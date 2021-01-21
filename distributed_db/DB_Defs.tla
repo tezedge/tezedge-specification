@@ -12,21 +12,48 @@ VARIABLES network_info, node_info
 (* Definitions of ubiquitous sets *)
 (**********************************)
 
-Nodes == 1..numNodes
+\* static values
+Nodes == 1..numNodes     \* node ids
 
-Chains == 1..numChains
+sys == numNodes + 1      \* system id
 
-Branches == 0..sizeBound
+SysNodes == 1..sys       \* nodes and system
 
-Heights == 0..sizeBound
+Chains == 1..numChains   \* chain ids
 
-Op_nums == 0..sizeBound
+Branches == 0..sizeBound \* branch ids
 
+Heights == 0..sizeBound  \* block heights
+
+Op_nums == 0..sizeBound  \* possible numbers of operations in blocks
+
+\* dynamic values
 activeChains == 1..network_info.chains
 
-activeNodes[ chain \in Chains ] == network_info.active[chain]
+activeNodes[ chain \in Chains ] == network_info.active[chain] \ {sys}
+
+activeSysNodes[ chain \in Chains ] == network_info.active[chain]
 
 activeBranches[ chain \in Chains ] == 0..network_info.branch[chain]
+
+currentHeight[ chain \in Chains, branch \in Branches ] == network_info.height[chain][branch]
+
+branchSet[ node \in Nodes, chain \in Chains ] == ToSet(node_info.branches[node][chain])
+
+\* heights of [node] known blocks on [branch] of [chain]
+blockHeights[ node \in Nodes, chain \in Chains, branch \in Branches ] ==
+    LET blocks       == ToSet(node_info.blocks[node][chain][branch])
+    IN { block.header.height : block \in blocks } 
+
+\* heights of [node] known headers on [branch] of [chain]
+headerHeights[ node \in Nodes, chain \in Chains, branch \in Branches ] ==
+    LET headers       == ToSet(node_info.headers[node][chain])
+        branchHeaders == { header \in headers : header.branch = branch }
+    IN { h.height : h \in branchHeaders }
+
+\* heights of [node] known blocks and headers on [branch] of [chain]
+heightSet[ node \in Nodes, chain \in Chains, branch \in Branches ] ==
+    blockHeights[node, chain, branch] \cup headerHeights[node, chain, branch]
 
 -----------------------------------------------------------------------------
 
@@ -88,6 +115,9 @@ current_height[ node \in Nodes, chain \in Chains, branch \in Branches ] ==
 checkMessages[ node \in Nodes ] ==
     [ chain \in Chains |-> Len(node_info.messages[node][chain]) < sizeBound ]
 
+\* check that [sys]'s message queue on [chain] is not full
+checkSysMsgs[ chain \in Chains ] == Len(network_info.sysmsgs[chain]) < sizeBound
+
 \* check that there is space for [node] to register an expectation on [chain]
 checkExpect[ node \in Nodes ] ==
     [ chain \in Chains |-> Cardinality(node_info.expect[node][chain]) < sizeBound ]
@@ -108,16 +138,23 @@ checkAdd(set, msg) ==
     CASE Cardinality(set) < sizeBound -> set \cup {msg}
       [] OTHER -> set
 
-\* send [msg] to all active nodes on [chain] except [from]
-\* sent_chain \in [ Nodes -> SUBSET Messages ]
+\* send [msg] to all active nodes and [sys] on [chain] except [from]
+\* sent_chain \in [ SysNodes -> SUBSET Messages ]
 checkAddToActive(sent_chain, from, chain, msg) ==
-    [ to \in Nodes |->
+    [ to \in SysNodes |->
+        CASE to \in network_info.active[chain] \ {from} -> checkAdd(sent_chain[to], msg)
+          [] OTHER -> sent_chain[to] ]
+
+\* send [msg] to all active nodes on [chain] except [from]
+\* sent_chain \in [ SysNodes -> SUBSET Messages ]
+checkAddToActiveNodes(sent_chain, from, chain, msg) ==
+    [ to \in SysNodes |->
         CASE to \in activeNodes[chain] \ {from} -> checkAdd(sent_chain[to], msg)
           [] OTHER -> sent_chain[to] ]
 
 \* system sends [msg] to active nodes on [chain]
 checkSysAddToActive(sent, chain, msg) ==
-    [ to \in Nodes |->
+    [ to \in SysNodes |->
         CASE to \in activeNodes[chain] -> checkAdd(sent[to], msg)
           [] OTHER -> sent[to] ]
 
@@ -177,13 +214,26 @@ insertBlock(block, blocks) ==
                         [] OTHER ->
                            CASE b_height > hd_height -> acc \o <<b>> \o bs
                              [] OTHER -> aux(b, Tail(bs), Append(acc, hd))
-    IN CASE blocks \notin ToSet(blocks) -> aux(block, blocks, <<>>)
+    IN CASE block \notin ToSet(blocks) -> aux(block, blocks, <<>>)
          [] OTHER -> blocks
 
 \* check that [blocks] is not full before inserting [block]
 checkInsertBlock(block, blocks) ==
     CASE Len(blocks) < sizeBound -> insertBlock(block, blocks)
       [] OTHER -> blocks
+
+\* insert a [branch] into a sequence of [branches]
+insertBranch(branch, branches) ==
+    LET RECURSIVE aux(_, _, _)
+        aux(b, bs, acc) ==
+          CASE bs = <<>> -> Append(acc, b)
+            [] OTHER ->
+                 LET hd == Head(bs)
+                 IN CASE b > hd -> acc \o <<b>> \o bs
+                      [] b = hd -> acc \o bs
+                      [] OTHER -> aux(b, Tail(bs), Append(acc, hd))
+    IN aux(branch, branches, <<>>)
+
 
 \* check that all [branches] are valid branches on [chain]
 RECURSIVE checkBranches(_, _)
