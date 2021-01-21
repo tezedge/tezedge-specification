@@ -15,11 +15,11 @@ LOCAL INSTANCE Utils
 \* [node] becomes active on [chain]
 \* [node] immediately receives current system branch on [chain]
 Activate(node, chain) ==
-    LET msg == SysMsg("Sys_current_branch", [ branch |-> network_info.branch[chain] ])
-    IN /\ network_info' = [ network_info EXCEPT !.active[chain] = @ \cup {node} ]
-       /\ node_info' = [ node_info EXCEPT
-            !.active[node] = @ \cup {chain},    \* [node] becomes active on [chain]
-            !.messages[node][chain] = <<msg>> ] \* [node] receives current system branch
+    LET msg == Msg(sys, "Current_branch", [ branch |-> network_info.branch[chain] ])
+    IN /\ network_info' = [ network_info EXCEPT
+            !.active[chain] = @ \cup {node}, \* [node] becomes active on [chain]
+            !.sent[chain][node] = {msg} ]    \* current branch is sent to [node] 
+       /\ node_info' = [ node_info EXCEPT !.active[node] = @ \cup {chain} ]
 
 \* An inactive node on some chain becomes active
 Activation ==
