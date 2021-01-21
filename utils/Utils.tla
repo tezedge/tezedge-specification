@@ -105,4 +105,24 @@ Select(seq, test) ==
       [] test[Head(seq)] -> Head(seq)
       [] OTHER -> Select(Tail(seq), test)
 
+\* returns TRUE if all elements of [seq] satisfy [test], FALSE otherwise
+Forall(seq, test(_)) ==
+    LET RECURSIVE forall(_, _, _)
+        forall(s, t(_), acc) ==
+          IF s = <<>>
+          THEN acc
+          ELSE /\ acc
+               /\ forall(Tail(s), t, acc /\ t(Head(s)))
+    IN forall(seq, test, TRUE)
+
+\* returns TRUE if any elements of [seq] satisfy [test], FALSE otherwise
+Exists(seq, test(_)) ==
+    LET RECURSIVE exists(_, _, _)
+        exists(s, t(_), acc) ==
+          IF s = <<>>
+          THEN acc
+          ELSE \/ acc
+               \/ exists(Tail(s), t, acc \/ t(Head(s)))
+    IN exists(seq, test, FALSE)
+
 =============================================================================
