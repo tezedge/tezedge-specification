@@ -99,11 +99,13 @@ isSubSeq(s1, s2) ==
 
 \* Selects the first element that satisfies the predicate
 \* if no element satisfies the predicate, then return <<>>
-RECURSIVE Select(_, _)
-Select(seq, test) ==
-    CASE seq = <<>> -> <<>>
-      [] test[Head(seq)] -> Head(seq)
-      [] OTHER -> Select(Tail(seq), test)
+Select(seq, test(_)) ==
+    LET RECURSIVE select(_, _)
+        select(t(_), s) ==
+            CASE s = <<>> -> <<>>
+              [] t(Head(s)) -> Head(s)
+              [] OTHER -> select(t, Tail(s))
+    IN select(test, seq)
 
 \* returns TRUE if all elements of [seq] satisfy [test], FALSE otherwise
 Forall(seq, test(_)) ==
@@ -124,5 +126,7 @@ Exists(seq, test(_)) ==
           ELSE \/ acc
                \/ exists(Tail(s), t, acc \/ t(Head(s)))
     IN exists(seq, test, FALSE)
+
+Cons(elem, seq) == <<elem>> \o seq
 
 =============================================================================
