@@ -9,10 +9,9 @@ LOCAL INSTANCE Utils
 
 -----------------------------------------------------------------------------
 
-\* There 3 types of messages:
+\* There 2 types of messages:
 \* - Full (advertise/request)
 \* - Synchronization (expect/acknowledge/error)
-\* - System
 
 -----------------------------------------------------------------------------
 
@@ -25,11 +24,6 @@ LOCAL INSTANCE Utils
 (* Advertise messages *)
 (* Used to respond to specific requests and to broadcast messages to all active nodes on a chain *)
 
-\* - Current_branch
-\* - Current_head
-\* - Block_header
-\* - Operations
-
 \* Advertise message parameters
 AdParams ==
     [ branch : Branches ] \* Current_branch
@@ -41,7 +35,7 @@ AdParams ==
     [ branch : Branches, height : Heights, ops : Operations ] \* Operations
 
 \* Advertise message types
-AdMsgTypes == { "Current_branch", "Current_head", "Block_header", "Operations" }
+AdMsgTypes == { "Block_header", "Current_branch", "Current_head", "Operations" }
 
 \* Advertise messages
 AdMsgs == [ from : Nodes, type : AdMsgTypes, params : AdParams ]
@@ -49,11 +43,6 @@ AdMsgs == [ from : Nodes, type : AdMsgTypes, params : AdParams ]
 
 (* Request messages *)
 (* Used to request specific info either from a single node or from all active nodes on a chain *)
-
-\* - Get_current_branch
-\* - Get_current_head
-\* - Get_block_header
-\* - Get_operations
 
 \* Request message parameters
 ReqParams ==
@@ -64,7 +53,7 @@ ReqParams ==
     [ branch : Branches, height : Heights ] \* Get_block_header & Get_operations
 
 \* Request message types
-ReqMsgTypes == { "Get_current_branch", "Get_current_head", "Get_block_header", "Get_operations" }
+ReqMsgTypes == { "Get_block_header", "Get_current_branch", "Get_current_head", "Get_operations" }
 
 \* Request messages
 ReqMsgs == [ from : Nodes, type : ReqMsgTypes, params : ReqParams ]
@@ -84,16 +73,16 @@ FullMsgs == AdMsgs \cup ReqMsgs
 (* Used to acknowlegde the receipt of a message from a node *)
 
 \* Error message params
-ErrorMsgParams == [ branch : Branches, height : Heights ]
+ErrorParams == [ branch : Branches, height : Heights ]
 
 \* Error message types
 ErrorMsgTypes == { "Err_block_header", "Err_operations" }
 
 \* Error messages
-ErrorMsgs == [ from : Nodes, type : ErrorMsgTypes, error : ErrorMsgParams ]
+ErrorMsgs == [ from : Nodes, type : ErrorMsgTypes, error : ErrorParams ]
 
 \* Acknowledgment message types
-AckMsgTypes == { "Ack_current_branch", "Ack_current_head", "Ack_block_header", "Ack_operations" }
+AckMsgTypes == { "Ack_block_header", "Ack_current_branch", "Ack_current_head", "Ack_operations" }
 
 \* Acknowledgment/error messages
 AckMsgs == [ from : Nodes, type : AckMsgTypes ]
@@ -105,39 +94,13 @@ AckMsgs == [ from : Nodes, type : AckMsgTypes ]
 ExpectParams == ReqParams
 
 \* Expect message types
-ExpectMsgTypes == AdMsgTypes \cup AckMsgTypes \cup ErrorMsgTypes
+ExpectMsgTypes == AdMsgTypes \cup AckMsgTypes
 
 \* Expect messages
 ExpectMsgs == [ from : Nodes, type : ExpectMsgTypes, expect : ExpectParams ]
 
-\* A sync message is either an ack or expect message
+\* A sync message is an ack, expect, or error message
 SyncMsgs == AckMsgs \cup ExpectMsgs \cup ErrorMsgs
-
------------------------------------------------------------------------------
-
-(*******************)
-(* System messages *)
-(*******************)
-
-NewBlock == { "New_block" }
-
-NewBranch == { "New_branch" }
-
-NewChain == { "New_chain" }
-
-\* System message types
-SysMsgTypes == NewBlock \cup NewBranch \cup NewChain
-
-\* System message parameters
-SysParams ==
-    [ block : Blocks ] \* New_block
-    \cup
-    [ branch : Branches ] \* New_branch
-    \cup
-    [ chain : Chains ] \* New_chain
-
-\* System messages
-SysMsgs == [ type : SysMsgTypes, params : SysParams ]
 
 -----------------------------------------------------------------------------
 
@@ -145,29 +108,38 @@ SysMsgs == [ type : SysMsgTypes, params : SysParams ]
 (* All messages *)
 (****************)
 
-Messages == FullMsgs \cup ExpectMsgs \cup SysMsgs
+Messages == FullMsgs \cup SyncMsgs
 
 -----------------------------------------------------------------------------
 
 \* full message predicate
-isFullMsg[ msg \in Messages ] == DOMAIN msg = { "from", "params", "type" }
+isFullMsg(msg) == DOMAIN msg = { "from", "params", "type" }
+
+\* advertise message predicate
+isAdMsg(msg) == isFullMsg(msg) /\ msg.type \in AdMsgTypes
+
+\* request message predicate
+isReqMsg(msg) == isFullMsg(msg) /\ msg.type \in ReqMsgTypes
 
 \* ack message predicate
-isAckMsg[ msg \in Messages ] == DOMAIN msg = { "from", "type" }
+isAckMsg(msg) == DOMAIN msg = { "from", "type" }
 
 \* error message predicate
-isErrorMsg[ msg \in Messages ] == DOMAIN msg = { "error", "from", "type" }
+isErrorMsg(msg) == DOMAIN msg = { "error", "from", "type" }
 
 \* expect message predicate
-isExpectMsg[ msg \in Messages ] == DOMAIN msg = { "expect", "from", "type" }
+isExpectMsg(msg) == DOMAIN msg = { "expect", "from", "type" }
 
-\* system message predicate
-isSysMsg[ msg \in Messages ] == DOMAIN msg = { "params", "type" }
+\* [msg] is a non-expect message
+isNonExpectMsg(msg) ==
+    \/ isAdMsg(msg)
+    \/ isReqMsg(msg)
+    \/ isAckMsg(msg)
+    \/ isErrorMsg(msg)
 
 \* Message "constructors"
 \* validates [type] matches [params] and creates the message
 \* invalid type/param pairs will return a TLC error
-
 OnlyChain == { "Get_current_branch" }
 
 OnlyBranch == { "Get_current_head", "Current_branch" }
@@ -202,45 +174,38 @@ AckMsg(from, type) ==
 ErrorMsg(from, type, error) ==
     CASE type \in ErrorMsgTypes -> [ from |-> from, type |-> type, error |-> error ]
 
-\* System message "constructor"
-SysMsg(type, params) ==
-    CASE \/ /\ type \in NewBlock
-            /\ DOMAIN params = { "block" }
-         \/ /\ type \in NewBranch
-            /\ DOMAIN params = { "branch" }
-         \/ /\ type \in NewChain
-            /\ DOMAIN params = { "chain" } -> [ type |-> type, params |-> params ]
-
 -----------------------------------------------------------------------------
 
 (****************)
 (* Expectations *)
 (****************)
 
+\* convert advertise msg type to corresponding ack type
+ack_type[ type \in AdMsgTypes ] ==
+    CASE type = "Current_branch" -> "Ack_current_branch"
+      [] type = "Current_head"   -> "Ack_current_head"
+      [] type = "Block_header"   -> "Ack_block_header"
+      [] type = "Operations"     -> "Ack_operations"
+
 \* compute set of expected responses for [msg]
 \* this set is either empty or contains a single expect message
-expect_msg[ to \in Nodes, msg \in FullMsgs ] ==
+\* a node can have any non-expect message to handle
+expect_msg(to, msg) ==
     LET type   == msg.type
         params == msg.params
-    IN
-      CASE \* Request messages - advertise expected
-           type = "Get_current_branch" -> {ExpectMsg(to, "Current_branch", [ chain |-> params.chain ])}
-        [] type = "Get_current_head" ->
-           {ExpectMsg(to, "Current_head", [ chain |-> params.chain, branch |-> params.branch ])}
-        [] type = "Get_block_header" ->
-           {ExpectMsg(to, "Block_header",
-             [ chain |-> params.chain, branch |-> params.branch, height |-> params.height ])}
-        [] type = "Get_operations" ->
-           {ExpectMsg(to, "Operation",
-             [ chain |-> params.chain, branch |-> params.branch, height |-> params.height, ops |-> params.ops ])}
-           \* Advertise messages - ack expected
-        [] type = "Current_branch" -> {AckMsg(to, "Ack_current_branch")}
-        [] type = "Current_head"   -> {AckMsg(to, "Ack_current_head")}
-        [] type = "Block_header"   -> {AckMsg(to, "Ack_block_header")}
-        [] type = "Operations"     -> {AckMsg(to, "Ack_operations")}
-           \* Acknowledgment messages
-        [] type \in AckMsgTypes -> {} \* no response expected from an acknowledgement
+    IN CASE \* Request messages - advertise expected
+            type = "Get_current_branch" -> {ExpectMsg(to, "Current_branch", [ chain |-> params.chain ])}
+         [] type = "Get_current_head" -> {ExpectMsg(to, "Current_head", [ branch |-> params.branch ])}
+         [] type = "Get_block_header" ->
+              {ExpectMsg(to, "Block_header", [ branch |-> params.branch, height |-> params.height ])}
+         [] type = "Get_operations" ->
+              {ExpectMsg(to, "Operations", [ branch |-> params.branch, height |-> params.height ])}
+            \* Advertise messages - ack expected
+         [] type \in AdMsgTypes -> {AckMsg(to, ack_type[type])}
+            \* Ack and Sys messages - nothing expected
+         [] type \in AckMsgTypes -> {} \* no response expected from an ack message
 
+\* from the type of an expected message, compute the original message type 
 type_of_expect[ type \in ExpectMsgTypes ] ==
       \* advertise messages are expected as responses to request messages
     CASE type = "Current_branch" -> "Get_current_branch"
@@ -253,44 +218,40 @@ type_of_expect[ type \in ExpectMsgTypes ] ==
       [] type = "Ack_block_header" -> "Block_header"
       [] type = "Ack_operations" -> "Operations"
 
-msg_of_expect[ node \in Nodes, chain \in Chains, exp \in ExpectMsgs ] ==
-    LET from   == exp.from
+\* from an expected message, generate the original message to send again
+msg_of_expect(exp) ==
+    LET sender == exp.from
         params == exp.expect
         type   == exp.type
-    IN Msg(from, type_of_expect[type], params)
+    IN Msg(sender, type_of_expect[type], params)
 
 -----------------------------------------------------------------------------
 
-(*************************)
-(* Message-based actions *)
-(*************************)
-
-\* [node] receives a message on [chain]
-\* [node] must have space to receive a message on [chain]
-Recv(node, chain, msg) ==
-    node_info' = [ node_info EXCEPT !.messages[node][chain] = checkAppend(@, msg) ]
-
-\* [node] consumes a sent message on [chain]
-\* [node] must have messages on [chain] to consume
-Consume_sent(chain, node, msg) ==
-    network_info' = [ network_info EXCEPT !.sent[chain][node] = @ \ {msg} ]
-
-\* [node] consumes and handles a received message on [chain] and consumes corresponding expectation
-\* [node] must have received messages on [chain]
-Consume_msg(node, chain, msg) ==
-    node_info' = [ node_info EXCEPT !.messages[node][chain] = Tail(@),
-                                    !.expect[node][chain] = @ \ expect_msg[node, msg] ]
+(********************************)
+(* Message-based action helpers *)
+(********************************)
 
 \* Send [msg] to [to] on [chain]
-Send(to, chain, msg) ==
-    network_info' = [ network_info EXCEPT !.sent[chain][to] = checkAdd(@, msg) ]
+\* sent \in SUBSET Messages
+Send(sent, msg) == checkAdd(sent, msg)
 
 \* Register an expectation
-Expect(from, to, chain, msg) ==
-    node_info' = [ node_info EXCEPT !.expect[from][chain] = checkUnion(@, expect_msg[to, msg]) ]
+\* expect \in SUBSET ExpectMsgs
+Expect(expect, from, msg) == checkUnion(expect, expect_msg(from, msg))
 
-\* Sends [msg] to all active nodes on [chain] who can recieve it
-BroadcastToActive(from, chain, msg) ==
-    network_info' = [ network_info EXCEPT !.sent[chain] = checkAddToActive(from, chain, msg) ]
+\* Sends [msg] to all active nodes and [sys] on [chain]
+\* sent \in [ SysNodes -> SUBSET Messages ]
+Broadcast(sent, from, chain, msg) == checkAddToActive(sent, from, chain, msg)
+
+\* Sends [msg] to all active nodes on [chain]
+\* sent \in [ SysNodes -> SUBSET Messages ]
+\* UNCHANGED network_info.sent[chain][sys] 
+BroadcastNodes(sent, from, chain, msg) == checkAddToActiveNodes(sent, from, chain, msg)
+
+\* Remove expected messages
+ManageExpect(expect, from, type) ==
+    LET exp_from == { exp \in expect : exp.from = from }
+        exp_type == { exp \in exp_from : exp.type = type }
+    IN expect \ exp_type
 
 =============================================================================
