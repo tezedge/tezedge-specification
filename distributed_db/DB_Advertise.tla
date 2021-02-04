@@ -22,7 +22,7 @@ LOCAL INSTANCE Utils
 \* [node] advertises their current [branch] of [chain]
 Ad_current_branch(node, chain) ==
     LET branch == Head(node_info.branches[node][chain])
-        msg    == Msg(node, "Current_branch", [ branch |-> branch ])
+        msg    == [ type |-> "Current_branch", params |-> [ branch |-> branch ] ]
     IN /\ network_info' = [ network_info EXCEPT !.sent[chain] = BroadcastNodes(@, node, chain, msg) ]
        /\ UNCHANGED node_info
 
@@ -30,14 +30,14 @@ Ad_current_branch(node, chain) ==
 Advertise_branch ==
     \E chain \in activeChains :
         \E from \in activeNodes[chain] :
-            /\ node_info.branches[from][chain] # <<>> \* [from] knows about a [branch] on [chain]
-            /\ activeNodes[chain] \ {from} # {}       \* there are other active nodes on [chain]
-            /\ Ad_current_branch(from, chain)         \* [from] advertises their current branch
+            /\ branchSet[from, chain] # {}      \* [from] knows about a [branch] on [chain]
+            /\ activeNodes[chain] \ {from} # {} \* there are other active nodes on [chain] besides [sys]
+            /\ Ad_current_branch(from, chain)   \* [from] advertises their current branch
 
 \* [sys] advertises the current [branch] of [chain]
 Ad_sys_current_branch(chain) ==
     LET branch == network_info.branch[chain]
-        msg    == Msg(sys, "Current_branch", [ branch |-> branch ])
+        msg    == [ type |-> "Current_branch", params |-> [ branch |-> branch ] ]
     IN /\ network_info' = [ network_info EXCEPT !.sent[chain] = Broadcast(@, sys, chain, msg) ]
        /\ UNCHANGED node_info
 
@@ -50,7 +50,7 @@ Advertise_sys_branch ==
 \* [node] advertises their current [head] of [branch] on [chain]
 Ad_current_head(node, chain, branch) ==
     LET height == Head(node_info.blocks[node][chain][branch]).header.height
-        msg    == Msg(node, "Current_head", [ branch |-> branch, height |-> height ])
+        msg    == [ type |-> "Current_head", params |-> [ branch |-> branch, height |-> height ] ]
     IN /\ network_info' = [ network_info EXCEPT !.sent[chain] = BroadcastNodes(@, node, chain, msg) ]
        /\ UNCHANGED node_info
 
@@ -66,7 +66,7 @@ Advertise_head ==
 \* [sys] advertises the current [head] of [branch] on [chain]
 Ad_sys_current_head(chain, branch) ==
     LET height == network_info.height[chain][branch]
-        msg    == Msg(sys, "Current_head", [ branch |-> branch, height |-> height ])
+        msg    == [ type |-> "Current_head", params |-> [ branch |-> branch, height |-> height ] ]
     IN /\ network_info' = [ network_info EXCEPT !.sent[chain] = Broadcast(@, sys, chain, msg) ]
        /\ UNCHANGED node_info
 

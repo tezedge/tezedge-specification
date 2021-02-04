@@ -17,9 +17,8 @@ LOCAL INSTANCE Utils
 \* Block production
 Produce_block(chain, branch, num_ops) ==
     LET height == network_info.height[chain][branch] + 1 \* next block height on branch
-        ops    == mkOps(height, num_ops)                 \* block operations
         header == Header(chain, branch, height, num_ops)
-        block  == Block(header, ops)
+        block  == Block(header, num_ops)
     IN \* add the new block to [branch] on [chain]
        /\ network_info' = [ network_info EXCEPT
             !.blocks[chain][branch] = <<block>> \o @, \* add [block] to [branch]

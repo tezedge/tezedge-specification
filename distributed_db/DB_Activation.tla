@@ -15,7 +15,7 @@ LOCAL INSTANCE Utils
 \* [node] becomes active on [chain]
 \* [node] immediately receives current system branch on [chain]
 Activate(node, chain) ==
-    LET msg == Msg(sys, "Current_branch", [ branch |-> network_info.branch[chain] ])
+    LET msg == Msg(sys, node, "Current_branch", [ branch |-> network_info.branch[chain] ])
     IN /\ network_info' = [ network_info EXCEPT
             !.active[chain] = @ \cup {node}, \* [node] becomes active on [chain]
             !.sent[chain][node] = {msg} ]    \* current branch is sent to [node] 

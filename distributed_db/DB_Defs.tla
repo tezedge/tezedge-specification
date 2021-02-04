@@ -13,19 +13,19 @@ VARIABLES network_info, node_info
 (**********************************)
 
 \* static values
-Nodes == 1..numNodes     \* node ids
+Nodes == 1..numNodes      \* node ids
 
-sys == numNodes + 1      \* system id
+sys == 0                  \* system id
 
-SysNodes == 1..sys       \* nodes and system
+SysNodes == sys..numNodes \* nodes and system
 
-Chains == 1..numChains   \* chain ids
+Chains == 1..numChains    \* chain ids
 
-Branches == 0..sizeBound \* branch ids
+Branches == 0..sizeBound  \* branch ids
 
-Heights == 0..sizeBound  \* block heights
+Heights == 0..sizeBound   \* block heights
 
-Op_nums == 0..sizeBound  \* possible numbers of operations in blocks
+Op_nums == 0..sizeBound   \* possible numbers of operations in blocks
 
 \* dynamic values
 activeChains == 1..network_info.chains
@@ -34,26 +34,36 @@ activeNodes[ chain \in Chains ] == network_info.active[chain] \ {sys}
 
 activeSysNodes[ chain \in Chains ] == network_info.active[chain]
 
+inactiveNodes[ chain \in Chains ] == Nodes \ activeNodes[chain]
+
 activeBranches[ chain \in Chains ] == 0..network_info.branch[chain]
 
 currentHeight[ chain \in Chains, branch \in Branches ] == network_info.height[chain][branch]
 
+currentHeights(chain, branch) == 0..currentHeight[chain, branch]
+
 branchSet[ node \in Nodes, chain \in Chains ] == ToSet(node_info.branches[node][chain])
+
+\* set of all blocks [node] knows about on [branch] of [chain]
+blockSet(node, chain, branch) == ToSet(node_info.blocks[node][chain][branch])
+
+headerSet(node, chain, branch) == { h \in ToSet(node_info.headers[node][chain]) : h.branch = branch }
 
 \* heights of [node] known blocks on [branch] of [chain]
 blockHeights[ node \in Nodes, chain \in Chains, branch \in Branches ] ==
-    LET blocks       == ToSet(node_info.blocks[node][chain][branch])
-    IN { block.header.height : block \in blocks } 
+    { block.header.height : block \in blockSet(node, chain, branch) } 
 
-\* heights of [node] known headers on [branch] of [chain]
+\* heights of the headers in [node]'s list on [branch] of [chain]
 headerHeights[ node \in Nodes, chain \in Chains, branch \in Branches ] ==
-    LET headers       == ToSet(node_info.headers[node][chain])
-        branchHeaders == { header \in headers : header.branch = branch }
-    IN { h.height : h \in branchHeaders }
+    { h.height : h \in headerSet(node, chain, branch) }
 
 \* heights of [node] known blocks and headers on [branch] of [chain]
 heightSet[ node \in Nodes, chain \in Chains, branch \in Branches ] ==
     blockHeights[node, chain, branch] \cup headerHeights[node, chain, branch]
+
+allNodeBlocks(chain) == UNION { blockSet(node, chain, branch) : node \in Nodes, branch \in activeBranches[chain] }
+
+allSysBlocks(chain) == UNION { ToSet(network_info.blocks[chain][branch]) : branch \in activeBranches[chain] }
 
 -----------------------------------------------------------------------------
 
@@ -78,18 +88,19 @@ Header(chain, branch, height, num_ops) ==
     [ chain |-> chain, branch |-> branch, height |-> height, num_ops |-> num_ops ]
 
 \* Operations "constructor"
-mkOps(height, num_ops) == [ x \in 1..num_ops |-> <<height, x>> ]
+mkOps(num_ops) == num_ops
 
 \* header predicate
 isHeader(h) == DOMAIN h = { "chain", "branch", "height", "num_ops" }
 
-\* block predicate
+\* valid block predicate
 isBlock(b) ==
     /\ DOMAIN b = { "header", "ops" }
     /\ isHeader(b.header)
-    /\ b.ops = mkOps(b.header.height, b.header.num_ops)
+    /\ b.ops = b.header.num_ops
 
 \* selects a block on [branch] of [chain] at [height]
+\* set must be non-empty
 blockAtHeight(chain, branch, height) ==
     Pick({ b \in ToSet(network_info.blocks[chain][branch]) : b.header.height = height })
 
@@ -138,20 +149,6 @@ checkAdd(set, msg) ==
     CASE Cardinality(set) < sizeBound -> set \cup {msg}
       [] OTHER -> set
 
-\* send [msg] to all active nodes and [sys] on [chain] except [from]
-\* sent_chain \in [ SysNodes -> SUBSET Messages ]
-checkAddToActive(sent_chain, from, chain, msg) ==
-    [ to \in SysNodes |->
-        CASE to \in network_info.active[chain] \ {from} -> checkAdd(sent_chain[to], msg)
-          [] OTHER -> sent_chain[to] ]
-
-\* send [msg] to all active nodes on [chain] except [from]
-\* sent_chain \in [ SysNodes -> SUBSET Messages ]
-checkAddToActiveNodes(sent_chain, from, chain, msg) ==
-    [ to \in SysNodes |->
-        CASE to \in activeNodes[chain] \ {from} -> checkAdd(sent_chain[to], msg)
-          [] OTHER -> sent_chain[to] ]
-
 \* system sends [msg] to active nodes on [chain]
 checkSysAddToActive(sent, chain, msg) ==
     [ to \in SysNodes |->
@@ -175,19 +172,19 @@ checkCons(data, stack) ==
       [] OTHER -> stack
 
 \* insert [header] into [headers]
+\* smallest branches and heights first
 insertHeader(header, headers) ==
     LET RECURSIVE aux(_, _, _)
         aux(h, hs, acc) ==
           CASE hs = <<>> -> Append(acc, h)
             [] OTHER ->
-               LET hd == Head(hs)
-               IN
-                 CASE h.branch > hd.branch -> acc \o <<h>> \o hs
-                   [] OTHER ->
-                      CASE h.branch # hd.branch -> aux(h, Tail(hs), Append(acc, hd))
-                        [] OTHER ->
-                           CASE h.height > hd.height -> acc \o <<h>> \o hs
-                             [] OTHER -> aux(h, Tail(hs), Append(acc, hd))
+                 LET hd == Head(hs)
+                 IN CASE h.branch < hd.branch -> acc \o Cons(h, hs)
+                      [] OTHER ->
+                         CASE h.branch # hd.branch -> aux(h, Tail(hs), Append(acc, hd))
+                           [] OTHER ->
+                              CASE h.height < hd.height -> acc \o Cons(h, hs)
+                                [] OTHER -> aux(h, Tail(hs), Append(acc, hd))
     IN CASE header \notin ToSet(headers) -> aux(header, headers, <<>>)
          [] OTHER -> headers
 
@@ -234,7 +231,6 @@ insertBranch(branch, branches) ==
                       [] OTHER -> aux(b, Tail(bs), Append(acc, hd))
     IN aux(branch, branches, <<>>)
 
-
 \* check that all [branches] are valid branches on [chain]
 RECURSIVE checkBranches(_, _)
 checkBranches(branches, chain) ==
@@ -242,14 +238,7 @@ checkBranches(branches, chain) ==
     \/ /\ Head(branches) \in activeBranches[chain]
        /\ checkBranches(Tail(branches), chain)
 
------------------------------------------------------------------------------
-
-(********************)
-(* Sequences & Sets *)
-(********************)
-
-BoundedSeq(S) == Seq_n(S, sizeBound)
-
-BoundedSubsets(S) == Subsets_n(S, sizeBound)
+\* do sys or node action
+ifSys(node, action1, action2) == IF node = sys THEN action1 ELSE action2
 
 =============================================================================
