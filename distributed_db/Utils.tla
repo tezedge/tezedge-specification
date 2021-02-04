@@ -39,21 +39,25 @@ divide[a, b \in Nat] ==
     IN
       _divide[a, b, 0]
 
-\* maximum element of a nonempty finite set
+\* maximum element of a nonempty finite set of naturals
 RECURSIVE _max_set(_, _)
 _max_set(S, curr) ==
     CASE S = {} -> curr
       [] OTHER -> LET x == Pick(S) IN _max_set(S \ {x}, max[x, curr])
 
-max_set(S) == CASE S # {} -> LET x == Pick(S) IN _max_set(S \ {x}, x)
+max_set(S) ==
+    CASE S /= {} -> LET x == Pick(S) IN _max_set(S \ {x}, x)
+      [] OTHER -> -1
 
-\* minimum element of a nonempty finite set
+\* minimum element of a nonempty finite set of naturals
 RECURSIVE _min_set(_, _)
 _min_set(S, curr) ==
     CASE S = {} -> curr
       [] OTHER -> LET x == Pick(S) IN _min_set(S \ {x}, min[x, curr])
 
-min_set(S) == CASE S # {} -> LET x == Pick(S) IN _min_set(S \ {x}, x)
+min_set(S) ==
+    CASE S /= {} -> LET x == Pick(S) IN _min_set(S \ {x}, x)
+      [] OTHER -> -1
 
 ----------------------------------------------------------------------------
 
@@ -68,7 +72,7 @@ SeqOfLen(S, n) ==
 Seq_n(S, n) == UNION { SeqOfLen(S, l) : l \in 0..n }
 
 \* Enumerable set of nonempty sequences of length <= n
-NESeq_n(S, n) == { f \in Seq_n(S, n) : f # <<>> }
+NESeq_n(S, n) == { f \in Seq_n(S, n) : f /= <<>> }
 
 \* Enumerable set of pairs of elements from sets S1 and S2
 Pairs(S1, S2) == { <<x1, x2>> : x1 \in S1, x2 \in S2 }
@@ -80,7 +84,7 @@ NESeq(S) == Seq(S) \ {<<>>}
 RECURSIVE _remove(_, _, _)
 _remove(s, e, acc) ==
     CASE s = <<>> -> acc
-      [] e # Head(s) -> _remove(Tail(s), e, Append(acc, Head(s)))
+      [] e /= Head(s) -> _remove(Tail(s), e, Append(acc, Head(s)))
       [] OTHER -> _remove(Tail(s), e, acc)
 
 Remove(s, e) == _remove(s, e, <<>>)
@@ -127,7 +131,6 @@ Exists(seq, test(_)) ==
                \/ exists(Tail(s), t, acc \/ t(Head(s)))
     IN exists(seq, test, FALSE)
 
-\*
 Cons(elem, seq) == <<elem>> \o seq
 
 =============================================================================
