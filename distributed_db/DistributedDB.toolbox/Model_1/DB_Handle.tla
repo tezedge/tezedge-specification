@@ -1,8 +1,8 @@
 ----------------------------- MODULE DB_Handle ------------------------------
 
-(*********************************************************************************)
-(* This module contains the actions a node uses to respond to received messages. *)
-(*********************************************************************************)
+(**************************************************************)
+(* A node uses these actions to respond to received messages. *)
+(**************************************************************)
 
 CONSTANTS numChains, numNodes, sizeBound
 
@@ -20,144 +20,121 @@ LOCAL INSTANCE Utils
 (* Handle helpers *)
 (******************)
 
-\* [node] updates blocks
-\* node is active on [block_chain]
-updateBlocks(node, block) ==
-    LET block_chain  == block.header.chain
-        block_branch == block.header.branch
-        block_height == block.header.height
-        node_exp_br  == current_branch[node, block_chain] + 1
-        node_exp_ht  == current_height[node, block_chain, block_branch] + 1
-    IN
-      CASE block_branch \in ToSet(node_info.branches[node][block_chain]) -> \* [node] knows about [block_branch]
-           CASE block_height = node_exp_ht -> \* [node] knows about the predecessor of [block]
-                node_info' =
-                  [ node_info EXCEPT !.blocks[node][block_chain][block_branch] = checkCons(block, @) ]
-             [] block_height > node_exp_ht -> \* [node] seems to be missing some blocks on [block_branch]
-                \* remember the header if possible
-                /\ node_info' = [ node_info EXCEPT !.headers[node][block_chain] = checkAdd(@, block.header) ]
-                \* request missing headers
-                /\ network_info' = Request_block_headers(node, block_chain, block_branch, node_exp_ht..block_height)
-             [] OTHER -> TRUE
-        \* [node] does not know about [block_branch]
-        [] OTHER -> Get_current_branch_n(node, block_chain) \* request current branch of [block_chain]
-
-\* assume start < end
-missingBranches[ start, end \in Branches ] ==
-    IF start = end
-    THEN <<end>>
-    ELSE <<end>> \o missingBranches[start, end - 1]
+\* TODO
+\* [node] requests missing branch head on [chain]
+updateBranches_sent(sent, node, chain, branch) ==
+    LET next_br == min_set(Branches \ branchSet[node, chain])
+        msg     == [ type |-> "Get_current_head", params |-> [ branch |-> next_br ] ]
+    IN IF branch \in branchSet[node, chain] \/ branch < 0
+       THEN sent
+       ELSE Broadcast(sent, node, chain, msg)
 
 \* [node] updates branches on [chain]
-updateBranches(node, chain, branch) ==
-    LET expected == current_branch[node, chain] + 1
-    IN
-      CASE branch = expected ->
-             /\ node_info' = [ node_info EXCEPT !.branches[node][chain] = checkCons(branch, @) ]
-             /\ Get_current_head_n(node, chain, branch) \* request the current head of [branch] from all active peers
-        [] branch > expected ->
-           LET missing == missingBranches[expected, branch]
-           IN
-              /\ node_info' = [ node_info EXCEPT !.branches[node][chain] = missing \o @ ] \* add missing branches
-              /\ network_info' = Request_branch_heads(node, chain, expected..branch) \* request missing branch heads
-        [] OTHER -> TRUE
+updateBranches(branches, node, chain, branch) ==
+    IF branch \in branchSet[node, chain] \/ branch < 0 \* if [node] can disregard [branch]
+    THEN branches                                      \* then do nothing
+    ELSE insertBranch(branch, branches)                \* else add [branch]
 
-\* [node] reacts to info about a block at [height] on [chain] [branch]
-updateHeights(node, chain, branch, height) ==
-    LET node_br  == current_branch[node, chain]
-        expected == current_height[node, chain, branch] + 1
-    IN
-      CASE \* [node] knows about [branch]
-           branch <= node_br ->
-                \* [node] requests the corresponding block header
-           CASE height = expected -> Get_block_header_n(node, chain, branch, height)
-                \* [node] requests the missing block headers
-             [] height > expected -> network_info' = Request_block_headers(node, chain, branch, expected..height)
-                \* otherwise [node] does nothing
-             [] OTHER -> TRUE
-        \* [node] does not know about [branch]
-        [] OTHER -> TRUE
+\* [node] reacts to info about a block at [height] on [branch] of [chain]
+updateHeights(sent, node, chain, branch, height) ==
+    LET next_br == min_set(Branches \ branchSet[node, chain])
+        next_ht == min_set(Heights \ heightSet[node, chain, branch])
+    IN IF height \in heightSet[node, chain, branch] \* [node] knows about a block at [height]
+       THEN sent
+       ELSE IF branch \notin branchSet[node, chain] \* [node] does not know about [branch]
+            THEN updateBranches_sent(sent, node, chain, next_br) \* update branches
+            ELSE LET msg == [ type |-> "Get_block_header",
+                              params |-> [ branch |-> branch, height |-> next_ht ] ] 
+                 IN Broadcast(sent, node, chain, msg)
+
+\* [node] reacts to a block header at [height] on [branch] of [chain]
+updateHeaders_sent(sent, node, chain, branch, height) ==
+    LET exp_br == current_branch[node, chain] + 1
+        exp_ht == current_height[node, chain, branch] + 1
+    IN IF height \in blockHeights[node, chain, branch] \* [node] already knows about this block
+       THEN sent
+       ELSE IF height \in headerHeights[node, chain, branch] \* [node] has a header at [height]
+            THEN LET msg == [ type |-> "Get_operations",
+                              params |-> [ branch |-> branch, height |-> height ] ]
+                 IN Broadcast(sent, node, chain, msg)             \* request operations
+            ELSE updateHeights(sent, node, chain, branch, height) \* request current head or block header
 
 \* [node] reacts to a block [header] on [chain] [branch]
-updateHeaders(node, chain, branch, header) ==
-    LET height   == header.height
-        expected == current_height[node, chain, branch] + 1
-    IN
-      CASE \* [node] records the block header and requests the operations
-           height = expected ->
-             /\ node_info' = [ node_info EXCEPT !.headers[node][chain] = checkAdd(@, header) ]
-             /\ Get_operations_n(node, chain, branch, height)
-           \* [node] records the block header
-        [] height > expected ->
-             node_info' = [ node_info EXCEPT !.headers[node][chain] = checkAdd(@, header) ]
-           \* otherwise [node] does nothing
-        [] OTHER -> TRUE
+updateHeaders(headers, node, chain, branch, height, num_ops) ==
+    IF height \notin heightSet[node, chain, branch]
+    \* [node] records the block header (and requests the operations)
+    THEN checkInsertHeader(Header(chain, branch, height, num_ops), headers)
+    ELSE headers
 
 \* [node] reacts to operations for the block at [height] on [chain] [branch]
-updateOperations(node, chain, branch, height, ops) ==
-    LET expected == current_height[node, chain, branch] + 1
-        headers  == node_info.headers[node][chain]
-    IN
-      LET header == Header(chain, branch, height, Len(ops))
-      IN  \* [node] knows about the corresponding block header on [chain] [branch] at [height]
-        CASE header \in headers ->
-                  \* if as expected, [node] adds the block to their [branch] on [chain]
-             CASE height = expected ->
-                  node_info' = [ node_info EXCEPT
-                    !.headers[node][chain] = @ \ {header},
-                    !.blocks[node][chain][branch] = checkCons(Block(header, ops), @) ]
-               [] OTHER -> TRUE
-          [] OTHER -> TRUE
+updateOperations(blocks, headers, node, chain, branch, height, ops) ==
+    LET header == Header(chain, branch, height, Len(ops))
+    IN \* [node] knows about the corresponding block header on [chain] [branch] at [height]
+       IF header \in ToSet(headers)
+       THEN \* [node] adds the block to their [branch] on [chain]
+            checkInsertBlock(Block(header, ops), blocks)
+       ELSE blocks
 
-\* Handle advertised current branch
+\* [node] handles advertised current [branch] on [chain] from [from]
 Handle_branch(node, chain, from, type, params) ==
     LET branch == params.branch
-    IN
-      /\ updateBranches(node, chain, branch)                   \* handle branch info
-      /\ Send(from, chain, AckMsg(node, "Ack_current_branch")) \* send acknowledgement
-      /\ Consume_msg(node, chain, Msg(from, type, params))     \* manage expectations
+        ack    == AckMsg(node, from, "Ack_current_branch")
+    IN /\ network_info' = [ network_info EXCEPT !.sent[chain] =
+            LET ub == updateBranches_sent(@, node, chain, branch)             \* request current head
+            IN [ ub EXCEPT ![from] = Send(ub[from], ack) ] ]                  \* send acknowledgment
+       /\ node_info' = [ node_info EXCEPT
+            !.branches[node][chain] = updateBranches(@, node, chain, branch), \* update branches
+\*            !.expect[node][chain] = ManageExpect(@, from, type),              \* manage expectations
+            !.messages[node][chain] = Tail(@) ]                               \* consume message
 
-\* Handle advertised current head
+\* [node] handles advertised current head of [branch] on [chain] from [from]
 Handle_head(node, chain, from, type, params) ==
     LET branch == params.branch
         height == params.height
-    IN
-      /\ updateBranches(node, chain, branch)                 \* handle branch info
-      /\ updateHeights(node, chain, branch, height)          \* handle height info
-      /\ Send(from, chain, AckMsg(node, "Ack_current_head")) \* send acknowledgement
-      /\ Consume_msg(node, chain, Msg(from, type, params))   \* manage expectations
+        ack    == AckMsg(node, from, "Ack_current_head")
+    IN /\ network_info' = [ network_info EXCEPT !.sent[chain] =
+            LET uh == updateHeights(@, node, chain, branch, height) \* request block header or current head
+            IN [ uh EXCEPT ![from] = Send(uh[from], ack) ] ]        \* send acknowledgment
+       /\ node_info' = [ node_info EXCEPT
+            !.branches[node][chain] = updateBranches(@, node, chain, branch), \* update branches
+\*            !.expect[node][chain] = ManageExpect(@, from, type),              \* manage expectations
+            !.height[node][chain][branch] = max[@, height],                   \* update height
+            !.messages[node][chain] = Tail(@) ]                               \* consume message
 
-\* Handle advertised block header
+\* [node] handles advertised block [header] on [branch] of [chain] from [from]
 Handle_header(node, chain, from, type, params) ==
-    LET branch == params.branch
-        height == params.height
-        header == params.header
-        node_ht == current_height[node, chain, branch]
-        msg     ==
-          CASE height <= node_ht -> AckMsg(node, "Ack_block_header")
-            [] OTHER -> ErrorMsg(node, "Err_block_header", [ branch |-> branch, height |-> height ])
-    IN
-      /\ updateBranches(node, chain, branch)               \* handle branch info
-      /\ updateHeights(node, chain, branch, height)        \* handle height info
-      /\ updateHeaders(node, chain, branch, header)        \* handle header info
-      /\ Send(from, chain, msg)                            \* send acknowledgement or error
-      /\ Consume_msg(node, chain, Msg(from, type, params)) \* manage expectations
+    LET branch  == params.branch
+        height  == params.height
+        header  == params.header
+        num_ops == header.num_ops
+        ack     == AckMsg(node, from, "Ack_block_header")
+    IN /\ network_info' = [ network_info EXCEPT !.sent[chain] =
+            LET uh == updateHeaders_sent(@, node, chain, branch, height) \* request current head, header, or ops
+            IN [ uh EXCEPT ![from] = Send(uh[from], ack) ] ]             \* send acknowledgment
+       /\ node_info' = [ node_info EXCEPT
+            !.branches[node][chain] = updateBranches(@, node, chain, branch),                \* update branches
+\*            !.expect[node][chain] = ManageExpect(@, from, type),                             \* manage expectations
+            !.headers[node][chain] = updateHeaders(@, node, chain, branch, height, num_ops), \* update headers
+            !.messages[node][chain] = Tail(@) ]                                              \* consume message
 
-\* Handle advertised operations
+\* [node] handles advertised [ops] on [branch] of [chain] from [from]
 Handle_ops(node, chain, from, type, params) ==
     LET branch  == params.branch
         height  == params.height
         ops     == params.ops
-        node_ht == current_height[node, chain, branch]
-        msg     ==
-          CASE height <= node_ht -> AckMsg(node, "Ack_operations")
-            [] OTHER -> ErrorMsg(node, "Err_operations", [ branch |-> branch, height |-> height ])
-    IN
-      /\ updateBranches(node, chain, branch)                \* handle branch info
-      /\ updateHeights(node, chain, branch, height)         \* handle height info
-      /\ updateOperations(node, chain, branch, height, ops) \* handle operations info
-      /\ Send(from, chain, msg)                             \* send acknowledgement or error
-      /\ Consume_msg(node, chain, Msg(from, type, params))  \* manage expectations
+        header  == Header(chain, branch, height, Len(ops))
+        headers == updateHeaders(node_info.headers[node][chain], node, chain, branch, height, Len(ops))
+        ack     == AckMsg(node, from, "Ack_operations")
+    IN /\ network_info' = [ network_info EXCEPT !.sent[chain] =
+            LET uh == updateHeaders_sent(@, node, chain, branch, height) \* request info
+            IN [ uh EXCEPT ![from] = Send(uh[from], ack) ] ]             \* send ack
+       /\ node_info' = [ node_info EXCEPT
+            !.blocks[node][chain][branch] =
+                updateOperations(@, headers, node, chain, branch, height, ops), \* update blocks
+            !.branches[node][chain] = updateBranches(@, node, chain, branch),   \* update branches
+\*            !.expect[node][chain] = ManageExpect(@, from, type),                \* manage expectations
+            !.headers[node][chain] = Remove(headers, header),                   \* update headers
+            !.messages[node][chain] = Tail(@) ]                                 \* consume message
 
 ----------------------------------------------------------------------------
 
@@ -165,162 +142,242 @@ Handle_ops(node, chain, from, type, params) ==
 (* Handle actions *)
 (******************)
 
-(*********************)
-(* Offchain messages *)
-(*********************)
-
-\* [node] handles an offchain [msg]
-Handle_offchain(node, type, params) ==
-    CASE type = "New_chain" /\ DOMAIN params = { "chain" } ->
-      LET chain == params.chain
-      IN IF activeNodes[chain] = {}
-         THEN
-           /\ Activate(node, chain)             \* activate the new chain
-           /\ node_info' = [ node_info EXCEPT !.offchain[node] = Tail(@) ] \* consume offchain message
-         ELSE
-           /\ Activate(node, chain)             \* activate the new chain
-           /\ Get_current_branch_n(node, chain) \* request current branch from any active peers
-           /\ node_info' = [ node_info EXCEPT !.offchain[node] = Tail(@) ] \* consume offchain message
-
-\* A node handles an offchain message
-Handle_offchain_msg ==
-    \E node \in Nodes :
-        /\ node_info.offchain[node] # <<>> \* [node] has an offchain message
-        /\ LET msg    == Head(node_info.offchain[node])
-               type   == msg.type
-               params == msg.params
-           IN Handle_offchain(node, type, params) \* [node] handles an offchain message
-
-(********************)
-(* Onchain messages *)
-(********************)
-
-\* Handle system message
-\* [node] handles a system message on [chain]
-Handle_sys(node, chain, type, params) ==
-    /\ CASE type = "New_block" /\ DOMAIN params = { "block" }  ->
-            updateBlocks(node, params.block)
-         [] type = "New_branch" /\ DOMAIN params = { "branch" } ->
-            updateBranches(node, chain, params.branch)
-    /\ Consume_msg(node, chain, SysMsg(type, params))
-
-\* Handle acknowledgement message
 \* [node] handles an ack [msg] on [chain]
-Handle_ack(node, chain, msg) == node_info' = [ node_info EXCEPT !.expect[node][chain] = @ \ {msg} ]
+Handle_ack(node, chain, msg) ==
+    IF node = sys
+    THEN
+      /\ network_info' = [ network_info EXCEPT !.sysmsgs[chain] = Tail(@) ] \* consume message
+      /\ UNCHANGED node_info
+    ELSE
+      /\ node_info' = [ node_info EXCEPT
+           !.expect[node][chain] = @ \ {msg},  \* remove expectation
+           !.messages[node][chain] = Tail(@) ] \* consume message
+      /\ UNCHANGED network_info
 
 \* Handle advertise message
 Handle_advertise(node, chain, from, type, params) ==
-    CASE /\ type = "Current_branch"
-         /\ DOMAIN params = { "branch" } -> Handle_branch(node, chain, from, type, params)
-      [] /\ type = "Current_head"
-         /\ DOMAIN params = { "branch", "height" } -> Handle_head(node, chain, from, type, params)
-      [] /\ type = "Block_header"
-         /\ DOMAIN params = { "branch", "height", "header" } -> Handle_header(node, chain, from, type, params)
-      [] /\ type = "Operations"
-         /\ DOMAIN params = { "branch", "height", "ops" } -> Handle_ops(node, chain, from, type, params)
+    CASE /\ DOMAIN params = { "branch" }
+         /\ type = "Current_branch" -> Handle_branch(node, chain, from, type, params)
+      [] /\ DOMAIN params = { "branch", "height" }
+         /\ type = "Current_head" -> Handle_head(node, chain, from, type, params)
+      [] /\ DOMAIN params = { "branch", "height", "header" }
+         /\ type = "Block_header" -> Handle_header(node, chain, from, type, params)
+      [] /\ DOMAIN params = { "branch", "height", "ops" }
+         /\ type = "Operations" -> Handle_ops(node, chain, from, type, params)
 
 \* what was expected given the error
-from_error[ err \in ErrorMsgs ] ==
-    LET from == err.from
-        type == err.type
-    IN {AckMsg(from, type)} \* convert error to ack
+of_error(err) ==
+    LET from   == err.from
+        to     == err.to
+        type   == err.type
+        params == err.error
+        ack_of_err[ e \in ErrMsgTypes ] ==
+          CASE e = "Err_block_header" -> "Block_header"
+            [] e = "Err_operations" -> "Operations"
+    IN Msg(to, from, ack_of_err[type], params)
 
 \* [node] handles an error [err] on [chain]
 Handle_err(node, chain, err) ==
-    node_info' = [ node_info EXCEPT !.expect[node][chain] = @ \ from_error[err] ]
+    /\ node_info' = [ node_info EXCEPT
+         !.expect[node][chain] = @ \ of_error(err), \* remove expectation
+         !.messages[node][chain] = Tail(@) ]        \* consume message
+    /\ UNCHANGED network_info
 
-\* Send current branch
+\* [from] sends current branch to [to] on [chain]
 Send_branch(from, chain, to) ==
-    LET msg == Msg(from, "Current_branch", [ branch |-> current_branch[from, chain] ])
-    IN Send(to, chain, msg)
+    LET msg == Msg(from, to, "Current_branch", [ branch |-> current_branch[from, chain] ])
+\*        ack == AckMsg(from, "Ack_current_branch")
+    IN /\ network_info' = [ network_info EXCEPT !.sent[chain][to] = Send(@, msg) ] \* [from] sends current branch
+       /\ node_info' = [ node_info EXCEPT
+            !.messages[from][chain] = Tail(@) ] \* [from] consumes message
+\*            !.expect[from][chain] = Expect(@, to, ack) ] \* [from] expects ack from [to]
 
-\* Send current head
+\* [sys] sends current branch to [to] on [chain]
+Send_branch_sys(chain, to) ==
+    LET msg == Msg(sys, to, "Current_branch", [ branch |-> network_info.branch[chain] ])
+    IN /\ network_info' = [ network_info EXCEPT
+            !.sent[chain][to] = Send(@, msg), \* [sys] sends current branch
+            !.sysmsgs[chain] = Tail(@) ]      \* [sys] consumes message
+       /\ UNCHANGED node_info
+
+\* [from] sends current head to [to] on [chain]
 Send_head(from, chain, to, params) ==
     LET branch == params.branch
-        msg    == Msg(from, "Current_head", [ branch |-> branch, height |-> current_height[from, chain, branch] ])
-    IN Send(to, chain, msg)
+        msg    == Msg(from, to, "Current_head",
+                     [ branch |-> branch, height |-> current_height[from, chain, branch] ])
+\*        ack    == AckMsg(from, "Ack_current_head")
+    IN /\ network_info' = [ network_info EXCEPT !.sent[chain][to] = Send(@, msg) ] \* [from] sends current head
+       /\ node_info' = [ node_info EXCEPT
+            !.messages[from][chain] = Tail(@) ] \* [from] consumes message
+\*            !.expect[from][chain] = Expect(@, to, ack) ] \* expect ack from [to]
 
-\* Send requested block header or error
+\* [sys] sends current head to [to] on [chain]
+Send_head_sys(chain, to, params) ==
+    LET branch == params.branch
+        msg    == Msg(sys, to, "Current_head",
+                     [ branch |-> branch, height |-> currentHeight[chain, branch] ])
+    IN /\ network_info' = [ network_info EXCEPT
+            !.sent[chain][to] = Send(@, msg), \* [sys] sends current head
+            !.sysmsgs[chain] = Tail(@) ]      \* [sys] consumes message
+       /\ UNCHANGED node_info
+
+\* [from] sends requested block header or error to [to] on [chain]
 Send_header(from, chain, to, params) ==
     LET branch == params.branch
         height == params.height
         blocks == node_info.blocks[from][chain][branch]
-    IN
-      CASE \* [from] has seen the requested block
-           height \in { block.header.height : block \in ToSet(blocks) } ->
-           LET pred[ h \in Heights ] == [ b \in Blocks |-> b.header.height = h ] 
-               header == Select(blocks, pred[height]).header
-               msg    == Msg(from, "Block_header", [ branch |-> branch, height |-> height, header |-> header ])
-           IN
-             /\ Send(to, chain, msg)
-             /\ Expect(from, to, chain, AckMsg(to, "Ack_block_header"))
-           \* [from] has not seen the requested block
-        [] OTHER ->
-             /\ Send(to, chain, ErrorMsg(from, "Err_block_header", params))
-             /\ UNCHANGED node_info
+    IN CASE \* [from] has seen a block at the requested [height]
+            height \in { block.header.height : block \in ToSet(blocks) } ->
+              LET atHeight(b) == b.header.height = height
+                  header == Select(blocks, atHeight).header
+                  msg_ps == [ branch |-> branch, height |-> height, header |-> header ]
+                  msg    == Msg(from, to, "Block_header", msg_ps)
+\*                  ack    == AckMsg(to, "Ack_block_header")
+              IN /\ network_info' = [ network_info EXCEPT !.sent[chain][to] = Send(@, msg) ]
+                 /\ node_info' = [ node_info EXCEPT
+\*                      !.expect[from][chain] = Expect(@, to, ack), \* [from] expects ack from [to]
+                      !.messages[from][chain] = Tail(@) ]         \* [from] consumes message
+         [] OTHER -> \* [from] has not seen a block at [height]
+              LET err == ErrMsg(from, to, "Err_block_header", params)
+              IN /\ network_info' = [ network_info EXCEPT !.sent[chain][to] = Send(@, err) ] \* send error
+                 /\ node_info' = [ node_info EXCEPT !.messages[from][chain] = Tail(@) ]      \* consume
 
-\* Send requested block operations or error
+\* [sys] sends requested block header or error to [to] on [chain]
+Send_header_sys(chain, to, params) ==
+    LET branch == params.branch
+        height == params.height
+        blocks == network_info.blocks[chain][branch]
+    IN /\ CASE \* [sys] has seen a block at the requested [height]
+               height <= currentHeight[chain, branch] ->
+                 LET atHeight(b) == b.header.height = height
+                     header == Select(blocks, atHeight).header
+                     msg_ps == [ branch |-> branch, height |-> height, header |-> header ]
+                     msg    == Msg(sys, to, "Block_header", msg_ps)
+                 IN network_info' = [ network_info EXCEPT
+                      !.sent[chain][to] = Send(@, msg), \* [sys] sends block header
+                      !.sysmsgs[chain] = Tail(@) ]      \* [sys] consumes message
+            [] OTHER -> \* [sys] has not seen a block at [height]
+                 LET err == ErrMsg(sys, to, "Err_block_header", params) 
+                 IN network_info' = [ network_info EXCEPT
+                      !.sent[chain][to] = Send(@, err), \* [sys] sends error
+                      !.sysmsgs[chain] = Tail(@) ]      \* [sys] consumes message
+       /\ UNCHANGED node_info
+
+\* [from] sends requested block operations or error to [to] on [chain]
 Send_operations(from, chain, to, params) ==
     LET branch == params.branch
         height == params.height
         blocks == node_info.blocks[from][chain][branch]
-    IN
-      CASE \* [from] has seen the requested block
-           height \in { block.header.height : block \in ToSet(blocks) } ->
-           LET pred[ h \in Heights ] == [ b \in Blocks |-> b.header.height = h ] 
-               ops == Select(blocks, pred[height]).ops
-               msg == Msg(from, "Operations", [ branch |-> branch, height |-> height, ops |-> ops ])
-           IN
-             /\ Send(to, chain, msg)
-             /\ Expect(from, to, chain, AckMsg(to, "Ack_operations"))
-           \* [from] has not seen the requested block
-        [] OTHER ->
-             /\ Send(to, chain, ErrorMsg(from, "Err_operations", params))
-             /\ UNCHANGED node_info
+    IN CASE \* [from] has seen the requested block
+            height \in { block.header.height : block \in ToSet(blocks) } ->
+            LET atHeight(b) == b.header.height = height
+                ops == Select(blocks, atHeight).ops
+                msg == Msg(from, to, "Operations", [ branch |-> branch, height |-> height, ops |-> ops ])
+\*                ack == AckMsg(to, "Ack_operations")
+            IN
+              /\ network_info' = [ network_info EXCEPT !.sent[chain][to] = Send(@, msg) ]     \* [from] sends operations
+              /\ node_info' = [ node_info EXCEPT
+\*                   !.expect[from][chain] = Expect(@, to, ack), \* [from] expects ack from [to]
+                   !.messages[from][chain] = Tail(@) ]         \* [from] consumes message
+            \* [from] has not seen the requested block
+         [] OTHER ->
+              LET err == ErrMsg(from, to, "Err_operations", params)
+              IN /\ network_info' = [ network_info EXCEPT !.sent[chain][to] = Send(@, err) ] \* send error
+                 /\ node_info' = [ node_info EXCEPT !.messages[from][chain] = Tail(@) ]      \* consume
+
+\* [sys] sends requested block operations or error to [to] on [chain]
+Send_operations_sys(chain, to, params) ==
+    LET branch == params.branch
+        height == params.height
+        blocks == network_info.blocks[chain][branch]
+    IN /\ CASE \* [from] has seen the requested block
+               height \in { block.header.height : block \in ToSet(blocks) } ->
+                 LET atHeight(b) == b.header.height = height
+                     ops == Select(blocks, atHeight).ops
+                     msg == Msg(sys, to, "Operations", [ branch |-> branch, height |-> height, ops |-> ops ])
+                 IN network_info' = [ network_info EXCEPT
+                      !.sent[chain][to] = Send(@, msg), \* [sys] sends operations
+                      !.sysmsgs[chain] = Tail(@) ]      \* [sys] consumes message
+            [] OTHER -> \* [sys] has not seen a block at [height]
+                 LET err == ErrMsg(sys, to, "Err_operations", params)
+                 IN network_info' = [ network_info EXCEPT
+                      !.sent[chain][to] = Send(@, err), \* [sys] sends error
+                      !.sysmsgs[chain] = Tail(@) ]      \* [sys] consumes message
+       /\ UNCHANGED node_info
 
 \* Handle a request message
 Handle_request(node, chain, from, type, params) ==
-    /\ node_info' = [ node_info EXCEPT !.messages[node][chain] = Tail(@) ]         \* [node] consumes message on [chain]
-    /\ CASE type = "Get_current_branch" /\ DOMAIN params = { "chain" } ->          \* if Get_current_branch
-              /\ Send_branch(node, chain, from)                                    \* then send current branch
-              /\ Expect(node, from, chain, AckMsg(from, "Ack_current_branch"))     \* and expect acknowledgement
-         [] type = "Get_current_head" /\ DOMAIN params = { "branch" } ->           \* if Get_current_head
-              /\ Send_head(node, chain, from, params)                              \* then send current head
-              /\ Expect(node, from, chain, AckMsg(from, "Ack_current_head"))       \* and expect acknowledgement
-         [] type = "Get_block_header" /\ DOMAIN params = { "branch", "height" } -> \* if Get_block_header
-              Send_header(node, chain, from, params)                               \* then send block header or error
-         [] type = "Get_operations" /\ DOMAIN params = { "branch", "height" } ->   \* if Get_operations
-              Send_operations(node, chain, from, params)                           \* then send operations or error
+    CASE DOMAIN params = { "chain" } /\ type = "Get_current_branch" ->
+           ifSys(node, Send_branch_sys(chain, from), Send_branch(node, chain, from))
+      [] DOMAIN params = { "branch" } /\ type = "Get_current_head" ->
+           ifSys(node, Send_head_sys(chain, from, params), Send_head(node, chain, from, params))
+      [] DOMAIN params = { "branch", "height" } /\ type = "Get_block_header" ->
+           ifSys(node,
+             Send_header_sys(chain, from, params),
+             Send_header(node, chain, from, params))
+      [] DOMAIN params = { "branch", "height" } /\ type = "Get_operations" ->
+           ifSys(node,
+             Send_operations_sys(chain, from, params),
+             Send_operations(node, chain, from, params))
 
 \* [node] handles [msg] on [chain]
-Handle_onchain(node, chain, msg) ==
-    LET type   == msg.type
-        params == msg.params
-    IN
-      CASE \* System messages
-           type \in SysMsgTypes ->
-             /\ Handle_sys(node, chain, type, params)
-             /\ UNCHANGED network_info
-           \* Request messages
-        [] type \in ReqMsgTypes -> Handle_request(node, chain, msg.from, type, params)
-           \* Advertise messages
-        [] type \in AdMsgTypes  -> Handle_advertise(node, chain, msg.from, type, params)
-           \* Acknowledgment messages
-        [] type \in AckMsgTypes ->
-             /\ Handle_ack(node, chain, msg)
-             /\ UNCHANGED network_info
-           \* Error messages
-        [] type \in ErrorMsgTypes ->
-             /\ Handle_err(node, chain, msg)
-             /\ UNCHANGED network_info
+Handle(node, chain, msg) ==
+    LET type == msg.type
+    IN CASE \* Request messages
+            type \in ReqMsgTypes -> Handle_request(node, chain, msg.from, type, msg.params)
+            \* Advertise messages
+         [] type \in AdMsgTypes  -> Handle_advertise(node, chain, msg.from, type, msg.params)
+            \* Acknowledgment messages
+         [] type \in AckMsgTypes -> Handle_ack(node, chain, msg)
+            \* Error messages
+         [] type \in ErrMsgTypes -> Handle_err(node, chain, msg)
 
-\* A node handles an onchain message on some chain
-Handle_onchain_msg ==
+\* A node handles a message from an active node on some chain
+Handle_active_msg ==
     \E chain \in activeChains :
-        \E node \in activeNodes[chain] :
-            /\ node_info.messages[node][chain] # <<>>
-            /\ LET msg == Head(node_info.messages[node][chain])
-               IN Handle_onchain(node, chain, msg)
+        \E receiver \in activeNodes[chain] :
+            \E sender \in activeSysNodes[chain] \ {receiver} : 
+                LET msgs == node_info.messages[receiver][chain]
+                IN /\ msgs /= <<>>                       \* [receiver] has a message on [chain]
+                   /\ LET msg == Head(msgs)
+                      IN /\ sender = msg.from            \* [sender] is active on [chain]
+                         /\ Handle(receiver, chain, msg) \* [receiver] handles a message on [chain]
+
+Handle_inactive_msg ==
+    \* An active node drops a message from an inactive node on some chain
+    \/ \E chain \in activeChains :
+           \E receiver \in activeNodes[chain] :
+               \E sender \in Nodes \ activeNodes[chain] :
+                   LET msgs == node_info.messages[receiver][chain]
+                   IN /\ msgs /= <<>>
+                      /\ sender = Head(msgs).from
+                      /\ node_info' = [ node_info EXCEPT !.messages[receiver][chain] = Tail(@) ]
+                      /\ UNCHANGED network_info
+    \* [sys] drops a message from an inactive node on some chain
+    \/ \E chain \in activeChains :
+          \E sender \in Nodes \ activeNodes[chain] :  \* [sender] is inactive on [chain]
+              LET msgs == network_info.sysmsgs[chain]
+              IN /\ msgs /= <<>>
+                 /\ sender = Head(msgs).from
+                 /\ network_info' = [ network_info EXCEPT !.sysmsgs[chain] = Tail(@) ]
+                 /\ UNCHANGED node_info
+
+\* [sys] handles a message from an active node on some chain
+Sys_handle_msg ==
+    \E chain \in activeChains :
+        \E sender \in activeNodes[chain] : 
+            LET msgs == network_info.sysmsgs[chain]
+            IN /\ msgs /= <<>>                    \* [sys] has a message on [chain]
+               /\ LET msg == Head(msgs)
+                  IN /\ sender = msg.from        \* [sender] is active on [chain]
+                     /\ msg.type \in ReqMsgTypes \* message is a request
+                     /\ Handle(sys, chain, msg)  \* [sys] handles a message on [chain]
+
+\* Handle message action
+Handle_msg ==
+    \/ Handle_active_msg   \* an active node handles a message from an active node
+    \/ Handle_inactive_msg \* an active node handles a message from an inactive node
+    \/ Sys_handle_msg      \* system handles a message from a node
 
 ----------------------------------------------------------------------------
 
@@ -328,12 +385,13 @@ Handle_onchain_msg ==
 (* Send again *)
 (**************)
 
-\* A node sends an unrequited message again
+\* A node sends a message, for which they have not seen a response, again
 Send_again ==
     \E chain \in activeChains :
         \E node \in activeNodes[chain] :
             \E exp \in node_info.expect[node][chain] :
-                /\ Send(exp.from, chain, msg_of_expect[exp]) \* send corresponding msg again
+                /\ network_info' = [ network_info EXCEPT
+                     !.sent[chain][exp.from] = Send(@, exp) ] \* send corresponding msg again
                 /\ UNCHANGED node_info
 
 =============================================================================

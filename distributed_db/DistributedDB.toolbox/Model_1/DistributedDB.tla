@@ -12,52 +12,61 @@ VARIABLE node_info
     \* branches : [ Nodes -> [ Chains -> Seq(Branches) ] ]
     \* expect   : [ Nodes -> [ Chains -> SUBSET Messages ] ]
     \* headers  : [ Nodes -> [ Chains -> Seq(Headers) ] ]
+    \* height   : [ Nodes -> [ Chains -> [ Branches -> Heights \cup {-1} ] ] ]
     \* messages : [ Nodes -> [ Chains -> Seq(Messages) ] ]
-    \* offchain : [ Nodes -> Seq(SysMsgs) ]
+
+\* VARIABLES node_active,   \* Nodes -> SUBSET Chains
+\*           node_blocks,   \* Nodes -> Chains -> Branches -> Seq(Blocks)
+\*           node_branches, \* Nodes -> Chains -> Seq(Branches)
+\*           headers,       \* Nodes -> Chains -> Branches -> Seq(Headers)
+\*           node_height,   \* Nodes -> Chains -> Branches -> Heights \cup {-1}
+\*           node_msgs,     \* Nodes -> Chains -> Seq(Messages)
+\*           node_sent,     \* Nodes -> Chains -> Seq(Messages)
+\*           state          \* ???
 
 VARIABLE network_info
     \* active : [ Chains -> SUBSET Nodes ]
     \* blocks : [ Chains -> [ Branches -> Seq(Blocks) ] ]
     \* branch : [ Chains -> Branches ]
     \* chains : Chains
-    \* height : [ Chains -> [ Branches -> Heights ] ]
-    \* recv   : [ Chains -> [ Nodes -> Seq(Messages) ] ]
+    \* height : [ Chains -> [ Branches -> Heights \cup {-1} ] ]
     \* sent   : [ Chains -> [ Nodes -> SUBSET Messages ] ]
+
+\* VARIABLES net_active, \* Chains -> SUBSET Nodes
+\*           net_blocks, \* Chains -> Branches -> Seq(Blocks)
+\*           net_branch, \* Chains -> Branches
+\*           chains,     \* Chains
+\*           net_height, \* Chains -> Branches -> Heights \cup {-1}
+\*           mailbox     \* Chains -> Nodes -> Seq(Messages)
+
+\*node_vars == <<node_active, node_blocks, node_branches, headers, node_height, node_msgs, node_sent, state>>
+\*net_vars == <<net_active, net_blocks, net_branch, chains, net_height, mailbox>>
+\*vars == <<net_vars, node_vars>>
 
 vars == <<network_info, node_info>>
 
 ----------------------------------------------------------------------------
 
-LOCAL INSTANCE DB_Activation   \* Activation and Deactivation actions
-LOCAL INSTANCE DB_Advertise    \* Advertisement actions
-LOCAL INSTANCE DB_Defs         \* ubiquitous definitions
-LOCAL INSTANCE DB_Handle       \* Message handling actions
-LOCAL INSTANCE DB_Maintenance  \* Block production, new chain, new branch actions
-LOCAL INSTANCE DB_Messages     \* Message constructors, functions, actions
-LOCAL INSTANCE DB_Receive      \* Receive and drop actions
-LOCAL INSTANCE DB_Request      \* Request actions
+LOCAL INSTANCE DB_Activation  \* Activation and Deactivation actions
+LOCAL INSTANCE DB_Advertise   \* Advertisement actions
+LOCAL INSTANCE DB_Defs        \* ubiquitous definitions
+LOCAL INSTANCE DB_Handle      \* Message handling actions
+LOCAL INSTANCE DB_Maintenance \* Block production, new chain, new branch actions
+LOCAL INSTANCE DB_Messages    \* Message constructors, functions, actions
+LOCAL INSTANCE DB_Receive     \* Receive and drop actions
+LOCAL INSTANCE DB_Request     \* Request actions
+
+DB_Init == INSTANCE DB_Init              \* initial states
+DB_TypeOK == INSTANCE DB_TypeOK          \* type invariants
+DB_Invariants == INSTANCE DB_Invariants  \* other invariants and properties
 
 ----------------------------------------------------------------------------
 
 (*********************)
 (* Initial predicate *)
 (*********************)
-Init ==
-    /\ network_info =
-         [ active   |-> [ c \in Chains |-> {} ]
-         , blocks   |-> [ c \in Chains |-> [ b \in Branches |-> <<>> ] ]
-         , branch   |-> [ c \in Chains |-> 0 ]
-         , chains   |-> 1
-         , height   |-> [ c \in Chains |-> [ b \in Branches |-> -1 ] ]
-         , sent     |-> [ c \in Chains |-> [ n \in Nodes |-> {} ] ] ]
-    /\ node_info =
-         [ active   |-> [ n \in Nodes |-> {} ]
-         , blocks   |-> [ n \in Nodes |-> [ c \in Chains |-> [ b \in Branches |-> <<>> ] ] ]
-         , branches |-> [ n \in Nodes |-> [ c \in Chains |-> <<>> ] ]
-         , expect   |-> [ n \in Nodes |-> [ c \in Chains |-> {} ] ]
-         , headers  |-> [ n \in Nodes |-> [ c \in Chains |-> <<>> ] ]
-         , messages |-> [ n \in Nodes |-> [ c \in Chains |-> <<>> ] ]
-         , offchain |-> [ n \in Nodes |-> <<>> ] ]
+
+Init == DB_Init!Init
 
 ----------------------------------------------------------------------------
 
@@ -67,7 +76,6 @@ Init ==
 (* - Deactivation: an active node becomes inactive on a chain                                  *)
 (* - Advertise_branch: a node advertises their current branch                                  *)
 (* - Advertise_head: a node advertises their current head height                               *)
-(* - Handle_offchain_msg: a node reacts to an offchain message                                 *)
 (* - Handle_onchain_msg: a node reacts to a message from another node                          *)
 (* - Send_again: a node sends a message again because they have not gotten a response          *)
 (* - Block_production: a new block is produced and broadcast to active nodes                   *)
@@ -75,7 +83,6 @@ Init ==
 (* - New_chain: a new chain is created and broadcast to nodes offchain                         *)
 (* - Receive: a message is received, i.e. added to the queue of messages the node can react to *)
 (* - Drop: a message sent to a node is dropped and the node is none the wiser                  *)
-(* - Drop_offchain: a message sent to a node offchain is dropped                               *)
 (* - Get_current_branch_one: a node requests the current branch from another active node       *)
 (* - Get_current_branch_all: a node requests the current branch from all other active nodes    *)
 (* - Get_current_head_one: a node requests the current head from another active node           *)
@@ -87,25 +94,25 @@ Init ==
 (***********************************************************************************************)
 
 Next ==
-    \* Activation actions
+    \* Activation actions (nodes)
     \/ Activation
-\*    \/ Deactivation
-    \* Advertise actions
+    \/ Deactivation
+    \* Advertise actions (nodes & sys)
     \/ Advertise_branch
+    \/ Advertise_sys_branch
     \/ Advertise_head
-    \* Handle actions
-    \/ Handle_offchain_msg
-    \/ Handle_onchain_msg
+    \/ Advertise_sys_head
+    \* Handle actions (nodes)
+    \/ Handle_msg
     \/ Send_again
-    \* Maintenance actions
+    \* Maintenance actions (sys)
     \/ Block_production
-    \/ New_branch
     \/ New_chain
-    \* Receive actions
+    \/ New_branch
+    \* Receive actions (nodes & sys)
     \/ Receive
-\*    \/ Drop
-\*    \/ Drop_offchain
-    \* Request actions
+    \/ Drop
+    \* Request actions (nodes)
     \/ Get_current_branch_one
     \/ Get_current_branch_all
     \/ Get_current_head_one
@@ -118,66 +125,36 @@ Next ==
 (***********************)
 (* Liveness conditions *)
 (***********************)
-\* TODO
-Fairness == {}
+
+Fairness ==
+    \* Weak fairness
+    /\ WF_vars(Activation)
+    /\ WF_vars(Block_production)
+    /\ WF_vars(New_branch)
+    /\ WF_vars(New_chain)
+    \* Strong fairness
+    /\ SF_vars(Advertise_branch)
+    /\ SF_vars(Advertise_head)
+    /\ SF_vars(Handle_msg)
+    /\ SF_vars(Send_again)
+    /\ SF_vars(Receive)
+    /\ SF_vars(Get_current_branch_one)
+    /\ SF_vars(Get_current_branch_all)
+    /\ SF_vars(Get_current_head_one)
+    /\ SF_vars(Get_current_head_all)
+    /\ SF_vars(Get_block_header_one)
+    /\ SF_vars(Get_block_header_all)
+    /\ SF_vars(Get_operations_one)
+    /\ SF_vars(Get_operations_all)
+    \* Invariants
+    
 
 ----------------------------------------------------------------------------
 
 (*****************)
 (* Specification *)
 (*****************)
-Spec == Init /\ [][Next]_vars
 
-----------------------------------------------------------------------------
-
-(**************)
-(* Invariants *)
-(**************)
-
-\* TODO
-
-\* Avoid silliness
-TypeOK ==
-    /\ network_info \in
-         [ active   : [ Chains -> SUBSET Nodes ]
-         , branch   : [ Chains -> Branches ]
-         , blocks   : [ Chains -> [ Branches -> Seq_n(Blocks, sizeBound) ] ]
-         , chains   : Chains
-         , height   : [ Chains -> [ Branches -> Heights \cup {-1} ] ]
-         , sent     : [ Chains -> [ Nodes -> Subsets_n(Messages \cup ExpectMsgs, sizeBound) ] ] ]
-    /\ node_info \in
-         [ active   : [ Nodes -> SUBSET Chains ]
-         , blocks   : [ Nodes -> [ Chains -> [ Branches -> Seq_n(Blocks, sizeBound) ] ] ]
-         , branches : [ Nodes -> [ Chains -> Seq_n(Branches, sizeBound) ] ]
-         , expect   : [ Nodes -> [ Chains -> Subsets_n(ExpectMsgs, sizeBound) ] ]
-         , headers  : [ Nodes -> [ Chains -> Seq_n(Headers, sizeBound) ] ]
-         , messages : [ Nodes -> [ Chains -> Seq_n(FullMsgs \cup SysMsgs, sizeBound) ] ]
-         , offchain : [ Nodes -> Seq_n(SysMsgs, sizeBound) ] ]
-
-\* network_info & node_info are in agreement
-ActiveAgreement ==
-    \A node \in Nodes, chain \in Chains :
-        \* actives
-        /\ node \in network_info.active[chain] <=> chain \in node_info.active[node]
-        \* branches
-        /\ node_info.branches[node][chain] # <<>> =>
-             Head(node_info.branches[node][chain]) <= network_info.branch[chain]
-        \* blocks
-        /\ \A branch \in ToSet(node_info.branches[node][chain]) :
-               isSubSeq(node_info.blocks[node][chain][branch], network_info.blocks[chain][branch])
-
-----------------------------------------------------------------------------
-
-(**************)
-(* Properties *)
-(**************)
-
-\* Once a message is sent, it is eventually received by the intended recipient
-\* A [msg] sent to a [node] ends up in messages[node][chain]
-SentMessagesAreReceived ==
-    \A chain \in Chains :
-        \A node \in network_info.active[chain] :
-            \A msg \in Messages :
-                msg \in network_info.sent[chain][node] ~> msg \in ToSet(node_info.messages[node][chain])
+Spec == Init /\ Fairness /\ [][Next]_vars
 
 =============================================================================
