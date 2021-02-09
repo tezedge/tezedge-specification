@@ -4,7 +4,8 @@ EXTENDS Utils
 
 CONSTANTS numNodes, numChains, sizeBound
 
-VARIABLES node_info, network_info
+VARIABLES node_active, node_blocks, node_branches, node_headers, node_height, node_incoming, node_sent,
+          active, blocks, branch, chains, mailbox, height, sysmsgs
 
 (******************************)
 (* Enumerable type invariants *)
@@ -16,143 +17,183 @@ LOCAL INSTANCE DB_Messages
 --------------------------------------------------------------------------------
 
 \* Avoid silliness
-(***********************************************************************************)
-(*  network_info \in                                                               *)
-(*    [ active  : [ Chains -> SUBSET Nodes ]                                       *)
-(*    , branch  : [ Chains -> Branches ]                                           *)
-(*    , blocks  : [ Chains -> [ Branches -> BoundedSeq(Blocks) ] ]                 *)
-(*    , chains  : Chains                                                           *)
-(*    , height  : [ Chains -> [ Branches -> Heights \cup {-1} ] ]                  *)
-(*    , sent    : [ Chains -> [ Nodes -> BoundedSubsets(Messages \ ExpectMsgs) ] ] *)
-(*    , sysmsgs : [ Chains -> BoundedSubsets(Messages \ ExpectMsgs) ] ]            *)
-(***********************************************************************************)
-
-\* chains
-NetworkChainsOK == network_info.chains \in Chains
+(*********************************************************)
+(* Network variables                                     *)
+(* active  : Chains -> SUBSET Nodes                      *)
+(* branch  : Chains -> Branches                          *)
+(* blocks  : Chains -> Branches -> BoundedSeq(Blocks)    *)
+(* chains  : Chains                                      *)
+(* height  : Chains -> Branches -> Heights \cup {-1}     *)
+(* mailbox : Chains -> Nodes -> BoundedSubsets(Messages) *)
+(* sysmsgs : Chains -> BoundedSubsets(Messages)          *)
+(*********************************************************)
 
 \* active
-NetworkActiveOK ==
-    \A chain \in activeChains :
-        /\ network_info.active[chain] \subseteq SysNodes
+ActiveOK ==
+    \A chain \in Chains :
+        /\ DOMAIN active = Chains
+        /\ active[chain] \subseteq SysNodes
         /\ activeNodes[chain] \subseteq Nodes
-        /\ sys \in network_info.active[chain]
+        /\ inactiveNodes[chain] \subseteq Nodes
+        /\ sys \in active[chain]
 
 \* branch
-NetworkBranchesOK ==
-    \A chain \in activeChains : network_info.branch[chain] \in Branches \cup {-1}
+BranchOK ==
+    \A chain \in Chains :
+        /\ DOMAIN branch = Chains
+        /\ branch[chain] \in Branches \cup {-1}
+        /\ chain \in activeChains => branch[chain] >= 0
 
 \* blocks
-NetworkBlocksOK ==
-    \A chain \in activeChains :
-        \A branch \in activeBranches[chain] :
-            LET blocks == network_info.blocks[chain][branch]
-            IN /\ Len(blocks) <= sizeBound + 1 \* height of each branch <= sizeBound
-               /\ Forall(blocks, isBlock)      \* all blocks are blocks
+BlocksOK ==
+    \A chain \in Chains :
+        \A b \in Branches :
+            LET blks == blocks[chain][b]
+            IN /\ DOMAIN blocks = Chains
+               /\ DOMAIN blocks[chain] = Branches
+               /\ Len(blks) <= sizeBound + 1                  \* height of each branch <= sizeBound
+               /\ Forall(blks, isBlock)                       \* all blocks are valid
+               /\ b \in activeBranches[chain] => blks /= <<>> \* active branches have blocks
+
+\* chains
+ChainsOK == chains \in Chains
 
 \* height
-NetworkHeightsOK ==
-    \A chain \in activeChains :
-        \A branch \in activeBranches[chain] :
-            network_info.height[chain][branch] \in Heights \cup {-1}
+HeightOK ==
+    \A chain \in Chains :
+        \A b \in Branches :
+            /\ DOMAIN height = Chains
+            /\ DOMAIN height[chain] = Branches
+            /\ height[chain][b] \in Heights \cup {-1}
+            /\ b \in activeBranches[chain] => height[chain][b] >= 0
 
-\* sent
-NetworkSentOK ==
-    \A chain \in activeChains :
-        \A node \in activeNodes[chain] :
-            LET sent == network_info.sent[chain][node]
-            IN /\ Cardinality(sent) <= sizeBound            \* size of [sent] <= sizeBound
-               /\ sent = { msg \in sent : isValidMsg(msg) } \* only valid messages are sent
+\* mailbox
+MailboxOK ==
+    \A chain \in Chains :
+        \A node \in SysNodes :
+            LET mail == mailbox[chain][node]
+                set  == ToSet(mail)
+            IN /\ DOMAIN mailbox = Chains
+               /\ DOMAIN mailbox[chain] = SysNodes
+               /\ Len(mail) <= sizeBound                  \* bounded
+               /\ set = { msg \in set : isValidMsg(msg) } \* only valid messages are sent
+
 \* sysmsgs
-NetworkSysMsgsOK ==
-    \A chain \in activeChains :
-        LET sysmsgs == network_info.sysmsgs[chain]
-            msgs    == ToSet(sysmsgs)
-        IN /\ Len(sysmsgs) <= sizeBound                       \* size of [sysmsgs] <= sizeBound
+SysMsgsOK ==
+    \A chain \in Chains :
+        LET smsgs == sysmsgs[chain]
+            msgs  == ToSet(smsgs)
+        IN /\ DOMAIN sysmsgs = Chains
+           /\ Len(smsgs) <= sizeBound                         \* size of [sysmsgs] <= sizeBound
            /\ msgs = { msg \in msgs : \/ isValidReqMsg(msg)   \* [sys] receives request messages
                                       \/ isValidAckMsg(msg) } \* [sys] receives ack message
 
 \* check all fields of network_info
 NetworkOK ==
-    /\ NetworkChainsOK
-    /\ NetworkActiveOK
-    /\ NetworkBranchesOK
-    /\ NetworkBlocksOK
-    /\ NetworkHeightsOK
-    /\ NetworkSentOK
-    /\ NetworkSysMsgsOK
+    /\ ActiveOK
+    /\ BranchOK
+    /\ BlocksOK
+    /\ ChainsOK
+    /\ HeightOK
+    /\ MailboxOK
+    /\ SysMsgsOK
 
-(**********************************************************************************)
-(*  node_info \in                                                                 *)
-(*    [ active   : [ Nodes -> SUBSET Chains ]                                     *)
-(*    , blocks   : [ Nodes -> [ Chains -> [ Branches -> BoundedSeq(Blocks) ] ] ]  *)
-(*    , branches : [ Nodes -> [ Chains -> BoundedSeq(Branches) ] ]                *)
-(*    , expect   : [ Nodes -> [ Chains -> BoundedSubsets(ExpectMsgs) ] ]          *)
-(*    , headers  : [ Nodes -> [ Chains -> BoundedSeq(Headers) ] ]                 *)
-(*    , height   : [ Nodes -> [ Chains -> [ Branch -> Heights \cup {-1} ] ] ]     *)
-(*    , messages : [ Nodes -> [ Chains -> BoundedSeq(Messages \ ExpectMsgs) ] ] ] *)
-(**********************************************************************************)
+--------------------------------------------------------------------------------
 
-\* active
+(*********************************************************************)
+(* Node variables                                                    *)
+(* node_active   : Nodes -> SUBSET Chains                            *)
+(* node_blocks   : Nodes -> Chains -> Branches -> BoundedSeq(Blocks) *)
+(* node_branches : Nodes -> Chains -> BoundedSeq(Branches)           *)
+(* node_headers  : Nodes -> Chains -> BoundedSeq(Headers)            *)
+(* node_height   : Nodes -> Chains -> Branches -> Heights \cup {-1}  *)
+(* node_incoming : Nodes -> Chains -> BoundedSeq(Messages)           *)
+(* node_sent     : Nodes -> Chains -> BoundedSeq(Messages)           *)
+(*********************************************************************)
+
+\* node_active
 NodeActiveOK ==
-    \A node \in Nodes : node_info.active[node] \subseteq Chains
+    \A node \in Nodes :
+        /\ DOMAIN node_active = Nodes
+        /\ node_active[node] \subseteq Chains
 
-\* blocks
+\* node_blocks
 NodeBlocksOK ==
-    \A chain \in activeChains :
-        \A node \in activeNodes[chain], branch \in activeBranches[chain] :
-            LET blocks == node_info.blocks[node][chain][branch]
-            IN /\ Len(blocks) <= sizeBound \* height of each block <= sizeBound
-               /\ Forall(blocks, isBlock)  \* all blocks are blocks
+    \A chain \in Chains :
+        \A node \in Nodes, b \in Branches :
+            LET blks == node_blocks[node][chain][b]
+            IN /\ DOMAIN node_blocks = Nodes
+               /\ DOMAIN node_blocks[node] = Chains
+               /\ DOMAIN node_blocks[node][chain] = Branches
+               /\ Len(blks) <= sizeBound \* height of each block <= sizeBound
+               /\ Forall(blks, isBlock)  \* all blocks are valid
 
-\* branches
+\* node_branches
 NodeBranchesOK ==
-    \A chain \in activeChains :
-        \A node \in activeNodes[chain] :
-            LET branches == node_info.branches[node][chain]
-            IN /\ current_branch[node, chain] <= sizeBound \* branches <= sizeBound
+    \A chain \in Chains :
+        \A node \in Nodes :
+            LET branches == node_branches[node][chain]
+            IN /\ DOMAIN node_branches = Nodes
+               /\ DOMAIN node_branches[node] = Chains
+               /\ current_branch[node, chain] <= sizeBound \* branches <= sizeBound
                /\ checkBranches(branches, chain)           \* check that all branches are valid
 
-\* expect
-NodeExpectOK ==
-    \A chain \in activeChains :
-        \A node \in activeNodes[chain] :
-            LET expect == node_info.expect[node][chain]
-            IN /\ Cardinality(expect) <= sizeBound              \* bounded expect set
-               /\ expect = { exp \in expect : isValidMsg(exp) } \* all expect messages valid
-\* headers
+\* node_headers
 NodeHeadersOK ==
-    \A chain \in activeChains :
-        \A node \in activeNodes[chain] :
-            LET headers == node_info.headers[node][chain]
-            IN /\ Len(headers) <= sizeBound \* bounded list of headers
-               /\ Forall(headers, isHeader) \* all headers are headers
-\* height
-NodeHeightsOK ==
-    \A chain \in activeChains :
-        \A node \in activeNodes[chain] :
-            \A branch \in branchSet[node, chain] :
-                LET height == node_info.height[node][chain][branch]
-                IN /\ height >= -1
-                   /\ height <= network_info.height[chain][branch]
+    \A chain \in Chains :
+        \A node \in Nodes :
+            LET headers == node_headers[node][chain]
+            IN /\ DOMAIN node_headers = Nodes
+               /\ DOMAIN node_headers[node] = Chains
+               /\ Len(headers) <= sizeBound \* bounded list of headers
+               /\ Forall(headers, isHeader) \* all headers are valid headers
 
-\* messages
-NodeMessagesOK ==
-    \A chain \in activeChains :
-        \A node \in activeNodes[chain] :
-            LET msgs == node_info.messages[node][chain]
-            IN /\ Len(msgs) <= sizeBound   \* length of message queue <= sizeBound
-               /\ Forall(msgs, isValidMsg) \* all messages are valid
+\* node_height
+NodeHeightsOK ==
+    \A chain \in Chains :
+        \A node \in Nodes :
+            \A b \in Branches :
+                LET hgt == node_height[node][chain][b]
+                IN /\ DOMAIN node_height = Nodes
+                   /\ DOMAIN node_height[node] = Chains
+                   /\ DOMAIN node_height[node][chain] = Branches
+                   /\ hgt >= -1
+                   /\ hgt <= height[chain][b] \* node heights do not exceed system heights
+
+\* node_incoming
+NodeIncomingOK ==
+    \A chain \in Chains :
+        \A node \in Nodes :
+            LET msgs == node_incoming[node][chain]
+            IN /\ DOMAIN node_incoming = Nodes
+               /\ DOMAIN node_incoming[node] = Chains
+               /\ Len(msgs) <= sizeBound   \* length of incoming queue <= sizeBound
+               /\ Forall(msgs, isValidMsg) \* all incoming messages are valid
+
+\* node_sent
+NodeSentOK ==
+    \A chain \in Chains :
+        \A node \in Nodes :
+            LET sent == node_sent[node][chain]
+                set  == ToSet(sent)
+            IN /\ DOMAIN node_sent = Nodes
+               /\ DOMAIN node_sent[node] = Chains 
+               /\ Len(sent) <= sizeBound                  \* bounded
+               /\ set = { msg \in set : isValidMsg(msg) } \* all sent messages are valid
 
 \* check all fields of node_info
 NodeOK ==
     /\ NodeActiveOK
     /\ NodeBlocksOK
     /\ NodeBranchesOK
-    /\ NodeExpectOK
     /\ NodeHeadersOK
     /\ NodeHeightsOK
-    /\ NodeMessagesOK
+    /\ NodeIncomingOK
+    /\ NodeSentOK
 
+--------------------------------------------------------------------------------
+
+\* Type invariant
 TypeOK ==
     /\ NetworkOK
     /\ NodeOK
