@@ -40,24 +40,22 @@ divide[a, b \in Nat] ==
       _divide[a, b, 0]
 
 \* maximum element of a nonempty finite set of naturals
-RECURSIVE _max_set(_, _)
-_max_set(S, curr) ==
-    CASE S = {} -> curr
-      [] OTHER -> LET x == Pick(S) IN _max_set(S \ {x}, max[x, curr])
-
-max_set(S) ==
-    CASE S /= {} -> LET x == Pick(S) IN _max_set(S \ {x}, x)
-      [] OTHER -> -1
+max_set(set) ==
+    LET RECURSIVE _max_set(_, _)
+        _max_set(S, curr) ==
+            CASE S = {} -> curr
+              [] OTHER -> LET x == Pick(S) IN _max_set(S \ {x}, max[x, curr])
+    IN CASE set /= {} -> LET x == Pick(set) IN _max_set(set \ {x}, x)
+         [] OTHER -> -1
 
 \* minimum element of a nonempty finite set of naturals
-RECURSIVE _min_set(_, _)
-_min_set(S, curr) ==
-    CASE S = {} -> curr
-      [] OTHER -> LET x == Pick(S) IN _min_set(S \ {x}, min[x, curr])
-
-min_set(S) ==
-    CASE S /= {} -> LET x == Pick(S) IN _min_set(S \ {x}, x)
-      [] OTHER -> -1
+min_set(set) ==
+    LET RECURSIVE _min_set(_, _)
+        _min_set(S, curr) ==
+            CASE S = {} -> curr
+              [] OTHER -> LET x == Pick(S) IN _min_set(S \ {x}, min[x, curr])
+    IN CASE set /= {} -> LET x == Pick(set) IN _min_set(set\ {x}, x)
+         [] OTHER -> -1
 
 ----------------------------------------------------------------------------
 
@@ -81,13 +79,13 @@ Pairs(S1, S2) == { <<x1, x2>> : x1 \in S1, x2 \in S2 }
 NESeq(S) == Seq(S) \ {<<>>}
 
 \* remove (all occurrences of) an element from a sequence
-RECURSIVE _remove(_, _, _)
-_remove(s, e, acc) ==
-    CASE s = <<>> -> acc
-      [] e /= Head(s) -> _remove(Tail(s), e, Append(acc, Head(s)))
-      [] OTHER -> _remove(Tail(s), e, acc)
-
-Remove(s, e) == _remove(s, e, <<>>)
+Remove(seq, elem) ==
+    LET RECURSIVE _remove(_, _, _)
+        _remove(s, e, acc) ==
+            CASE s = <<>> -> acc
+              [] e /= Head(s) -> _remove(Tail(s), e, Append(acc, Head(s)))
+              [] OTHER -> _remove(Tail(s), e, acc)
+    IN _remove(seq, elem, <<>>)
 
 \* (finite) subsequence predicate
 RECURSIVE isSubSeq(_, _)
@@ -132,5 +130,7 @@ Exists(seq, test(_)) ==
     IN exists(seq, test, FALSE)
 
 Cons(elem, seq) == <<elem>> \o seq
+
+Filter(seq, pred(_)) == SelectSeq(seq, pred)
 
 =============================================================================
