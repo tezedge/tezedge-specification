@@ -1,9 +1,9 @@
 @!@!@STARTMSG 2262:0 @!@!@
 TLC2 Version 2.16 of 31 December 2020 (rev: cdddf55)
 @!@!@ENDMSG 2262 @!@!@
-@!@!@STARTMSG 2187:0 @!@!@
-Running breadth-first search Model-Checking with fp 26 and seed 1271155873281850233 with 10 workers on 12 cores with 949MB heap and 2134MB offheap memory [pid: 13346] (Linux 4.19.0-13-amd64 amd64, AdoptOpenJDK 14.0.1 x86_64, OffHeapDiskFPSet, DiskStateQueue).
-@!@!@ENDMSG 2187 @!@!@
+@!@!@STARTMSG 2271:0 @!@!@
+Running depth-first search Model-Checking with fp 121 and seed 4737419446382450507 with 1 worker on 12 cores with 949MB heap and 2134MB offheap memory [pid: 24885] (Linux 4.19.0-13-amd64 amd64, AdoptOpenJDK 14.0.1 x86_64).
+@!@!@ENDMSG 2271 @!@!@
 @!@!@STARTMSG 2220:0 @!@!@
 Starting SANY...
 @!@!@ENDMSG 2220 @!@!@
@@ -49,380 +49,539 @@ Semantic processing of module MC
 SANY finished.
 @!@!@ENDMSG 2219 @!@!@
 @!@!@STARTMSG 2185:0 @!@!@
-Starting... (2021-02-03 16:38:55)
+Starting... (2021-02-09 13:45:06)
 @!@!@ENDMSG 2185 @!@!@
-@!@!@STARTMSG 2212:0 @!@!@
-Implied-temporal checking--satisfiability problem has 6 branches.
-@!@!@ENDMSG 2212 @!@!@
-@!@!@STARTMSG 2189:0 @!@!@
-Computing initial states...
-@!@!@ENDMSG 2189 @!@!@
-@!@!@STARTMSG 2190:0 @!@!@
-Finished computing initial states: 1 distinct state generated at 2021-02-03 16:38:56.
-@!@!@ENDMSG 2190 @!@!@
 @!@!@STARTMSG 2776:0 @!@!@
-CostModel lookup failed for expression <line 98, col 5 to line 100, col 31 of module DB_Defs>. Reporting costs into <line 121, col 45 to line 121, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
+CostModel lookup failed for expression <line 101, col 5 to line 103, col 27 of module DB_Defs>. Reporting costs into <line 119, col 45 to line 119, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
 @!@!@ENDMSG 2776 @!@!@
 @!@!@STARTMSG 2776:0 @!@!@
-CostModel lookup failed for expression <line 98, col 8 to line 98, col 37 of module DB_Defs>. Reporting costs into <line 121, col 45 to line 121, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
+CostModel lookup failed for expression <line 101, col 8 to line 101, col 37 of module DB_Defs>. Reporting costs into <line 119, col 45 to line 119, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
 @!@!@ENDMSG 2776 @!@!@
 @!@!@STARTMSG 2776:0 @!@!@
-CostModel lookup failed for expression <line 98, col 8 to line 98, col 15 of module DB_Defs>. Reporting costs into <line 121, col 45 to line 121, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
+CostModel lookup failed for expression <line 101, col 8 to line 101, col 15 of module DB_Defs>. Reporting costs into <line 119, col 45 to line 119, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
 @!@!@ENDMSG 2776 @!@!@
 @!@!@STARTMSG 2776:0 @!@!@
-CostModel lookup failed for expression <line 98, col 15 to line 98, col 15 of module DB_Defs>. Reporting costs into <line 121, col 45 to line 121, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
+CostModel lookup failed for expression <line 101, col 15 to line 101, col 15 of module DB_Defs>. Reporting costs into <line 119, col 45 to line 119, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
 @!@!@ENDMSG 2776 @!@!@
 @!@!@STARTMSG 2776:0 @!@!@
-CostModel lookup failed for expression <line 98, col 19 to line 98, col 37 of module DB_Defs>. Reporting costs into <line 121, col 45 to line 121, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
+CostModel lookup failed for expression <line 101, col 19 to line 101, col 37 of module DB_Defs>. Reporting costs into <line 119, col 45 to line 119, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
 @!@!@ENDMSG 2776 @!@!@
 @!@!@STARTMSG 2776:0 @!@!@
-CostModel lookup failed for expression <line 99, col 8 to line 99, col 25 of module DB_Defs>. Reporting costs into <line 121, col 45 to line 121, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
+CostModel lookup failed for expression <line 102, col 8 to line 102, col 25 of module DB_Defs>. Reporting costs into <line 119, col 45 to line 119, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
 @!@!@ENDMSG 2776 @!@!@
 @!@!@STARTMSG 2776:0 @!@!@
-CostModel lookup failed for expression <line 99, col 17 to line 99, col 24 of module DB_Defs>. Reporting costs into <line 121, col 45 to line 121, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
+CostModel lookup failed for expression <line 102, col 17 to line 102, col 24 of module DB_Defs>. Reporting costs into <line 119, col 45 to line 119, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
 @!@!@ENDMSG 2776 @!@!@
 @!@!@STARTMSG 2776:0 @!@!@
-CostModel lookup failed for expression <line 94, col 16 to line 94, col 68 of module DB_Defs>. Reporting costs into <line 121, col 45 to line 121, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
+CostModel lookup failed for expression <line 97, col 16 to line 97, col 57 of module DB_Defs>. Reporting costs into <line 119, col 45 to line 119, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
 @!@!@ENDMSG 2776 @!@!@
 @!@!@STARTMSG 2776:0 @!@!@
-CostModel lookup failed for expression <line 94, col 16 to line 94, col 23 of module DB_Defs>. Reporting costs into <line 121, col 45 to line 121, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
+CostModel lookup failed for expression <line 97, col 16 to line 97, col 23 of module DB_Defs>. Reporting costs into <line 119, col 45 to line 119, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
 @!@!@ENDMSG 2776 @!@!@
 @!@!@STARTMSG 2776:0 @!@!@
-CostModel lookup failed for expression <line 94, col 23 to line 94, col 23 of module DB_Defs>. Reporting costs into <line 121, col 45 to line 121, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
+CostModel lookup failed for expression <line 97, col 23 to line 97, col 23 of module DB_Defs>. Reporting costs into <line 119, col 45 to line 119, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
 @!@!@ENDMSG 2776 @!@!@
 @!@!@STARTMSG 2776:0 @!@!@
-CostModel lookup failed for expression <line 99, col 17 to line 99, col 17 of module DB_Defs>. Reporting costs into <line 121, col 45 to line 121, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
+CostModel lookup failed for expression <line 102, col 17 to line 102, col 17 of module DB_Defs>. Reporting costs into <line 119, col 45 to line 119, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
 @!@!@ENDMSG 2776 @!@!@
 @!@!@STARTMSG 2776:0 @!@!@
-CostModel lookup failed for expression <line 94, col 27 to line 94, col 68 of module DB_Defs>. Reporting costs into <line 121, col 45 to line 121, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
+CostModel lookup failed for expression <line 97, col 27 to line 97, col 57 of module DB_Defs>. Reporting costs into <line 119, col 45 to line 119, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
 @!@!@ENDMSG 2776 @!@!@
 @!@!@STARTMSG 2776:0 @!@!@
-CostModel lookup failed for expression <line 100, col 8 to line 100, col 31 of module DB_Defs>. Reporting costs into <line 121, col 45 to line 121, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
+CostModel lookup failed for expression <line 103, col 8 to line 103, col 27 of module DB_Defs>. Reporting costs into <line 119, col 45 to line 119, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
 @!@!@ENDMSG 2776 @!@!@
 @!@!@STARTMSG 2776:0 @!@!@
-CostModel lookup failed for expression <line 100, col 8 to line 100, col 12 of module DB_Defs>. Reporting costs into <line 121, col 45 to line 121, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
+CostModel lookup failed for expression <line 103, col 8 to line 103, col 12 of module DB_Defs>. Reporting costs into <line 119, col 45 to line 119, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
 @!@!@ENDMSG 2776 @!@!@
 @!@!@STARTMSG 2776:0 @!@!@
-CostModel lookup failed for expression <line 100, col 8 to line 100, col 8 of module DB_Defs>. Reporting costs into <line 121, col 45 to line 121, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
+CostModel lookup failed for expression <line 103, col 8 to line 103, col 8 of module DB_Defs>. Reporting costs into <line 119, col 45 to line 119, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
 @!@!@ENDMSG 2776 @!@!@
 @!@!@STARTMSG 2776:0 @!@!@
-CostModel lookup failed for expression <line 100, col 16 to line 100, col 31 of module DB_Defs>. Reporting costs into <line 121, col 45 to line 121, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
+CostModel lookup failed for expression <line 103, col 18 to line 103, col 27 of module DB_Defs>. Reporting costs into <line 119, col 45 to line 119, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
 @!@!@ENDMSG 2776 @!@!@
 @!@!@STARTMSG 2776:0 @!@!@
-CostModel lookup failed for expression <line 100, col 16 to line 100, col 23 of module DB_Defs>. Reporting costs into <line 121, col 45 to line 121, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
+CostModel lookup failed for expression <line 82, col 15 to line 82, col 21 of module DB_Defs>. Reporting costs into <line 119, col 45 to line 119, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
 @!@!@ENDMSG 2776 @!@!@
 @!@!@STARTMSG 2776:0 @!@!@
-CostModel lookup failed for expression <line 100, col 16 to line 100, col 16 of module DB_Defs>. Reporting costs into <line 121, col 45 to line 121, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
+CostModel lookup failed for expression <line 32, col 12 to line 32, col 23 of module DB_Defs>. Reporting costs into <line 119, col 45 to line 119, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
 @!@!@ENDMSG 2776 @!@!@
 @!@!@STARTMSG 2776:0 @!@!@
-CostModel lookup failed for expression <line 155, col 5 to line 158, col 25 of module DB_Messages>. Reporting costs into <line 121, col 45 to line 121, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
+CostModel lookup failed for expression <line 32, col 15 to line 32, col 23 of module DB_Defs>. Reporting costs into <line 119, col 45 to line 119, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
 @!@!@ENDMSG 2776 @!@!@
+@!@!@STARTMSG 2208:0 @!@!@
+Finished computing initial states: 1 states generated, with 1 of them distinct.
+@!@!@ENDMSG 2208 @!@!@
+@!@!@STARTMSG 2205:0 @!@!@
+Starting level 2: 1 states generated, 1 distinct states found.
+@!@!@ENDMSG 2205 @!@!@
+@!@!@STARTMSG 2205:0 @!@!@
+Starting level 3: 5 states generated, 5 distinct states found.
+@!@!@ENDMSG 2205 @!@!@
 @!@!@STARTMSG 2776:0 @!@!@
-CostModel lookup failed for expression <line 155, col 8 to line 155, col 24 of module DB_Messages>. Reporting costs into <line 121, col 45 to line 121, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
+CostModel lookup failed for expression <line 198, col 5 to line 201, col 25 of module DB_Messages>. Reporting costs into <line 119, col 45 to line 119, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
 @!@!@ENDMSG 2776 @!@!@
 @!@!@STARTMSG 2776:0 @!@!@
-CostModel lookup failed for expression <line 155, col 21 to line 155, col 23 of module DB_Messages>. Reporting costs into <line 121, col 45 to line 121, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
+CostModel lookup failed for expression <line 198, col 8 to line 198, col 25 of module DB_Messages>. Reporting costs into <line 119, col 45 to line 119, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
 @!@!@ENDMSG 2776 @!@!@
 @!@!@STARTMSG 2776:0 @!@!@
-CostModel lookup failed for expression <line 44, col 5 to line 53, col 36 of module DB_Messages>. Reporting costs into <line 121, col 45 to line 121, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
+CostModel lookup failed for expression <line 198, col 22 to line 198, col 24 of module DB_Messages>. Reporting costs into <line 119, col 45 to line 119, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
 @!@!@ENDMSG 2776 @!@!@
 @!@!@STARTMSG 2776:0 @!@!@
-CostModel lookup failed for expression <line 44, col 8 to line 44, col 21 of module DB_Messages>. Reporting costs into <line 121, col 45 to line 121, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
+CostModel lookup failed for expression <line 49, col 5 to line 59, col 36 of module DB_Messages>. Reporting costs into <line 119, col 45 to line 119, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
 @!@!@ENDMSG 2776 @!@!@
 @!@!@STARTMSG 2776:0 @!@!@
-CostModel lookup failed for expression <line 44, col 8 to line 44, col 10 of module DB_Messages>. Reporting costs into <line 121, col 45 to line 121, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
+CostModel lookup failed for expression <line 49, col 8 to line 49, col 22 of module DB_Messages>. Reporting costs into <line 119, col 45 to line 119, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
 @!@!@ENDMSG 2776 @!@!@
 @!@!@STARTMSG 2776:0 @!@!@
-CostModel lookup failed for expression <line 44, col 16 to line 44, col 21 of module DB_Messages>. Reporting costs into <line 121, col 45 to line 121, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
+CostModel lookup failed for expression <line 49, col 8 to line 49, col 10 of module DB_Messages>. Reporting costs into <line 119, col 45 to line 119, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
 @!@!@ENDMSG 2776 @!@!@
 @!@!@STARTMSG 2776:0 @!@!@
-CostModel lookup failed for expression <line 41, col 11 to line 41, col 82 of module DB_Messages>. Reporting costs into <line 121, col 45 to line 121, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
+CostModel lookup failed for expression <line 49, col 16 to line 49, col 22 of module DB_Messages>. Reporting costs into <line 119, col 45 to line 119, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
 @!@!@ENDMSG 2776 @!@!@
 @!@!@STARTMSG 2776:0 @!@!@
-CostModel lookup failed for expression <line 41, col 13 to line 41, col 27 of module DB_Messages>. Reporting costs into <line 121, col 45 to line 121, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
+CostModel lookup failed for expression <line 43, col 12 to line 43, col 85 of module DB_Messages>. Reporting costs into <line 119, col 45 to line 119, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
 @!@!@ENDMSG 2776 @!@!@
 @!@!@STARTMSG 2776:0 @!@!@
-CostModel lookup failed for expression <line 41, col 20 to line 41, col 27 of module DB_Messages>. Reporting costs into <line 121, col 45 to line 121, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
+CostModel lookup failed for expression <line 43, col 14 to line 43, col 28 of module DB_Messages>. Reporting costs into <line 119, col 45 to line 119, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
 @!@!@ENDMSG 2776 @!@!@
 @!@!@STARTMSG 2776:0 @!@!@
-CostModel lookup failed for expression <line 20, col 13 to line 20, col 25 of module DB_Defs>. Reporting costs into <line 121, col 45 to line 121, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
+CostModel lookup failed for expression <line 43, col 21 to line 43, col 28 of module DB_Messages>. Reporting costs into <line 119, col 45 to line 119, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
 @!@!@ENDMSG 2776 @!@!@
 @!@!@STARTMSG 2776:0 @!@!@
-CostModel lookup failed for expression <line 20, col 13 to line 20, col 15 of module DB_Defs>. Reporting costs into <line 121, col 45 to line 121, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
+CostModel lookup failed for expression <line 24, col 13 to line 24, col 25 of module DB_Defs>. Reporting costs into <line 119, col 45 to line 119, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
 @!@!@ENDMSG 2776 @!@!@
 @!@!@STARTMSG 2776:0 @!@!@
-CostModel lookup failed for expression <line 20, col 18 to line 20, col 25 of module DB_Defs>. Reporting costs into <line 121, col 45 to line 121, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
+CostModel lookup failed for expression <line 24, col 13 to line 24, col 15 of module DB_Defs>. Reporting costs into <line 119, col 45 to line 119, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
 @!@!@ENDMSG 2776 @!@!@
 @!@!@STARTMSG 2776:0 @!@!@
-CostModel lookup failed for expression <line 41, col 30 to line 41, col 42 of module DB_Messages>. Reporting costs into <line 121, col 45 to line 121, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
+CostModel lookup failed for expression <line 24, col 18 to line 24, col 25 of module DB_Defs>. Reporting costs into <line 119, col 45 to line 119, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
 @!@!@ENDMSG 2776 @!@!@
 @!@!@STARTMSG 2776:0 @!@!@
-CostModel lookup failed for expression <line 41, col 35 to line 41, col 42 of module DB_Messages>. Reporting costs into <line 121, col 45 to line 121, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
+CostModel lookup failed for expression <line 43, col 31 to line 43, col 43 of module DB_Messages>. Reporting costs into <line 119, col 45 to line 119, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
 @!@!@ENDMSG 2776 @!@!@
 @!@!@STARTMSG 2776:0 @!@!@
-CostModel lookup failed for expression <line 41, col 45 to line 41, col 61 of module DB_Messages>. Reporting costs into <line 121, col 45 to line 121, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
+CostModel lookup failed for expression <line 43, col 36 to line 43, col 43 of module DB_Messages>. Reporting costs into <line 119, col 45 to line 119, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
 @!@!@ENDMSG 2776 @!@!@
 @!@!@STARTMSG 2776:0 @!@!@
-CostModel lookup failed for expression <line 41, col 52 to line 41, col 61 of module DB_Messages>. Reporting costs into <line 121, col 45 to line 121, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
+CostModel lookup failed for expression <line 43, col 46 to line 43, col 63 of module DB_Messages>. Reporting costs into <line 119, col 45 to line 119, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
 @!@!@ENDMSG 2776 @!@!@
 @!@!@STARTMSG 2776:0 @!@!@
-CostModel lookup failed for expression <line 38, col 15 to line 38, col 80 of module DB_Messages>. Reporting costs into <line 121, col 45 to line 121, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
+CostModel lookup failed for expression <line 43, col 53 to line 43, col 63 of module DB_Messages>. Reporting costs into <line 119, col 45 to line 119, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
 @!@!@ENDMSG 2776 @!@!@
 @!@!@STARTMSG 2776:0 @!@!@
-CostModel lookup failed for expression <line 41, col 64 to line 41, col 80 of module DB_Messages>. Reporting costs into <line 121, col 45 to line 121, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
+CostModel lookup failed for expression <line 40, col 16 to line 40, col 81 of module DB_Messages>. Reporting costs into <line 119, col 45 to line 119, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
 @!@!@ENDMSG 2776 @!@!@
 @!@!@STARTMSG 2776:0 @!@!@
-CostModel lookup failed for expression <line 41, col 73 to line 41, col 80 of module DB_Messages>. Reporting costs into <line 121, col 45 to line 121, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
+CostModel lookup failed for expression <line 43, col 66 to line 43, col 83 of module DB_Messages>. Reporting costs into <line 119, col 45 to line 119, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
 @!@!@ENDMSG 2776 @!@!@
 @!@!@STARTMSG 2776:0 @!@!@
-CostModel lookup failed for expression <line 29, col 5 to line 35, col 61 of module DB_Messages>. Reporting costs into <line 121, col 45 to line 121, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
+CostModel lookup failed for expression <line 43, col 75 to line 43, col 83 of module DB_Messages>. Reporting costs into <line 119, col 45 to line 119, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
 @!@!@ENDMSG 2776 @!@!@
 @!@!@STARTMSG 2776:0 @!@!@
-CostModel lookup failed for expression <line 29, col 5 to line 33, col 61 of module DB_Messages>. Reporting costs into <line 121, col 45 to line 121, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
+CostModel lookup failed for expression <line 31, col 5 to line 37, col 61 of module DB_Messages>. Reporting costs into <line 119, col 45 to line 119, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
 @!@!@ENDMSG 2776 @!@!@
 @!@!@STARTMSG 2776:0 @!@!@
-CostModel lookup failed for expression <line 29, col 5 to line 31, col 53 of module DB_Messages>. Reporting costs into <line 121, col 45 to line 121, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
+CostModel lookup failed for expression <line 31, col 5 to line 35, col 61 of module DB_Messages>. Reporting costs into <line 119, col 45 to line 119, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
 @!@!@ENDMSG 2776 @!@!@
 @!@!@STARTMSG 2776:0 @!@!@
-CostModel lookup failed for expression <line 29, col 5 to line 29, col 35 of module DB_Messages>. Reporting costs into <line 121, col 45 to line 121, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
+CostModel lookup failed for expression <line 31, col 5 to line 33, col 53 of module DB_Messages>. Reporting costs into <line 119, col 45 to line 119, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
 @!@!@ENDMSG 2776 @!@!@
 @!@!@STARTMSG 2776:0 @!@!@
-CostModel lookup failed for expression <line 29, col 7 to line 29, col 33 of module DB_Messages>. Reporting costs into <line 121, col 45 to line 121, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
+CostModel lookup failed for expression <line 31, col 5 to line 31, col 35 of module DB_Messages>. Reporting costs into <line 119, col 45 to line 119, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
 @!@!@ENDMSG 2776 @!@!@
 @!@!@STARTMSG 2776:0 @!@!@
-CostModel lookup failed for expression <line 29, col 16 to line 29, col 33 of module DB_Messages>. Reporting costs into <line 121, col 45 to line 121, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
+CostModel lookup failed for expression <line 31, col 7 to line 31, col 33 of module DB_Messages>. Reporting costs into <line 119, col 45 to line 119, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
 @!@!@ENDMSG 2776 @!@!@
 @!@!@STARTMSG 2776:0 @!@!@
-CostModel lookup failed for expression <line 29, col 16 to line 29, col 23 of module DB_Messages>. Reporting costs into <line 121, col 45 to line 121, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
+CostModel lookup failed for expression <line 31, col 16 to line 31, col 33 of module DB_Messages>. Reporting costs into <line 119, col 45 to line 119, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
 @!@!@ENDMSG 2776 @!@!@
 @!@!@STARTMSG 2776:0 @!@!@
-CostModel lookup failed for expression <line 24, col 13 to line 24, col 24 of module DB_Defs>. Reporting costs into <line 121, col 45 to line 121, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
+CostModel lookup failed for expression <line 31, col 16 to line 31, col 23 of module DB_Messages>. Reporting costs into <line 119, col 45 to line 119, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
 @!@!@ENDMSG 2776 @!@!@
 @!@!@STARTMSG 2776:0 @!@!@
-CostModel lookup failed for expression <line 24, col 16 to line 24, col 24 of module DB_Defs>. Reporting costs into <line 121, col 45 to line 121, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
+CostModel lookup failed for expression <line 28, col 13 to line 28, col 24 of module DB_Defs>. Reporting costs into <line 119, col 45 to line 119, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
 @!@!@ENDMSG 2776 @!@!@
 @!@!@STARTMSG 2776:0 @!@!@
-CostModel lookup failed for expression <line 29, col 30 to line 29, col 33 of module DB_Messages>. Reporting costs into <line 121, col 45 to line 121, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
+CostModel lookup failed for expression <line 28, col 16 to line 28, col 24 of module DB_Defs>. Reporting costs into <line 119, col 45 to line 119, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
 @!@!@ENDMSG 2776 @!@!@
 @!@!@STARTMSG 2776:0 @!@!@
-CostModel lookup failed for expression <line 29, col 31 to line 29, col 32 of module DB_Messages>. Reporting costs into <line 121, col 45 to line 121, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
+CostModel lookup failed for expression <line 31, col 30 to line 31, col 33 of module DB_Messages>. Reporting costs into <line 119, col 45 to line 119, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
 @!@!@ENDMSG 2776 @!@!@
 @!@!@STARTMSG 2776:0 @!@!@
-CostModel lookup failed for expression <line 31, col 5 to line 31, col 53 of module DB_Messages>. Reporting costs into <line 121, col 45 to line 121, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
+CostModel lookup failed for expression <line 31, col 31 to line 31, col 32 of module DB_Messages>. Reporting costs into <line 119, col 45 to line 119, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
 @!@!@ENDMSG 2776 @!@!@
 @!@!@STARTMSG 2776:0 @!@!@
-CostModel lookup failed for expression <line 31, col 7 to line 31, col 23 of module DB_Messages>. Reporting costs into <line 121, col 45 to line 121, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
+CostModel lookup failed for expression <line 33, col 5 to line 33, col 53 of module DB_Messages>. Reporting costs into <line 119, col 45 to line 119, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
 @!@!@ENDMSG 2776 @!@!@
 @!@!@STARTMSG 2776:0 @!@!@
-CostModel lookup failed for expression <line 31, col 16 to line 31, col 23 of module DB_Messages>. Reporting costs into <line 121, col 45 to line 121, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
+CostModel lookup failed for expression <line 33, col 7 to line 33, col 23 of module DB_Messages>. Reporting costs into <line 119, col 45 to line 119, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
 @!@!@ENDMSG 2776 @!@!@
 @!@!@STARTMSG 2776:0 @!@!@
-CostModel lookup failed for expression <line 31, col 26 to line 31, col 51 of module DB_Messages>. Reporting costs into <line 121, col 45 to line 121, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
+CostModel lookup failed for expression <line 33, col 16 to line 33, col 23 of module DB_Messages>. Reporting costs into <line 119, col 45 to line 119, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
 @!@!@ENDMSG 2776 @!@!@
 @!@!@STARTMSG 2776:0 @!@!@
-CostModel lookup failed for expression <line 31, col 35 to line 31, col 51 of module DB_Messages>. Reporting costs into <line 121, col 45 to line 121, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
+CostModel lookup failed for expression <line 33, col 26 to line 33, col 51 of module DB_Messages>. Reporting costs into <line 119, col 45 to line 119, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
 @!@!@ENDMSG 2776 @!@!@
 @!@!@STARTMSG 2776:0 @!@!@
-CostModel lookup failed for expression <line 31, col 35 to line 31, col 41 of module DB_Messages>. Reporting costs into <line 121, col 45 to line 121, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
+CostModel lookup failed for expression <line 33, col 35 to line 33, col 51 of module DB_Messages>. Reporting costs into <line 119, col 45 to line 119, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
 @!@!@ENDMSG 2776 @!@!@
 @!@!@STARTMSG 2776:0 @!@!@
-CostModel lookup failed for expression <line 26, col 12 to line 26, col 23 of module DB_Defs>. Reporting costs into <line 121, col 45 to line 121, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
+CostModel lookup failed for expression <line 33, col 35 to line 33, col 41 of module DB_Messages>. Reporting costs into <line 119, col 45 to line 119, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
 @!@!@ENDMSG 2776 @!@!@
 @!@!@STARTMSG 2776:0 @!@!@
-CostModel lookup failed for expression <line 26, col 15 to line 26, col 23 of module DB_Defs>. Reporting costs into <line 121, col 45 to line 121, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
+CostModel lookup failed for expression <line 30, col 12 to line 30, col 23 of module DB_Defs>. Reporting costs into <line 119, col 45 to line 119, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
 @!@!@ENDMSG 2776 @!@!@
 @!@!@STARTMSG 2776:0 @!@!@
-CostModel lookup failed for expression <line 31, col 48 to line 31, col 51 of module DB_Messages>. Reporting costs into <line 121, col 45 to line 121, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
+CostModel lookup failed for expression <line 30, col 15 to line 30, col 23 of module DB_Defs>. Reporting costs into <line 119, col 45 to line 119, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
 @!@!@ENDMSG 2776 @!@!@
 @!@!@STARTMSG 2776:0 @!@!@
-CostModel lookup failed for expression <line 31, col 49 to line 31, col 50 of module DB_Messages>. Reporting costs into <line 121, col 45 to line 121, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
+CostModel lookup failed for expression <line 33, col 48 to line 33, col 51 of module DB_Messages>. Reporting costs into <line 119, col 45 to line 119, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
 @!@!@ENDMSG 2776 @!@!@
 @!@!@STARTMSG 2776:0 @!@!@
-CostModel lookup failed for expression <line 33, col 5 to line 33, col 61 of module DB_Messages>. Reporting costs into <line 121, col 45 to line 121, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
+CostModel lookup failed for expression <line 33, col 49 to line 33, col 50 of module DB_Messages>. Reporting costs into <line 119, col 45 to line 119, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
 @!@!@ENDMSG 2776 @!@!@
 @!@!@STARTMSG 2776:0 @!@!@
-CostModel lookup failed for expression <line 33, col 7 to line 33, col 23 of module DB_Messages>. Reporting costs into <line 121, col 45 to line 121, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
+CostModel lookup failed for expression <line 35, col 5 to line 35, col 61 of module DB_Messages>. Reporting costs into <line 119, col 45 to line 119, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
 @!@!@ENDMSG 2776 @!@!@
 @!@!@STARTMSG 2776:0 @!@!@
-CostModel lookup failed for expression <line 33, col 16 to line 33, col 23 of module DB_Messages>. Reporting costs into <line 121, col 45 to line 121, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
+CostModel lookup failed for expression <line 35, col 7 to line 35, col 23 of module DB_Messages>. Reporting costs into <line 119, col 45 to line 119, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
 @!@!@ENDMSG 2776 @!@!@
 @!@!@STARTMSG 2776:0 @!@!@
-CostModel lookup failed for expression <line 33, col 26 to line 33, col 41 of module DB_Messages>. Reporting costs into <line 121, col 45 to line 121, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
+CostModel lookup failed for expression <line 35, col 16 to line 35, col 23 of module DB_Messages>. Reporting costs into <line 119, col 45 to line 119, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
 @!@!@ENDMSG 2776 @!@!@
 @!@!@STARTMSG 2776:0 @!@!@
-CostModel lookup failed for expression <line 33, col 35 to line 33, col 41 of module DB_Messages>. Reporting costs into <line 121, col 45 to line 121, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
+CostModel lookup failed for expression <line 35, col 26 to line 35, col 41 of module DB_Messages>. Reporting costs into <line 119, col 45 to line 119, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
 @!@!@ENDMSG 2776 @!@!@
 @!@!@STARTMSG 2776:0 @!@!@
-CostModel lookup failed for expression <line 33, col 53 to line 33, col 59 of module DB_Messages>. Reporting costs into <line 121, col 45 to line 121, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
+CostModel lookup failed for expression <line 35, col 35 to line 35, col 41 of module DB_Messages>. Reporting costs into <line 119, col 45 to line 119, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
 @!@!@ENDMSG 2776 @!@!@
 @!@!@STARTMSG 2776:0 @!@!@
-CostModel lookup failed for expression <line 33, col 44 to line 33, col 59 of module DB_Messages>. Reporting costs into <line 121, col 45 to line 121, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
+CostModel lookup failed for expression <line 35, col 44 to line 35, col 59 of module DB_Messages>. Reporting costs into <line 119, col 45 to line 119, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
 @!@!@ENDMSG 2776 @!@!@
 @!@!@STARTMSG 2776:0 @!@!@
-CostModel lookup failed for expression <line 75, col 12 to line 75, col 85 of module DB_Defs>. Reporting costs into <line 121, col 45 to line 121, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
+CostModel lookup failed for expression <line 35, col 53 to line 35, col 59 of module DB_Messages>. Reporting costs into <line 119, col 45 to line 119, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
 @!@!@ENDMSG 2776 @!@!@
 @!@!@STARTMSG 2776:0 @!@!@
-CostModel lookup failed for expression <line 75, col 14 to line 75, col 29 of module DB_Defs>. Reporting costs into <line 121, col 45 to line 121, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
+CostModel lookup failed for expression <line 79, col 12 to line 79, col 66 of module DB_Defs>. Reporting costs into <line 119, col 45 to line 119, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
 @!@!@ENDMSG 2776 @!@!@
 @!@!@STARTMSG 2776:0 @!@!@
-CostModel lookup failed for expression <line 75, col 23 to line 75, col 29 of module DB_Defs>. Reporting costs into <line 121, col 45 to line 121, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
+CostModel lookup failed for expression <line 79, col 14 to line 79, col 29 of module DB_Defs>. Reporting costs into <line 119, col 45 to line 119, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
 @!@!@ENDMSG 2776 @!@!@
 @!@!@STARTMSG 2776:0 @!@!@
-CostModel lookup failed for expression <line 75, col 32 to line 75, col 45 of module DB_Defs>. Reporting costs into <line 121, col 45 to line 121, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
+CostModel lookup failed for expression <line 79, col 23 to line 79, col 29 of module DB_Defs>. Reporting costs into <line 119, col 45 to line 119, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
 @!@!@ENDMSG 2776 @!@!@
 @!@!@STARTMSG 2776:0 @!@!@
-CostModel lookup failed for expression <line 75, col 40 to line 75, col 45 of module DB_Defs>. Reporting costs into <line 121, col 45 to line 121, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
+CostModel lookup failed for expression <line 79, col 32 to line 79, col 45 of module DB_Defs>. Reporting costs into <line 119, col 45 to line 119, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
 @!@!@ENDMSG 2776 @!@!@
 @!@!@STARTMSG 2776:0 @!@!@
-CostModel lookup failed for expression <line 22, col 11 to line 22, col 22 of module DB_Defs>. Reporting costs into <line 121, col 45 to line 121, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
+CostModel lookup failed for expression <line 79, col 40 to line 79, col 45 of module DB_Defs>. Reporting costs into <line 119, col 45 to line 119, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
 @!@!@ENDMSG 2776 @!@!@
 @!@!@STARTMSG 2776:0 @!@!@
-CostModel lookup failed for expression <line 22, col 14 to line 22, col 22 of module DB_Defs>. Reporting costs into <line 121, col 45 to line 121, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
+CostModel lookup failed for expression <line 26, col 11 to line 26, col 22 of module DB_Defs>. Reporting costs into <line 119, col 45 to line 119, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
 @!@!@ENDMSG 2776 @!@!@
 @!@!@STARTMSG 2776:0 @!@!@
-CostModel lookup failed for expression <line 75, col 48 to line 75, col 64 of module DB_Defs>. Reporting costs into <line 121, col 45 to line 121, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
+CostModel lookup failed for expression <line 26, col 14 to line 26, col 22 of module DB_Defs>. Reporting costs into <line 119, col 45 to line 119, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
 @!@!@ENDMSG 2776 @!@!@
 @!@!@STARTMSG 2776:0 @!@!@
-CostModel lookup failed for expression <line 75, col 57 to line 75, col 64 of module DB_Defs>. Reporting costs into <line 121, col 45 to line 121, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
+CostModel lookup failed for expression <line 79, col 48 to line 79, col 64 of module DB_Defs>. Reporting costs into <line 119, col 45 to line 119, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
 @!@!@ENDMSG 2776 @!@!@
 @!@!@STARTMSG 2776:0 @!@!@
-CostModel lookup failed for expression <line 75, col 67 to line 75, col 83 of module DB_Defs>. Reporting costs into <line 121, col 45 to line 121, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
+CostModel lookup failed for expression <line 79, col 57 to line 79, col 64 of module DB_Defs>. Reporting costs into <line 119, col 45 to line 119, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
 @!@!@ENDMSG 2776 @!@!@
 @!@!@STARTMSG 2776:0 @!@!@
-CostModel lookup failed for expression <line 75, col 77 to line 75, col 83 of module DB_Defs>. Reporting costs into <line 121, col 45 to line 121, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
+CostModel lookup failed for expression <line 37, col 5 to line 37, col 61 of module DB_Messages>. Reporting costs into <line 119, col 45 to line 119, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
 @!@!@ENDMSG 2776 @!@!@
 @!@!@STARTMSG 2776:0 @!@!@
-CostModel lookup failed for expression <line 28, col 12 to line 28, col 23 of module DB_Defs>. Reporting costs into <line 121, col 45 to line 121, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
+CostModel lookup failed for expression <line 37, col 7 to line 37, col 23 of module DB_Messages>. Reporting costs into <line 119, col 45 to line 119, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
 @!@!@ENDMSG 2776 @!@!@
 @!@!@STARTMSG 2776:0 @!@!@
-CostModel lookup failed for expression <line 28, col 15 to line 28, col 23 of module DB_Defs>. Reporting costs into <line 121, col 45 to line 121, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
+CostModel lookup failed for expression <line 37, col 16 to line 37, col 23 of module DB_Messages>. Reporting costs into <line 119, col 45 to line 119, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
 @!@!@ENDMSG 2776 @!@!@
 @!@!@STARTMSG 2776:0 @!@!@
-CostModel lookup failed for expression <line 35, col 5 to line 35, col 61 of module DB_Messages>. Reporting costs into <line 121, col 45 to line 121, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
+CostModel lookup failed for expression <line 37, col 26 to line 37, col 41 of module DB_Messages>. Reporting costs into <line 119, col 45 to line 119, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
 @!@!@ENDMSG 2776 @!@!@
 @!@!@STARTMSG 2776:0 @!@!@
-CostModel lookup failed for expression <line 35, col 7 to line 35, col 23 of module DB_Messages>. Reporting costs into <line 121, col 45 to line 121, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
+CostModel lookup failed for expression <line 37, col 35 to line 37, col 41 of module DB_Messages>. Reporting costs into <line 119, col 45 to line 119, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
 @!@!@ENDMSG 2776 @!@!@
 @!@!@STARTMSG 2776:0 @!@!@
-CostModel lookup failed for expression <line 35, col 16 to line 35, col 23 of module DB_Messages>. Reporting costs into <line 121, col 45 to line 121, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
+CostModel lookup failed for expression <line 37, col 44 to line 37, col 59 of module DB_Messages>. Reporting costs into <line 119, col 45 to line 119, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
 @!@!@ENDMSG 2776 @!@!@
 @!@!@STARTMSG 2776:0 @!@!@
-CostModel lookup failed for expression <line 35, col 26 to line 35, col 41 of module DB_Messages>. Reporting costs into <line 121, col 45 to line 121, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
+CostModel lookup failed for expression <line 37, col 50 to line 37, col 59 of module DB_Messages>. Reporting costs into <line 119, col 45 to line 119, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
 @!@!@ENDMSG 2776 @!@!@
 @!@!@STARTMSG 2776:0 @!@!@
-CostModel lookup failed for expression <line 35, col 35 to line 35, col 41 of module DB_Messages>. Reporting costs into <line 121, col 45 to line 121, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
+CostModel lookup failed for expression <line 82, col 15 to line 82, col 21 of module DB_Defs>. Reporting costs into <line 119, col 45 to line 119, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
 @!@!@ENDMSG 2776 @!@!@
 @!@!@STARTMSG 2776:0 @!@!@
-CostModel lookup failed for expression <line 35, col 44 to line 35, col 59 of module DB_Messages>. Reporting costs into <line 121, col 45 to line 121, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
+CostModel lookup failed for expression <line 32, col 12 to line 32, col 23 of module DB_Defs>. Reporting costs into <line 119, col 45 to line 119, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
 @!@!@ENDMSG 2776 @!@!@
 @!@!@STARTMSG 2776:0 @!@!@
-CostModel lookup failed for expression <line 35, col 50 to line 35, col 59 of module DB_Messages>. Reporting costs into <line 121, col 45 to line 121, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
+CostModel lookup failed for expression <line 32, col 15 to line 32, col 23 of module DB_Defs>. Reporting costs into <line 119, col 45 to line 119, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
 @!@!@ENDMSG 2776 @!@!@
 @!@!@STARTMSG 2776:0 @!@!@
-CostModel lookup failed for expression <line 78, col 15 to line 78, col 101 of module DB_Defs>. Reporting costs into <line 121, col 45 to line 121, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
+CostModel lookup failed for expression <line 50, col 8 to line 50, col 25 of module DB_Messages>. Reporting costs into <line 119, col 45 to line 119, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
 @!@!@ENDMSG 2776 @!@!@
 @!@!@STARTMSG 2776:0 @!@!@
-CostModel lookup failed for expression <line 78, col 21 to line 78, col 101 of module DB_Defs>. Reporting costs into <line 121, col 45 to line 121, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
+CostModel lookup failed for expression <line 50, col 8 to line 50, col 15 of module DB_Messages>. Reporting costs into <line 119, col 45 to line 119, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
 @!@!@ENDMSG 2776 @!@!@
 @!@!@STARTMSG 2776:0 @!@!@
-CostModel lookup failed for expression <line 78, col 72 to line 78, col 78 of module DB_Defs>. Reporting costs into <line 121, col 45 to line 121, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
+CostModel lookup failed for expression <line 50, col 8 to line 50, col 10 of module DB_Messages>. Reporting costs into <line 119, col 45 to line 119, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
 @!@!@ENDMSG 2776 @!@!@
 @!@!@STARTMSG 2776:0 @!@!@
-CostModel lookup failed for expression <line 78, col 93 to line 78, col 99 of module DB_Defs>. Reporting costs into <line 121, col 45 to line 121, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
+CostModel lookup failed for expression <line 50, col 20 to line 50, col 25 of module DB_Messages>. Reporting costs into <line 119, col 45 to line 119, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
 @!@!@ENDMSG 2776 @!@!@
 @!@!@STARTMSG 2776:0 @!@!@
-CostModel lookup failed for expression <line 78, col 23 to line 78, col 62 of module DB_Defs>. Reporting costs into <line 121, col 45 to line 121, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
+CostModel lookup failed for expression <line 50, col 20 to line 50, col 22 of module DB_Messages>. Reporting costs into <line 119, col 45 to line 119, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
 @!@!@ENDMSG 2776 @!@!@
 @!@!@STARTMSG 2776:0 @!@!@
-CostModel lookup failed for expression <line 78, col 25 to line 78, col 34 of module DB_Defs>. Reporting costs into <line 121, col 45 to line 121, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
+CostModel lookup failed for expression <line 51, col 8 to line 59, col 36 of module DB_Messages>. Reporting costs into <line 119, col 45 to line 119, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
 @!@!@ENDMSG 2776 @!@!@
 @!@!@STARTMSG 2776:0 @!@!@
-CostModel lookup failed for expression <line 78, col 28 to line 78, col 34 of module DB_Defs>. Reporting costs into <line 121, col 45 to line 121, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
+CostModel lookup failed for expression <line 51, col 11 to line 52, col 40 of module DB_Messages>. Reporting costs into <line 119, col 45 to line 119, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
 @!@!@ENDMSG 2776 @!@!@
 @!@!@STARTMSG 2776:0 @!@!@
-CostModel lookup failed for expression <line 78, col 39 to line 78, col 60 of module DB_Defs>. Reporting costs into <line 121, col 45 to line 121, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
+CostModel lookup failed for expression <line 51, col 14 to line 51, col 45 of module DB_Messages>. Reporting costs into <line 119, col 45 to line 119, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
 @!@!@ENDMSG 2776 @!@!@
 @!@!@STARTMSG 2776:0 @!@!@
-CostModel lookup failed for expression <line 78, col 45 to line 78, col 47 of module DB_Defs>. Reporting costs into <line 121, col 45 to line 121, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
+CostModel lookup failed for expression <line 51, col 14 to line 51, col 30 of module DB_Messages>. Reporting costs into <line 119, col 45 to line 119, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
 @!@!@ENDMSG 2776 @!@!@
 @!@!@STARTMSG 2776:0 @!@!@
-CostModel lookup failed for expression <line 78, col 50 to line 78, col 59 of module DB_Defs>. Reporting costs into <line 121, col 45 to line 121, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
+CostModel lookup failed for expression <line 51, col 21 to line 51, col 30 of module DB_Messages>. Reporting costs into <line 119, col 45 to line 119, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
 @!@!@ENDMSG 2776 @!@!@
 @!@!@STARTMSG 2776:0 @!@!@
-CostModel lookup failed for expression <line 78, col 18 to line 78, col 54 of module Utils>. Reporting costs into <line 121, col 45 to line 121, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
+CostModel lookup failed for expression <line 51, col 21 to line 51, col 23 of module DB_Messages>. Reporting costs into <line 119, col 45 to line 119, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
 @!@!@ENDMSG 2776 @!@!@
 @!@!@STARTMSG 2776:0 @!@!@
-CostModel lookup failed for expression <line 78, col 40 to line 78, col 41 of module Utils>. Reporting costs into <line 121, col 45 to line 121, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
+CostModel lookup failed for expression <line 51, col 34 to line 51, col 45 of module DB_Messages>. Reporting costs into <line 119, col 45 to line 119, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
 @!@!@ENDMSG 2776 @!@!@
 @!@!@STARTMSG 2776:0 @!@!@
-CostModel lookup failed for expression <line 78, col 46 to line 78, col 46 of module DB_Defs>. Reporting costs into <line 121, col 45 to line 121, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
+CostModel lookup failed for expression <line 52, col 14 to line 52, col 40 of module DB_Messages>. Reporting costs into <line 119, col 45 to line 119, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
 @!@!@ENDMSG 2776 @!@!@
 @!@!@STARTMSG 2776:0 @!@!@
-CostModel lookup failed for expression <line 78, col 51 to line 78, col 52 of module Utils>. Reporting costs into <line 121, col 45 to line 121, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
+CostModel lookup failed for expression <line 52, col 14 to line 52, col 21 of module DB_Messages>. Reporting costs into <line 119, col 45 to line 119, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
 @!@!@ENDMSG 2776 @!@!@
 @!@!@STARTMSG 2776:0 @!@!@
-CostModel lookup failed for expression <line 78, col 53 to line 78, col 59 of module DB_Defs>. Reporting costs into <line 121, col 45 to line 121, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
+CostModel lookup failed for expression <line 52, col 14 to line 52, col 16 of module DB_Messages>. Reporting costs into <line 119, col 45 to line 119, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
 @!@!@ENDMSG 2776 @!@!@
+@!@!@STARTMSG 2205:0 @!@!@
+Starting level 4: 38 states generated, 33 distinct states found.
+@!@!@ENDMSG 2205 @!@!@
+@!@!@STARTMSG 2205:0 @!@!@
+Starting level 5: 300 states generated, 200 distinct states found.
+@!@!@ENDMSG 2205 @!@!@
 @!@!@STARTMSG 2776:0 @!@!@
-CostModel lookup failed for expression <line 78, col 20 to line 78, col 29 of module Utils>. Reporting costs into <line 121, col 45 to line 121, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
+CostModel lookup failed for expression <line 53, col 11 to line 54, col 38 of module DB_Messages>. Reporting costs into <line 119, col 45 to line 119, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
 @!@!@ENDMSG 2776 @!@!@
 @!@!@STARTMSG 2776:0 @!@!@
-CostModel lookup failed for expression <line 78, col 22 to line 78, col 23 of module Utils>. Reporting costs into <line 121, col 45 to line 121, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
+CostModel lookup failed for expression <line 53, col 14 to line 53, col 55 of module DB_Messages>. Reporting costs into <line 119, col 45 to line 119, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
 @!@!@ENDMSG 2776 @!@!@
 @!@!@STARTMSG 2776:0 @!@!@
-CostModel lookup failed for expression <line 78, col 26 to line 78, col 27 of module Utils>. Reporting costs into <line 121, col 45 to line 121, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
+CostModel lookup failed for expression <line 53, col 14 to line 53, col 30 of module DB_Messages>. Reporting costs into <line 119, col 45 to line 119, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
 @!@!@ENDMSG 2776 @!@!@
 @!@!@STARTMSG 2776:0 @!@!@
-CostModel lookup failed for expression <line 45, col 8 to line 45, col 25 of module DB_Messages>. Reporting costs into <line 121, col 45 to line 121, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
+CostModel lookup failed for expression <line 53, col 21 to line 53, col 30 of module DB_Messages>. Reporting costs into <line 119, col 45 to line 119, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
 @!@!@ENDMSG 2776 @!@!@
 @!@!@STARTMSG 2776:0 @!@!@
-CostModel lookup failed for expression <line 45, col 8 to line 45, col 10 of module DB_Messages>. Reporting costs into <line 121, col 45 to line 121, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
+CostModel lookup failed for expression <line 53, col 21 to line 53, col 23 of module DB_Messages>. Reporting costs into <line 119, col 45 to line 119, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
 @!@!@ENDMSG 2776 @!@!@
 @!@!@STARTMSG 2776:0 @!@!@
-CostModel lookup failed for expression <line 45, col 20 to line 45, col 25 of module DB_Messages>. Reporting costs into <line 121, col 45 to line 121, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
+CostModel lookup failed for expression <line 53, col 34 to line 53, col 55 of module DB_Messages>. Reporting costs into <line 119, col 45 to line 119, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
 @!@!@ENDMSG 2776 @!@!@
 @!@!@STARTMSG 2776:0 @!@!@
-CostModel lookup failed for expression <line 45, col 20 to line 45, col 22 of module DB_Messages>. Reporting costs into <line 121, col 45 to line 121, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
+CostModel lookup failed for expression <line 54, col 14 to line 54, col 38 of module DB_Messages>. Reporting costs into <line 119, col 45 to line 119, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
 @!@!@ENDMSG 2776 @!@!@
 @!@!@STARTMSG 2776:0 @!@!@
-CostModel lookup failed for expression <line 45, col 8 to line 45, col 15 of module DB_Messages>. Reporting costs into <line 121, col 45 to line 121, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
+CostModel lookup failed for expression <line 54, col 14 to line 54, col 21 of module DB_Messages>. Reporting costs into <line 119, col 45 to line 119, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
 @!@!@ENDMSG 2776 @!@!@
 @!@!@STARTMSG 2776:0 @!@!@
-CostModel lookup failed for expression <line 46, col 8 to line 53, col 36 of module DB_Messages>. Reporting costs into <line 121, col 45 to line 121, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
+CostModel lookup failed for expression <line 54, col 14 to line 54, col 16 of module DB_Messages>. Reporting costs into <line 119, col 45 to line 119, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
 @!@!@ENDMSG 2776 @!@!@
+@!@!@STARTMSG 2205:0 @!@!@
+Starting level 6: 2293 states generated, 1309 distinct states found.
+@!@!@ENDMSG 2205 @!@!@
 @!@!@STARTMSG 2776:0 @!@!@
-CostModel lookup failed for expression <line 46, col 11 to line 47, col 40 of module DB_Messages>. Reporting costs into <line 121, col 45 to line 121, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
+CostModel lookup failed for expression <line 199, col 8 to line 199, col 25 of module DB_Messages>. Reporting costs into <line 119, col 45 to line 119, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
 @!@!@ENDMSG 2776 @!@!@
 @!@!@STARTMSG 2776:0 @!@!@
-CostModel lookup failed for expression <line 46, col 14 to line 46, col 45 of module DB_Messages>. Reporting costs into <line 121, col 45 to line 121, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
+CostModel lookup failed for expression <line 199, col 22 to line 199, col 24 of module DB_Messages>. Reporting costs into <line 119, col 45 to line 119, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
 @!@!@ENDMSG 2776 @!@!@
 @!@!@STARTMSG 2776:0 @!@!@
-CostModel lookup failed for expression <line 46, col 14 to line 46, col 30 of module DB_Messages>. Reporting costs into <line 121, col 45 to line 121, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
+CostModel lookup failed for expression <line 82, col 5 to line 90, col 43 of module DB_Messages>. Reporting costs into <line 119, col 45 to line 119, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
 @!@!@ENDMSG 2776 @!@!@
 @!@!@STARTMSG 2776:0 @!@!@
-CostModel lookup failed for expression <line 46, col 21 to line 46, col 30 of module DB_Messages>. Reporting costs into <line 121, col 45 to line 121, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
+CostModel lookup failed for expression <line 82, col 8 to line 82, col 22 of module DB_Messages>. Reporting costs into <line 119, col 45 to line 119, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
 @!@!@ENDMSG 2776 @!@!@
 @!@!@STARTMSG 2776:0 @!@!@
-CostModel lookup failed for expression <line 46, col 21 to line 46, col 23 of module DB_Messages>. Reporting costs into <line 121, col 45 to line 121, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
+CostModel lookup failed for expression <line 82, col 8 to line 82, col 10 of module DB_Messages>. Reporting costs into <line 119, col 45 to line 119, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
 @!@!@ENDMSG 2776 @!@!@
 @!@!@STARTMSG 2776:0 @!@!@
-CostModel lookup failed for expression <line 46, col 34 to line 46, col 45 of module DB_Messages>. Reporting costs into <line 121, col 45 to line 121, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
+CostModel lookup failed for expression <line 82, col 16 to line 82, col 22 of module DB_Messages>. Reporting costs into <line 119, col 45 to line 119, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
 @!@!@ENDMSG 2776 @!@!@
 @!@!@STARTMSG 2776:0 @!@!@
-CostModel lookup failed for expression <line 47, col 14 to line 47, col 40 of module DB_Messages>. Reporting costs into <line 121, col 45 to line 121, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
+CostModel lookup failed for expression <line 76, col 12 to line 76, col 82 of module DB_Messages>. Reporting costs into <line 119, col 45 to line 119, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
 @!@!@ENDMSG 2776 @!@!@
 @!@!@STARTMSG 2776:0 @!@!@
-CostModel lookup failed for expression <line 47, col 14 to line 47, col 21 of module DB_Messages>. Reporting costs into <line 121, col 45 to line 121, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
+CostModel lookup failed for expression <line 76, col 14 to line 76, col 25 of module DB_Messages>. Reporting costs into <line 119, col 45 to line 119, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
 @!@!@ENDMSG 2776 @!@!@
 @!@!@STARTMSG 2776:0 @!@!@
-CostModel lookup failed for expression <line 47, col 14 to line 47, col 16 of module DB_Messages>. Reporting costs into <line 121, col 45 to line 121, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
+CostModel lookup failed for expression <line 76, col 21 to line 76, col 25 of module DB_Messages>. Reporting costs into <line 119, col 45 to line 119, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
 @!@!@ENDMSG 2776 @!@!@
-@!@!@STARTMSG 2192:0 @!@!@
-Checking 6 branches of temporal properties for the current state space with 8976 total distinct states at (2021-02-03 16:38:59)
-@!@!@ENDMSG 2192 @!@!@
-@!@!@STARTMSG 2267:0 @!@!@
-Finished checking temporal properties in 04s at 2021-02-03 16:39:04
-@!@!@ENDMSG 2267 @!@!@
-@!@!@STARTMSG 2200:0 @!@!@
-Progress(7) at 2021-02-03 16:39:04: 2,708 states generated (2,708 s/min), 1,496 distinct states found (1,496 ds/min), 1,261 states left on queue.
-@!@!@ENDMSG 2200 @!@!@
+@!@!@STARTMSG 2776:0 @!@!@
+CostModel lookup failed for expression <line 20, col 10 to line 20, col 20 of module DB_Defs>. Reporting costs into <line 119, col 45 to line 119, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
+@!@!@ENDMSG 2776 @!@!@
+@!@!@STARTMSG 2776:0 @!@!@
+CostModel lookup failed for expression <line 20, col 13 to line 20, col 20 of module DB_Defs>. Reporting costs into <line 119, col 45 to line 119, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
+@!@!@ENDMSG 2776 @!@!@
+@!@!@STARTMSG 2776:0 @!@!@
+CostModel lookup failed for expression <line 76, col 28 to line 76, col 40 of module DB_Messages>. Reporting costs into <line 119, col 45 to line 119, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
+@!@!@ENDMSG 2776 @!@!@
+@!@!@STARTMSG 2776:0 @!@!@
+CostModel lookup failed for expression <line 76, col 33 to line 76, col 40 of module DB_Messages>. Reporting costs into <line 119, col 45 to line 119, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
+@!@!@ENDMSG 2776 @!@!@
+@!@!@STARTMSG 2776:0 @!@!@
+CostModel lookup failed for expression <line 76, col 43 to line 76, col 60 of module DB_Messages>. Reporting costs into <line 119, col 45 to line 119, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
+@!@!@ENDMSG 2776 @!@!@
+@!@!@STARTMSG 2776:0 @!@!@
+CostModel lookup failed for expression <line 76, col 50 to line 76, col 60 of module DB_Messages>. Reporting costs into <line 119, col 45 to line 119, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
+@!@!@ENDMSG 2776 @!@!@
+@!@!@STARTMSG 2776:0 @!@!@
+CostModel lookup failed for expression <line 73, col 16 to line 73, col 97 of module DB_Messages>. Reporting costs into <line 119, col 45 to line 119, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
+@!@!@ENDMSG 2776 @!@!@
+@!@!@STARTMSG 2776:0 @!@!@
+CostModel lookup failed for expression <line 76, col 63 to line 76, col 80 of module DB_Messages>. Reporting costs into <line 119, col 45 to line 119, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
+@!@!@ENDMSG 2776 @!@!@
+@!@!@STARTMSG 2776:0 @!@!@
+CostModel lookup failed for expression <line 76, col 72 to line 76, col 80 of module DB_Messages>. Reporting costs into <line 119, col 45 to line 119, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
+@!@!@ENDMSG 2776 @!@!@
+@!@!@STARTMSG 2776:0 @!@!@
+CostModel lookup failed for expression <line 66, col 5 to line 70, col 43 of module DB_Messages>. Reporting costs into <line 119, col 45 to line 119, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
+@!@!@ENDMSG 2776 @!@!@
+@!@!@STARTMSG 2776:0 @!@!@
+CostModel lookup failed for expression <line 66, col 5 to line 68, col 25 of module DB_Messages>. Reporting costs into <line 119, col 45 to line 119, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
+@!@!@ENDMSG 2776 @!@!@
+@!@!@STARTMSG 2776:0 @!@!@
+CostModel lookup failed for expression <line 66, col 5 to line 66, col 22 of module DB_Messages>. Reporting costs into <line 119, col 45 to line 119, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
+@!@!@ENDMSG 2776 @!@!@
+@!@!@STARTMSG 2776:0 @!@!@
+CostModel lookup failed for expression <line 66, col 7 to line 66, col 20 of module DB_Messages>. Reporting costs into <line 119, col 45 to line 119, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
+@!@!@ENDMSG 2776 @!@!@
+@!@!@STARTMSG 2776:0 @!@!@
+CostModel lookup failed for expression <line 66, col 15 to line 66, col 20 of module DB_Messages>. Reporting costs into <line 119, col 45 to line 119, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
+@!@!@ENDMSG 2776 @!@!@
+@!@!@STARTMSG 2776:0 @!@!@
+CostModel lookup failed for expression <line 68, col 5 to line 68, col 25 of module DB_Messages>. Reporting costs into <line 119, col 45 to line 119, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
+@!@!@ENDMSG 2776 @!@!@
+@!@!@STARTMSG 2776:0 @!@!@
+CostModel lookup failed for expression <line 68, col 7 to line 68, col 23 of module DB_Messages>. Reporting costs into <line 119, col 45 to line 119, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
+@!@!@ENDMSG 2776 @!@!@
+@!@!@STARTMSG 2776:0 @!@!@
+CostModel lookup failed for expression <line 68, col 16 to line 68, col 23 of module DB_Messages>. Reporting costs into <line 119, col 45 to line 119, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
+@!@!@ENDMSG 2776 @!@!@
+@!@!@STARTMSG 2776:0 @!@!@
+CostModel lookup failed for expression <line 70, col 5 to line 70, col 43 of module DB_Messages>. Reporting costs into <line 119, col 45 to line 119, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
+@!@!@ENDMSG 2776 @!@!@
+@!@!@STARTMSG 2776:0 @!@!@
+CostModel lookup failed for expression <line 70, col 7 to line 70, col 23 of module DB_Messages>. Reporting costs into <line 119, col 45 to line 119, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
+@!@!@ENDMSG 2776 @!@!@
+@!@!@STARTMSG 2776:0 @!@!@
+CostModel lookup failed for expression <line 70, col 16 to line 70, col 23 of module DB_Messages>. Reporting costs into <line 119, col 45 to line 119, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
+@!@!@ENDMSG 2776 @!@!@
+@!@!@STARTMSG 2776:0 @!@!@
+CostModel lookup failed for expression <line 70, col 26 to line 70, col 41 of module DB_Messages>. Reporting costs into <line 119, col 45 to line 119, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
+@!@!@ENDMSG 2776 @!@!@
+@!@!@STARTMSG 2776:0 @!@!@
+CostModel lookup failed for expression <line 70, col 35 to line 70, col 41 of module DB_Messages>. Reporting costs into <line 119, col 45 to line 119, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
+@!@!@ENDMSG 2776 @!@!@
+@!@!@STARTMSG 2776:0 @!@!@
+CostModel lookup failed for expression <line 83, col 8 to line 83, col 25 of module DB_Messages>. Reporting costs into <line 119, col 45 to line 119, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
+@!@!@ENDMSG 2776 @!@!@
+@!@!@STARTMSG 2776:0 @!@!@
+CostModel lookup failed for expression <line 83, col 8 to line 83, col 15 of module DB_Messages>. Reporting costs into <line 119, col 45 to line 119, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
+@!@!@ENDMSG 2776 @!@!@
+@!@!@STARTMSG 2776:0 @!@!@
+CostModel lookup failed for expression <line 83, col 8 to line 83, col 10 of module DB_Messages>. Reporting costs into <line 119, col 45 to line 119, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
+@!@!@ENDMSG 2776 @!@!@
+@!@!@STARTMSG 2776:0 @!@!@
+CostModel lookup failed for expression <line 83, col 20 to line 83, col 25 of module DB_Messages>. Reporting costs into <line 119, col 45 to line 119, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
+@!@!@ENDMSG 2776 @!@!@
+@!@!@STARTMSG 2776:0 @!@!@
+CostModel lookup failed for expression <line 83, col 20 to line 83, col 22 of module DB_Messages>. Reporting costs into <line 119, col 45 to line 119, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
+@!@!@ENDMSG 2776 @!@!@
+@!@!@STARTMSG 2776:0 @!@!@
+CostModel lookup failed for expression <line 84, col 8 to line 90, col 43 of module DB_Messages>. Reporting costs into <line 119, col 45 to line 119, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
+@!@!@ENDMSG 2776 @!@!@
+@!@!@STARTMSG 2776:0 @!@!@
+CostModel lookup failed for expression <line 84, col 11 to line 85, col 44 of module DB_Messages>. Reporting costs into <line 119, col 45 to line 119, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
+@!@!@ENDMSG 2776 @!@!@
+@!@!@STARTMSG 2776:0 @!@!@
+CostModel lookup failed for expression <line 84, col 14 to line 84, col 44 of module DB_Messages>. Reporting costs into <line 119, col 45 to line 119, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
+@!@!@ENDMSG 2776 @!@!@
+@!@!@STARTMSG 2776:0 @!@!@
+CostModel lookup failed for expression <line 84, col 14 to line 84, col 30 of module DB_Messages>. Reporting costs into <line 119, col 45 to line 119, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
+@!@!@ENDMSG 2776 @!@!@
+@!@!@STARTMSG 2776:0 @!@!@
+CostModel lookup failed for expression <line 84, col 21 to line 84, col 30 of module DB_Messages>. Reporting costs into <line 119, col 45 to line 119, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
+@!@!@ENDMSG 2776 @!@!@
+@!@!@STARTMSG 2776:0 @!@!@
+CostModel lookup failed for expression <line 84, col 21 to line 84, col 23 of module DB_Messages>. Reporting costs into <line 119, col 45 to line 119, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
+@!@!@ENDMSG 2776 @!@!@
+@!@!@STARTMSG 2776:0 @!@!@
+CostModel lookup failed for expression <line 84, col 34 to line 84, col 44 of module DB_Messages>. Reporting costs into <line 119, col 45 to line 119, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
+@!@!@ENDMSG 2776 @!@!@
+@!@!@STARTMSG 2776:0 @!@!@
+CostModel lookup failed for expression <line 85, col 14 to line 85, col 44 of module DB_Messages>. Reporting costs into <line 119, col 45 to line 119, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
+@!@!@ENDMSG 2776 @!@!@
+@!@!@STARTMSG 2776:0 @!@!@
+CostModel lookup failed for expression <line 85, col 14 to line 85, col 21 of module DB_Messages>. Reporting costs into <line 119, col 45 to line 119, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
+@!@!@ENDMSG 2776 @!@!@
+@!@!@STARTMSG 2776:0 @!@!@
+CostModel lookup failed for expression <line 85, col 14 to line 85, col 16 of module DB_Messages>. Reporting costs into <line 119, col 45 to line 119, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
+@!@!@ENDMSG 2776 @!@!@
+@!@!@STARTMSG 2205:0 @!@!@
+Starting level 7: 16902 states generated, 8678 distinct states found.
+@!@!@ENDMSG 2205 @!@!@
+@!@!@STARTMSG 2206:0 @!@!@
+Progress(-1) at 2021-02-09 13:45:12: 39786 states generated, 21036 distinct states found, -1 states left on queue.
+@!@!@ENDMSG 2206 @!@!@
+@!@!@STARTMSG 2776:0 @!@!@
+CostModel lookup failed for expression <line 86, col 11 to line 87, col 42 of module DB_Messages>. Reporting costs into <line 119, col 45 to line 119, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
+@!@!@ENDMSG 2776 @!@!@
+@!@!@STARTMSG 2776:0 @!@!@
+CostModel lookup failed for expression <line 86, col 14 to line 86, col 45 of module DB_Messages>. Reporting costs into <line 119, col 45 to line 119, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
+@!@!@ENDMSG 2776 @!@!@
+@!@!@STARTMSG 2776:0 @!@!@
+CostModel lookup failed for expression <line 86, col 14 to line 86, col 30 of module DB_Messages>. Reporting costs into <line 119, col 45 to line 119, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
+@!@!@ENDMSG 2776 @!@!@
+@!@!@STARTMSG 2776:0 @!@!@
+CostModel lookup failed for expression <line 86, col 21 to line 86, col 30 of module DB_Messages>. Reporting costs into <line 119, col 45 to line 119, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
+@!@!@ENDMSG 2776 @!@!@
+@!@!@STARTMSG 2776:0 @!@!@
+CostModel lookup failed for expression <line 86, col 21 to line 86, col 23 of module DB_Messages>. Reporting costs into <line 119, col 45 to line 119, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
+@!@!@ENDMSG 2776 @!@!@
+@!@!@STARTMSG 2776:0 @!@!@
+CostModel lookup failed for expression <line 86, col 34 to line 86, col 45 of module DB_Messages>. Reporting costs into <line 119, col 45 to line 119, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
+@!@!@ENDMSG 2776 @!@!@
+@!@!@STARTMSG 2776:0 @!@!@
+CostModel lookup failed for expression <line 87, col 14 to line 87, col 42 of module DB_Messages>. Reporting costs into <line 119, col 45 to line 119, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
+@!@!@ENDMSG 2776 @!@!@
+@!@!@STARTMSG 2776:0 @!@!@
+CostModel lookup failed for expression <line 87, col 14 to line 87, col 21 of module DB_Messages>. Reporting costs into <line 119, col 45 to line 119, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
+@!@!@ENDMSG 2776 @!@!@
+@!@!@STARTMSG 2776:0 @!@!@
+CostModel lookup failed for expression <line 87, col 14 to line 87, col 16 of module DB_Messages>. Reporting costs into <line 119, col 45 to line 119, col 54 of module Utils> instead (Safety and Liveness checking is unaffected. Please report a bug.)
+@!@!@ENDMSG 2776 @!@!@
+@!@!@STARTMSG 2205:0 @!@!@
+Starting level 8: 123116 states generated, 58697 distinct states found.
+@!@!@ENDMSG 2205 @!@!@
+@!@!@STARTMSG 2206:0 @!@!@
+Progress(-1) at 2021-02-09 13:45:25: 147950 states generated, 69908 distinct states found, -1 states left on queue.
+@!@!@ENDMSG 2206 @!@!@
+@!@!@STARTMSG 2206:0 @!@!@
+Progress(-1) at 2021-02-09 13:46:25: 671975 states generated, 293764 distinct states found, -1 states left on queue.
+@!@!@ENDMSG 2206 @!@!@
+@!@!@STARTMSG 2205:0 @!@!@
+Starting level 9: 893403 states generated, 398169 distinct states found.
+@!@!@ENDMSG 2205 @!@!@
+@!@!@STARTMSG 2206:0 @!@!@
+Progress(-1) at 2021-02-09 13:46:55: 916542 states generated, 410161 distinct states found, -1 states left on queue.
+@!@!@ENDMSG 2206 @!@!@

@@ -2,11 +2,14 @@
 
 CONSTANTS numChains, numNodes, sizeBound
 
-VARIABLES network_info, node_info
+VARIABLES node_active, node_blocks, node_branches, node_headers, node_height, node_incoming, node_sent,
+          active, blocks, branch, chains, mailbox, height, sysmsgs
 
 LOCAL INSTANCE DB_Defs
 LOCAL INSTANCE DB_Messages
 LOCAL INSTANCE Utils
+
+----------------------------------------------------------------------------
 
 (*******************************)
 (* Activate/Deactivate actions *)
@@ -15,24 +18,27 @@ LOCAL INSTANCE Utils
 \* [node] becomes active on [chain]
 \* [node] immediately receives current system branch on [chain]
 Activate(node, chain) ==
-    LET msg == Msg(sys, node, "Current_branch", [ branch |-> network_info.branch[chain] ])
-    IN /\ network_info' = [ network_info EXCEPT
-            !.active[chain] = @ \cup {node}, \* [node] becomes active on [chain]
-            !.sent[chain][node] = {msg} ]    \* current branch is sent to [node] 
-       /\ node_info' = [ node_info EXCEPT !.active[node] = @ \cup {chain} ]
+    LET welcome_msg == Msg(sys, node, "Current_branch", [ branch |-> branch[chain] ])
+    IN /\ active' = [ active EXCEPT ![chain] = @ \cup {node} ]
+       /\ Send(sys, chain, welcome_msg)
+       /\ node_active' = [ node_active EXCEPT ![node] = @ \cup {chain} ]
+       /\ UNCHANGED <<blocks, branch, chains, height, sysmsgs>>
+       /\ UNCHANGED <<node_blocks, node_branches, node_headers,
+                      node_height, node_incoming, node_sent>>
 
 \* An inactive node on some chain becomes active
 Activation ==
     \E chain \in activeChains :
-        \E node \in Nodes \ activeNodes[chain] : Activate(node, chain)
+        \E node \in inactiveNodes[chain] : Activate(node, chain)
 
 \* [node] becomes inactive on [chain]
 \* [node] immediately drops all [chain] messages
 Deactivate(node, chain) ==
-    /\ network_info' = [ network_info EXCEPT !.active[chain] = @ \ {node} ]
-    /\ node_info' = [ node_info EXCEPT
-         !.active[node] = @ \ {chain},    \* [node] becomes inactive on [chain]
-         !.messages[node][chain] = <<>> ] \* [node] drops all [chain] messages
+    /\ active' = [ active EXCEPT ![chain] = @ \ {node} ]
+    /\ node_active' = [ node_active EXCEPT ![node] = @ \ {chain} ]
+    /\ UNCHANGED <<blocks, branch, chains, mailbox, height, sysmsgs>>
+    /\ UNCHANGED <<node_blocks, node_branches, node_headers,
+                   node_height, node_incoming, node_sent>>
 
 \* An active node on some chain becomes inactive
 Deactivation ==

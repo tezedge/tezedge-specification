@@ -1,10 +1,14 @@
 ------------------------------ MODULE DB_Defs -------------------------------
 
-LOCAL INSTANCE Utils
+EXTENDS Utils
 
 CONSTANTS numChains, numNodes, sizeBound
 
-VARIABLES network_info, node_info
+VARIABLES node_active, node_blocks, node_branches, node_headers, node_height, node_incoming, node_sent,
+          active, blocks, branch, chains, mailbox, height, sysmsgs
+
+vars == <<node_active, node_blocks, node_branches, node_headers, node_height, node_incoming, node_sent,
+          active, blocks, branch, chains, mailbox, height, sysmsgs>>
 
 -----------------------------------------------------------------------------
 
@@ -25,45 +29,45 @@ Branches == 0..sizeBound  \* branch ids
 
 Heights == 0..sizeBound   \* block heights
 
-Op_nums == 0..sizeBound   \* possible numbers of operations in blocks
+Op_nums == 0..sizeBound   \* possible numbers of operations
 
 \* dynamic values
-activeChains == 1..network_info.chains
+activeChains == 1..chains
 
-activeNodes[ chain \in Chains ] == network_info.active[chain] \ {sys}
-
-activeSysNodes[ chain \in Chains ] == network_info.active[chain]
+activeNodes[ chain \in Chains ] == active[chain] \ {sys}
 
 inactiveNodes[ chain \in Chains ] == Nodes \ activeNodes[chain]
 
-activeBranches[ chain \in Chains ] == 0..network_info.branch[chain]
+activeBranches[ chain \in Chains ] == 0..branch[chain]
 
-currentHeight[ chain \in Chains, branch \in Branches ] == network_info.height[chain][branch]
+currentHeights(chain, b) == 0..height[chain][b]
 
-currentHeights(chain, branch) == 0..currentHeight[chain, branch]
+branchSet[ node \in Nodes, chain \in Chains ] == ToSet(node_branches[node][chain])
 
-branchSet[ node \in Nodes, chain \in Chains ] == ToSet(node_info.branches[node][chain])
+sentSet[ node \in Nodes, chain \in Chains ] == ToSet(node_sent[node][chain])
 
-\* set of all blocks [node] knows about on [branch] of [chain]
-blockSet(node, chain, branch) == ToSet(node_info.blocks[node][chain][branch])
+\* set of all blocks [node] knows about on [b] of [chain]
+blockSet(node, chain, b) == ToSet(node_blocks[node][chain][b])
 
-headerSet(node, chain, branch) == { h \in ToSet(node_info.headers[node][chain]) : h.branch = branch }
+headerSet(node, chain, b) == { h \in ToSet(node_headers[node][chain]) : h.branch = b }
 
-\* heights of [node] known blocks on [branch] of [chain]
-blockHeights[ node \in Nodes, chain \in Chains, branch \in Branches ] ==
-    { block.header.height : block \in blockSet(node, chain, branch) } 
+\* heights of [node] known blocks on branch [b] of [chain]
+blockHeights[ node \in Nodes, chain \in Chains, b \in Branches ] ==
+    { blk.header.height : blk \in blockSet(node, chain, b) } 
 
-\* heights of the headers in [node]'s list on [branch] of [chain]
-headerHeights[ node \in Nodes, chain \in Chains, branch \in Branches ] ==
-    { h.height : h \in headerSet(node, chain, branch) }
+\* heights of the headers in [node]'s list on branch [b] of [chain]
+headerHeights[ node \in Nodes, chain \in Chains, b \in Branches ] ==
+    { h.height : h \in headerSet(node, chain, b) }
 
-\* heights of [node] known blocks and headers on [branch] of [chain]
-heightSet[ node \in Nodes, chain \in Chains, branch \in Branches ] ==
-    blockHeights[node, chain, branch] \cup headerHeights[node, chain, branch]
+\* heights of [node] known blocks and headers on branch [b] of [chain]
+heightSet[ node \in Nodes, chain \in Chains, b \in Branches ] ==
+    blockHeights[node, chain, b] \cup headerHeights[node, chain, b]
 
-allNodeBlocks(chain) == UNION { blockSet(node, chain, branch) : node \in Nodes, branch \in activeBranches[chain] }
+\* set of all blocks that nodes know about on [chain]
+allNodeBlocks(chain) == UNION { blockSet(node, chain, b) : node \in Nodes, b \in activeBranches[chain] }
 
-allSysBlocks(chain) == UNION { ToSet(network_info.blocks[chain][branch]) : branch \in activeBranches[chain] }
+\* set of all blocks on [chain]
+allSysBlocks(chain) == UNION { ToSet(blocks[chain][b]) : b \in activeBranches[chain] }
 
 -----------------------------------------------------------------------------
 
@@ -72,10 +76,10 @@ allSysBlocks(chain) == UNION { ToSet(network_info.blocks[chain][branch]) : branc
 (***********************)
 
 \* The set of all block headers
-Headers == [ height : Heights, chain : Chains, branch : Branches, num_ops : Op_nums ]
+Headers == [ height : Heights, chain : Chains, branch : Branches ]
 
 \* The set of all block operations
-Operations == UNION { [ 1..num_ops -> Pairs({h}, 1..num_ops) ] : h \in Heights, num_ops \in Op_nums }
+Operations == Op_nums
 
 \* The set of all blocks
 Blocks == [ header : Headers, ops : Operations ]
@@ -84,25 +88,24 @@ Blocks == [ header : Headers, ops : Operations ]
 Block(header, ops) == [ header |-> header, ops |-> ops ]
 
 \* Header "constructor"
-Header(chain, branch, height, num_ops) ==
-    [ chain |-> chain, branch |-> branch, height |-> height, num_ops |-> num_ops ]
+Header(chain, b, h) == [ chain |-> chain, branch |-> b, height |-> h ]
 
 \* Operations "constructor"
 mkOps(num_ops) == num_ops
 
 \* header predicate
-isHeader(h) == DOMAIN h = { "chain", "branch", "height", "num_ops" }
+isHeader(h) == DOMAIN h = { "chain", "branch", "height" }
 
 \* valid block predicate
 isBlock(b) ==
     /\ DOMAIN b = { "header", "ops" }
     /\ isHeader(b.header)
-    /\ b.ops = b.header.num_ops
+    /\ b.ops \in Operations
 
-\* selects a block on [branch] of [chain] at [height]
+\* selects a block on [b] of [chain] at [h]
 \* set must be non-empty
-blockAtHeight(chain, branch, height) ==
-    Pick({ b \in ToSet(network_info.blocks[chain][branch]) : b.header.height = height })
+blockAtHeight(chain, b, h) ==
+    Pick({ blk \in ToSet(blocks[chain][b]) : blk.header.height = h })
 
 -----------------------------------------------------------------------------
 
@@ -112,54 +115,34 @@ blockAtHeight(chain, branch, height) ==
 
 \* get the current branch of [node] on [chain]
 current_branch[ node \in Nodes, chain \in Chains ] ==
-    LET branches == node_info.branches[node][chain]
-    IN CASE branches = <<>> -> -1
-         [] OTHER -> Head(branches)
+    LET bs == node_branches[node][chain]
+    IN CASE bs = <<>> -> -1
+         [] OTHER -> Head(bs)
 
-\* get the current height of [node] on [branch] [chain]
-current_height[ node \in Nodes, chain \in Chains, branch \in Branches ] ==
-    LET blocks == node_info.blocks[node][chain][branch]
-    IN CASE blocks = <<>> -> -1
-         [] OTHER -> Head(blocks).header.height
+\* get the current height of [node] on branch [b] [chain]
+current_height[ node \in Nodes, chain \in Chains, b \in Branches ] ==
+    LET blks == node_blocks[node][chain][b]
+    IN CASE blks = <<>> -> -1
+         [] OTHER -> Head(blks).header.height
 
 \* check that [node]'s message queue on [chain] is not full
-checkMessages[ node \in Nodes ] ==
-    [ chain \in Chains |-> Len(node_info.messages[node][chain]) < sizeBound ]
+checkIncoming[ node \in Nodes ] ==
+    [ chain \in Chains |-> Len(node_incoming[node][chain]) < sizeBound ]
 
 \* check that [sys]'s message queue on [chain] is not full
-checkSysMsgs[ chain \in Chains ] == Len(network_info.sysmsgs[chain]) < sizeBound
+checkSysMsgs[ chain \in Chains ] == Len(sysmsgs[chain]) < sizeBound
 
-\* check that there is space for [node] to register an expectation on [chain]
-checkExpect[ node \in Nodes ] ==
-    [ chain \in Chains |-> Cardinality(node_info.expect[node][chain]) < sizeBound ]
+\* check that there is space for [node] to send a message on [chain]
+checkSent[ node \in Nodes ] ==
+    [ chain \in Chains |-> Len(node_sent[node][chain]) < sizeBound ]
 
 \* check that there is space to for [node] to insert a header on [chain]
 checkHeaders[ node \in Nodes ] ==
-    [ chain \in Chains |-> Len(node_info.headers[node][chain]) < sizeBound ]
-
-\* check that there is space to send [node] a message [offchain]
-checkOffchain[ node \in Nodes ] == Cardinality(node_info.offchain[node]) < sizeBound
+    [ chain \in Chains |-> Len(node_headers[node][chain]) < sizeBound ]
 
 \* check that there is space to send [node] a message on [chain]
-checkSent[ chain \in Chains ] ==
-    [ node \in Nodes |-> Cardinality(network_info.sent[chain][node]) < sizeBound ]
-
-\* check that [set] is not full before including the message
-checkAdd(set, msg) ==
-    CASE Cardinality(set) < sizeBound -> set \cup {msg}
-      [] OTHER -> set
-
-\* system sends [msg] to active nodes on [chain]
-checkSysAddToActive(sent, chain, msg) ==
-    [ to \in SysNodes |->
-        CASE to \in activeNodes[chain] -> checkAdd(sent[to], msg)
-          [] OTHER -> sent[to] ]
-
-\* check that [set1] \cup [set2] is not full before unioning [set2] with [set1]
-checkUnion(set1, set2) ==
-    LET union == set1 \cup set2
-    IN CASE Cardinality(union) <= sizeBound -> union
-         [] OTHER -> set1
+checkMailbox[ chain \in Chains ] ==
+    [ node \in SysNodes |-> Len(mailbox[chain][node]) < sizeBound ]
 
 \* check that [queue] is not full before including the message at the end
 checkAppend(queue, msg) ==
@@ -181,7 +164,7 @@ insertHeader(header, headers) ==
                  LET hd == Head(hs)
                  IN CASE h.branch < hd.branch -> acc \o Cons(h, hs)
                       [] OTHER ->
-                         CASE h.branch # hd.branch -> aux(h, Tail(hs), Append(acc, hd))
+                         CASE h.branch /= hd.branch -> aux(h, Tail(hs), Append(acc, hd))
                            [] OTHER ->
                               CASE h.height < hd.height -> acc \o Cons(h, hs)
                                 [] OTHER -> aux(h, Tail(hs), Append(acc, hd))
@@ -193,8 +176,8 @@ checkInsertHeader(header, headers) ==
     CASE Len(headers) < sizeBound -> insertHeader(header, headers)
       [] OTHER -> headers
 
-\* insert [block] into [blocks]
-insertBlock(block, blocks) ==
+\* insert [blk] into [blks]
+insertBlock(blk, blks) ==
     LET RECURSIVE aux(_, _, _)
         aux(b, bs, acc) ==
           CASE bs = <<>> -> Append(acc, b)
@@ -207,29 +190,29 @@ insertBlock(block, blocks) ==
                IN
                  CASE b_branch > hd_branch -> acc \o <<b>> \o bs
                    [] OTHER ->
-                      CASE b_branch # hd_branch -> aux(b, Tail(bs), Append(acc, hd))
+                      CASE b_branch /= hd_branch -> aux(b, Tail(bs), Append(acc, hd))
                         [] OTHER ->
                            CASE b_height > hd_height -> acc \o <<b>> \o bs
                              [] OTHER -> aux(b, Tail(bs), Append(acc, hd))
-    IN CASE block \notin ToSet(blocks) -> aux(block, blocks, <<>>)
-         [] OTHER -> blocks
+    IN CASE blk \notin ToSet(blks) -> aux(blk, blks, <<>>)
+         [] OTHER -> blks
 
-\* check that [blocks] is not full before inserting [block]
-checkInsertBlock(block, blocks) ==
-    CASE Len(blocks) < sizeBound -> insertBlock(block, blocks)
-      [] OTHER -> blocks
+\* check that [blks] is not full before inserting [blk]
+checkInsertBlock(blk, blks) ==
+    CASE Len(blks) < sizeBound -> insertBlock(blk, blks)
+      [] OTHER -> blks
 
-\* insert a [branch] into a sequence of [branches]
-insertBranch(branch, branches) ==
+\* insert a branch [b] into a sequence of [branches]
+insertBranch(b, branches) ==
     LET RECURSIVE aux(_, _, _)
-        aux(b, bs, acc) ==
-          CASE bs = <<>> -> Append(acc, b)
+        aux(bb, bs, acc) ==
+          CASE bs = <<>> -> Append(acc, bb)
             [] OTHER ->
                  LET hd == Head(bs)
-                 IN CASE b > hd -> acc \o <<b>> \o bs
-                      [] b = hd -> acc \o bs
-                      [] OTHER -> aux(b, Tail(bs), Append(acc, hd))
-    IN aux(branch, branches, <<>>)
+                 IN CASE bb > hd -> acc \o <<bb>> \o bs
+                      [] bb = hd -> acc \o bs
+                      [] OTHER -> aux(bb, Tail(bs), Append(acc, hd))
+    IN aux(b, branches, <<>>)
 
 \* check that all [branches] are valid branches on [chain]
 RECURSIVE checkBranches(_, _)

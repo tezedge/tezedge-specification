@@ -2,7 +2,8 @@
 
 CONSTANTS numChains, numNodes, sizeBound
 
-VARIABLES network_info, node_info
+VARIABLES node_active, node_blocks, node_branches, node_headers, node_height, node_incoming, node_sent,
+          active, chains, mailbox, blocks, branch, height, sysmsgs
 
 LOCAL INSTANCE DB_Defs
 LOCAL INSTANCE DB_Messages
@@ -15,43 +16,54 @@ LOCAL INSTANCE Utils
 (***********************)
 
 \* Block production
-Produce_block(chain, branch, num_ops) ==
-    LET height == network_info.height[chain][branch] + 1 \* next block height on branch
-        header == Header(chain, branch, height, num_ops)
+Produce_block(chain, b, num_ops) ==
+    LET hgt    == height[chain][b] + 1 \* next block height on branch
+        header == Header(chain, b, hgt)
         block  == Block(header, num_ops)
-    IN \* add the new block to [branch] on [chain]
-       /\ network_info' = [ network_info EXCEPT
-            !.blocks[chain][branch] = <<block>> \o @, \* add [block] to [branch]
-            !.height[chain][branch] = @ + 1 ]         \* increase height of [branch]
-       /\ UNCHANGED node_info
+    IN \* add the new block to branch [b] on [chain]
+       /\ blocks' = [ blocks EXCEPT ![chain][b] = Cons(block, @) ] \* add [block] to branch [b]
+       /\ height' = [ height EXCEPT ![chain][b] = hgt ]            \* increase height of branch [b]
+       /\ UNCHANGED <<active, branch, chains, mailbox, sysmsgs>>
+       /\ UNCHANGED <<node_active, node_blocks, node_branches, node_headers,
+                      node_height, node_incoming, node_sent>>
 
 \* A block is produced on an existing branch of an existing chain
-Block_production ==
+New_block ==
     \E chain \in activeChains :
-        \E branch \in activeBranches[chain], num_ops \in Op_nums :
-            /\ currentHeight[chain, branch] < sizeBound \* another block can be produced on [branch]
-            /\ Produce_block(chain, branch, num_ops)    \* create a new block on [chain] [branch]
+        \E b \in activeBranches[chain] :
+            LET num_ops == RandomElement(Op_nums)
+            IN /\ height[chain][b] < sizeBound     \* another block can be produced on branch [b]
+               /\ Produce_block(chain, b, num_ops) \* create a new block on [chain] branch [b]
 
-\* Start a new branch on an existing [chain]
+\* Start a new branch on an existing [chain] with genesis block
 New_branch_on(chain) ==
-    /\ network_info' = [ network_info EXCEPT !.branch[chain] = @ + 1 ]
-    /\ UNCHANGED node_info
+    LET b   == branch[chain] + 1
+        blk == Block(Header(chain, b, 0), 0)
+    IN /\ blocks' = [ blocks EXCEPT ![chain][b] = <<blk>> ]
+       /\ branch' = [ branch EXCEPT ![chain] = b ]
+       /\ height' = [ height EXCEPT ![chain][b] = 0 ]
+       /\ UNCHANGED <<active, chains, mailbox, sysmsgs>>
+       /\ UNCHANGED <<node_active, node_blocks, node_branches, node_headers,
+                      node_height, node_incoming, node_sent>>
 
 \* A new branch is created on an existing chain
 New_branch ==
     \E chain \in activeChains :
-        /\ activeNodes[chain] # {}                \* there are active nodes on [chain]
-        /\ network_info.branch[chain] < sizeBound \* we have not reached the max [branch] on [chain]
-        /\ New_branch_on(chain)                   \* create a new branch on [chain]
+        /\ branch[chain] < sizeBound \* we have not reached the max branch [b] on [chain]
+        /\ New_branch_on(chain)      \* create a new branch on [chain]
 
-\* A new chain is created and a corresponding message is broadcast to all nodes offchain
-\* [sys] is active on [chain]
+\* A new [chain] is created with branch 0 and genesis block and [sys] is active on [chain]
 New_chain ==
-    /\ network_info.chains < numChains \* another chain can be added
-    /\ LET chain == network_info.chains + 1
-       IN /\ network_info' = [ network_info EXCEPT
-               !.active[chain] = {sys},
-               !.chains = chain ]
-          /\ UNCHANGED node_info
+    /\ chains < numChains \* another chain can be added
+    /\ LET chain == chains + 1
+           blk   == Block(Header(chain, 0, 0), 0)
+       IN /\ active' = [ active EXCEPT ![chain] = {sys} ]
+          /\ blocks' = [ blocks EXCEPT ![chain][0] = <<blk>> ]
+          /\ branch' = [ branch EXCEPT ![chain] = 0 ]
+          /\ chains' = chain
+          /\ height' = [ height EXCEPT ![chain][0] = 0 ]
+          /\ UNCHANGED <<mailbox, sysmsgs>>
+          /\ UNCHANGED <<node_active, node_blocks, node_branches, node_headers,
+                         node_height, node_incoming, node_sent>>
 
 =============================================================================
