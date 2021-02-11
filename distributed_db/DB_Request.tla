@@ -17,7 +17,8 @@ LOCAL INSTANCE Utils
 \* [from] requests the current branch of [chain] from active peer [to]
 Get_current_branch_1(from, chain, to) ==
     LET msg == Msg(from, to, "Get_current_branch", [ chain |-> chain ])
-    IN /\ Send(from, chain, msg)
+    IN /\ msg \notin ToSet(mailbox[chain][to])
+       /\ Send(from, chain, msg)
        /\ UNCHANGED <<active, blocks, branch, chains, height, sysmsgs>>
        /\ UNCHANGED <<node_active, node_blocks, node_branches,
                       node_headers, node_height, node_incoming>>
@@ -62,7 +63,8 @@ Get_curr_branch ==
 \* [from] requests the current head of branch [b] from an active peer [to] on [chain]
 Get_current_head_1(from, chain, b, to) ==
     LET msg == Msg(from, to, "Get_current_head", [ branch |-> b ])
-    IN /\ Send(from, chain, msg)
+    IN /\ msg \notin ToSet(mailbox[chain][to])
+       /\ Send(from, chain, msg)
        /\ UNCHANGED <<active, blocks, branch, chains, height, sysmsgs>>
        /\ UNCHANGED <<node_active, node_blocks, node_branches,
                       node_headers, node_height, node_incoming>>
@@ -106,7 +108,8 @@ Get_curr_head ==
 \* [from] requests the header of the block branch [b] at [height] from an active peer [to] on [chain]
 Get_block_header_1(from, chain, b, h, to) ==
     LET msg == Msg(from, to, "Get_block_header", [ branch |-> b, height |-> h ])
-    IN /\ Send(from, chain, msg)
+    IN /\ msg \notin ToSet(mailbox[chain][to])
+       /\ Send(from, chain, msg)
        /\ UNCHANGED <<active, blocks, branch, chains, height, sysmsgs>>
        /\ UNCHANGED <<node_active, node_blocks, node_branches,
                       node_headers, node_height, node_incoming>>
@@ -156,7 +159,8 @@ Get_block_header ==
 \* [from] requests the operations of the block on [b] at [h] on [chain] from active peer [to]
 Get_operations_1(from, chain, b, h, to) ==
     LET msg == Msg(from, to, "Get_operations", [ branch |-> b, height |-> h ])
-    IN /\ Send(from, chain, msg)
+    IN /\ msg \notin ToSet(mailbox[chain][to])
+       /\ Send(from, chain, msg)
        /\ UNCHANGED <<active, blocks, branch, chains, height, sysmsgs>>
        /\ UNCHANGED <<node_active, node_blocks, node_branches, node_headers, node_height, node_incoming>>
 
