@@ -7,9 +7,6 @@ CONSTANTS numChains, numNodes, sizeBound
 VARIABLES node_active, node_blocks, node_branches, node_headers, node_height, node_incoming, node_sent,
           active, blocks, branch, chains, mailbox, height, sysmsgs
 
-vars == <<node_active, node_blocks, node_branches, node_headers, node_height, node_incoming, node_sent,
-          active, blocks, branch, chains, mailbox, height, sysmsgs>>
-
 -----------------------------------------------------------------------------
 
 (**********************************)
@@ -53,7 +50,7 @@ headerSet(node, chain, b) == { h \in ToSet(node_headers[node][chain]) : h.branch
 
 \* heights of [node] known blocks on branch [b] of [chain]
 blockHeights[ node \in Nodes, chain \in Chains, b \in Branches ] ==
-    { blk.header.height : blk \in blockSet(node, chain, b) } 
+    { blk.header.height : blk \in blockSet(node, chain, b) }
 
 \* heights of the headers in [node]'s list on branch [b] of [chain]
 headerHeights[ node \in Nodes, chain \in Chains, b \in Branches ] ==
@@ -146,12 +143,12 @@ checkMailbox[ chain \in Chains ] ==
 
 \* check that [queue] is not full before including the message at the end
 checkAppend(queue, msg) ==
-    CASE Len(queue) < sizeBound -> Append(queue, msg)
+    CASE Len(queue) < sizeBound /\ msg \notin ToSet(queue) -> Append(queue, msg)
       [] OTHER -> queue
 
 \* check that [stack] is not full before including [data] at the beginning
 checkCons(data, stack) ==
-    CASE Len(stack) < sizeBound -> <<data>> \o stack
+    CASE Len(stack) < sizeBound /\ data \notin ToSet(stack) -> <<data>> \o stack
       [] OTHER -> stack
 
 \* insert [header] into [headers]

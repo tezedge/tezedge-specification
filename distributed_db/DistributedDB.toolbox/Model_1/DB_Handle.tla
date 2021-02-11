@@ -14,6 +14,7 @@ LOCAL INSTANCE Utils
 ----------------------------------------------------------------------------
 
 \* [node] handles advertised current branch [b] on [chain] from [from]
+\* node /= sys
 Handle_branch(node, peer, chain, b) ==
     LET ack == AckMsg(node, peer, "Ack_current_branch")
         bgb == PartialMsg("Get_current_branch", [ chain |-> chain ])
@@ -43,6 +44,7 @@ Handle_branch(node, peer, chain, b) ==
        /\ UNCHANGED <<node_active, node_blocks, node_headers, node_height>>
 
 \* [node] handles advertised current head of branch [b] on [chain] from [from]
+\* node /= sys
 Handle_head(node, peer, chain, b, h) ==
     LET ack == AckMsg(node, peer, "Ack_current_head")
         bgh == PartialMsg("Get_current_head", [ branch |-> b ])
@@ -96,10 +98,11 @@ Handle_head(node, peer, chain, b, h) ==
 
 \* nodes only receive Block_header advertisements upon request
 \* [node] handles the advertised [header] on branch [b] of [chain] from [from]
+\* node /= sys
 Handle_header(node, peer, chain, hdr) ==
     LET b   == hdr.branch
         h   == hdr.height
-        ack == AckMsg(node, node, "Ack_block_header")
+        ack == AckMsg(node, peer, "Ack_block_header")
         bgo == PartialMsg("Get_operations", [ branch |-> b, height |-> h ])
         mlb == [ mailbox EXCEPT ![chain][peer] = checkAppend(@, ack) ]
     IN \* send [peer] ack & broadcast Get_operations
@@ -110,6 +113,7 @@ Handle_header(node, peer, chain, hdr) ==
 
 \* nodes only receive Operations advertisements upon request
 \* [node] handles advertised [ops] on [branch] of [chain] from [from]
+\* node /= sys
 Handle_ops(node, peer, chain, b, h, ops) ==
     LET hdr == Header(chain, b, h)
         ack == AckMsg(node, peer, "Ack_operations")
@@ -123,10 +127,14 @@ Handle_ops(node, peer, chain, b, h, ops) ==
 \* node or sys handles an ack [msg] on [chain]
 Handle_ack(node, chain, msg) ==
     IF node = sys
-    THEN UNCHANGED vars
-    ELSE /\ ManageSent(node, chain, msg)
-         /\ UNCHANGED <<active, blocks, branch, chains, height, mailbox, sysmsgs>>
-         /\ UNCHANGED <<node_active, node_blocks, node_branches, node_headers, node_height>>
+    THEN
+      /\ UNCHANGED <<active, blocks, branch, chains, mailbox, height, sysmsgs>>
+      /\ UNCHANGED <<node_active, node_blocks, node_branches, node_headers,
+                     node_height, node_incoming, node_sent>>
+    ELSE
+      /\ ManageSent(node, chain, msg)
+      /\ UNCHANGED <<active, blocks, branch, chains, height, mailbox, sysmsgs>>
+      /\ UNCHANGED <<node_active, node_blocks, node_branches, node_headers, node_height>>
 
 \* Handle advertise message
 Handle_adv(node, chain, from, type, params) ==
@@ -281,18 +289,19 @@ Handle(node, chain, msg) ==
     LET type == msg.type
     IN /\ CASE \* Request messages
                type \in ReqMsgTypes -> Handle_req(node, chain, msg.from, type, msg.params)
-               \* Advertise messages
-            [] type \in AdvMsgTypes -> Handle_adv(node, chain, msg.from, type, msg.params)
                \* Acknowledgment messages
             [] type \in AckMsgTypes -> Handle_ack(node, chain, msg)
+               \* Advertise messages
+            [] type \in AdvMsgTypes /\ node /= sys ->
+                 Handle_adv(node, chain, msg.from, type, msg.params)
                \* Error messages
-            [] type \in ErrMsgTypes -> Handle_err(node, chain, msg)
+            [] type \in ErrMsgTypes /\ node /= sys -> Handle_err(node, chain, msg)
        /\ Consume(node, chain)
 
 \* A node handles a message from an active node on some chain
 Handle_active_msg ==
     \E chain \in activeChains :
-        \E rcvr \in activeNodes[chain] :
+        \E rcvr \in activeNodes[chain] :             \* rcvr /= sys
             \E sndr \in active[chain] \ {rcvr} : 
                 LET msgs == node_incoming[rcvr][chain]
                 IN /\ msgs /= <<>>                   \* [rcvr] has a message on [chain]
@@ -303,7 +312,7 @@ Handle_active_msg ==
 Handle_inactive_msg ==
     \* An active node drops a message from an inactive node on some chain
     \/ \E chain \in activeChains :
-           \E rcvr \in activeNodes[chain] :
+           \E rcvr \in activeNodes[chain] :  \* [sndr] is inactive on [chain]
                \E sndr \in inactiveNodes[chain] :
                    LET msgs == node_incoming[rcvr][chain]
                    IN /\ msgs /= <<>>
@@ -328,17 +337,17 @@ Sys_handle_msg ==
     \E chain \in activeChains :
         \E sndr \in activeNodes[chain] : 
             LET msgs == sysmsgs[chain]
-            IN /\ msgs /= <<>>                    \* [sys] has a message on [chain]
+            IN /\ msgs /= <<>>                                    \* [sys] has a message on [chain]
                /\ LET msg == Head(msgs)
-                  IN /\ sndr = msg.from        \* [sender] is active on [chain]
-                     /\ msg.type \in ReqMsgTypes \* message is a request
-                     /\ Handle(sys, chain, msg)  \* [sys] handles a message on [chain]
+                  IN /\ sndr = msg.from                           \* [sndr] is active on [chain]
+                     /\ msg.type \in ReqMsgTypes \cup AckMsgTypes \* message is a request or ack
+                     /\ Handle(sys, chain, msg)                   \* [sys] handles a message on [chain]
 
 \* Handle message action
 Handle_msg ==
     \/ Handle_active_msg   \* an active node handles a message from an active node
     \/ Handle_inactive_msg \* an active node handles a message from an inactive node
-    \/ Sys_handle_msg      \* system handles a message from a node
+    \/ Sys_handle_msg      \* system handles a message from an active node
 
 ----------------------------------------------------------------------------
 

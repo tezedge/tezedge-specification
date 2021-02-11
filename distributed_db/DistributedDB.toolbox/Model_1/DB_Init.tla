@@ -254,7 +254,7 @@ Init_blocks ==
 Init_options == 0..6
 
 \* Initialization variants
-Initialize[ x \in Init_options ] ==
+Initialize(x) ==
     CASE x = 1 -> Init_branch
       [] x = 2 -> Init_height
       [] x = 3 -> Init_header

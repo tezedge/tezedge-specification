@@ -43,8 +43,6 @@ AdvMsgTypes == { "Block_header", "Current_branch", "Current_head", "Operations" 
 AdvMsgs == [ from : SysNodes, to : SysNodes, type : AdvMsgTypes, params : AdvParams ]
 
 \* Advertise message predicates
-isAdMsg(msg) == msg \in AdvMsgs
-
 isValidAdvMsg(msg) ==
     /\ msg \in AdvMsgs
     /\ msg.from /= msg.to
@@ -76,8 +74,6 @@ ReqMsgTypes == { "Get_block_header", "Get_current_branch", "Get_current_head", "
 ReqMsgs == [ from : Nodes, to : SysNodes, type : ReqMsgTypes, params : ReqParams ]
 
 \* Request message predicates
-isReqMsg(msg) == msg \in ReqMsgs
-
 isValidReqMsg(msg) ==
     /\ msg \in ReqMsgs
     /\ msg.from /= msg.to
@@ -95,8 +91,6 @@ isValidReqMsg(msg) ==
 FullMsgs == AdvMsgs \cup ReqMsgs
 
 \* Full message predicates
-isFullMsg(msg) == msg \in FullMsgs
-
 isValidFullMsg(msg) ==
     \/ isValidAdvMsg(msg)
     \/ isValidReqMsg(msg)
@@ -146,8 +140,6 @@ AckMsgTypes == { "Ack_block_header", "Ack_current_branch", "Ack_current_head", "
 AckMsgs == [ from : Nodes, to : SysNodes, type : AckMsgTypes ]
 
 \* Ack message predicates
-isAckMsg(msg) == msg \in AckMsgs
-
 isValidAckMsg(msg) ==
     /\ msg \in AckMsgs
     /\ msg.from /= msg.to
@@ -155,7 +147,7 @@ isValidAckMsg(msg) ==
 \* Ack message "constructor"
 AckMsg(from, to, type) ==
     LET msg == [ from |-> from, to |-> to, type |-> type ]
-    IN CASE isValidAckMsg(msg) -> msg 
+    IN CASE isValidAckMsg(msg) -> msg
 
 (* Error messages *)
 
@@ -169,8 +161,6 @@ ErrMsgTypes == { "Err_block_header", "Err_operations" }
 ErrMsgs == [ from : Nodes, to : Nodes, type : ErrMsgTypes, error : ErrParams ]
 
 \* Error message predicates
-isErrMsg(msg) == msg \in ErrMsgs
-
 isValidErrMsg(msg) ==
     /\ msg \in ErrMsgs
     /\ msg.from /= msg.to
@@ -296,7 +286,7 @@ checkAppToActiveNodes(mailbox_chain, from, chain, pmsg) ==
 
 \* Sends [msg] to all active nodes on [chain]
 \* mailbox_chain : SysNodes -> SUBSET Messages
-\* UNCHANGED mailbox[chain][sys] 
+\* UNCHANGED mailbox[chain][sys]
 BroadcastNodes(mailbox_chain, from, chain, pmsg) ==
     CASE DOMAIN pmsg = { "params", "type" } -> checkAppToActiveNodes(mailbox_chain, from, chain, pmsg)
 

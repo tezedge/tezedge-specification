@@ -75,8 +75,9 @@ MailboxOK ==
                 set  == ToSet(mail)
             IN /\ DOMAIN mailbox = Chains
                /\ DOMAIN mailbox[chain] = SysNodes
-               /\ Len(mail) <= sizeBound                  \* bounded
-               /\ set = { msg \in set : isValidMsg(msg) } \* only valid messages are sent
+               /\ Len(mail) <= sizeBound                     \* bounded
+               /\ set = { msg \in set : /\ msg.to = node
+                                        /\ isValidMsg(msg) } \* only valid messages are sent
 
 \* sysmsgs
 SysMsgsOK ==
@@ -84,9 +85,10 @@ SysMsgsOK ==
         LET smsgs == sysmsgs[chain]
             msgs  == ToSet(smsgs)
         IN /\ DOMAIN sysmsgs = Chains
-           /\ Len(smsgs) <= sizeBound                         \* size of [sysmsgs] <= sizeBound
-           /\ msgs = { msg \in msgs : \/ isValidReqMsg(msg)   \* [sys] receives request messages
-                                      \/ isValidAckMsg(msg) } \* [sys] receives ack message
+           /\ Len(smsgs) <= sizeBound                            \* size of [sysmsgs] <= sizeBound
+           /\ msgs = { msg \in msgs : /\ msg.to = sys
+                                      /\ \/ isValidReqMsg(msg)   \* [sys] receives request messages
+                                         \/ isValidAckMsg(msg) } \* [sys] receives ack message
 
 \* check all fields of network_info
 NetworkOK ==
@@ -165,10 +167,12 @@ NodeIncomingOK ==
     \A chain \in Chains :
         \A node \in Nodes :
             LET msgs == node_incoming[node][chain]
+                set  == ToSet(msgs)
             IN /\ DOMAIN node_incoming = Nodes
                /\ DOMAIN node_incoming[node] = Chains
                /\ Len(msgs) <= sizeBound   \* length of incoming queue <= sizeBound
                /\ Forall(msgs, isValidMsg) \* all incoming messages are valid
+               /\ set = { msg \in set : msg.to = node }
 
 \* node_sent
 NodeSentOK ==
@@ -178,8 +182,9 @@ NodeSentOK ==
                 set  == ToSet(sent)
             IN /\ DOMAIN node_sent = Nodes
                /\ DOMAIN node_sent[node] = Chains 
-               /\ Len(sent) <= sizeBound                  \* bounded
-               /\ set = { msg \in set : isValidMsg(msg) } \* all sent messages are valid
+               /\ Len(sent) <= sizeBound                     \* bounded
+               /\ set = { msg \in set : /\ msg.from = node
+                                        /\ isValidMsg(msg) } \* all sent messages are valid
 
 \* check all fields of node_info
 NodeOK ==

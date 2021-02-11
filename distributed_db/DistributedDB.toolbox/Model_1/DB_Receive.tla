@@ -4,7 +4,6 @@ CONSTANTS numChains, numNodes, sizeBound
 
 VARIABLES node_active, node_blocks, node_branches, node_headers, node_height, node_incoming, node_sent,
           active, blocks, branch, chains, mailbox, height, sysmsgs
-          
 
 LOCAL INSTANCE DB_Defs
 LOCAL INSTANCE DB_Messages

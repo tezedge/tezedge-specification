@@ -30,7 +30,7 @@ Ad_current_branch(node, chain) ==
                       node_height, node_incoming, node_sent>>
 
 \* An active node on some chain advertises their current branch
-Advertise_branch ==
+Ad_node_branch ==
     \E chain \in activeChains :
         \E from \in activeNodes[chain] :
             /\ branchSet[from, chain] /= {}      \* [from] knows about a branch on [chain]
@@ -47,10 +47,12 @@ Ad_sys_current_branch(chain) ==
                       node_height, node_incoming, node_sent>>
 
 \* [sys] advertises the current branch of some chain
-Advertise_sys_branch ==
+Ad_sys_branch ==
     \E chain \in activeChains :
         /\ activeNodes[chain] /= {}     \* there are active nodes on [chain]
         /\ Ad_sys_current_branch(chain) \* [sys] advertises current branch
+
+Advertise_branch == Ad_node_branch \/ Ad_sys_branch
 
 \* [node] advertises their current head of branch [b] on [chain]
 Ad_current_head(node, chain, b) ==
@@ -62,7 +64,7 @@ Ad_current_head(node, chain, b) ==
                       node_height, node_incoming, node_sent>>
 
 \* An active node on some chain advertises their current head
-Advertise_head ==
+Ad_node_head ==
     \E chain \in activeChains :
         \E b \in activeBranches[chain],
            from \in activeNodes[chain] :
@@ -80,11 +82,13 @@ Ad_sys_current_head(chain, b) ==
                       node_height, node_incoming, node_sent>>
 
 \* [sys] advertises the current head of some branch on some chain
-Advertise_sys_head ==
+Ad_sys_head ==
     \E chain \in activeChains :
         \E b \in activeBranches[chain] :
            /\ height[chain][b] >= 0         \* there is a block on branch [b] of [chain]
            /\ activeNodes[chain] /= {}      \* there are active nodes on [chain]
            /\ Ad_sys_current_head(chain, b) \* [sys] advertises current head
+
+Advertise_head == Ad_node_head \/ Ad_sys_head
 
 =============================================================================

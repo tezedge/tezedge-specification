@@ -24,6 +24,9 @@ VARIABLES active,  \* Chains -> SUBSET Nodes
           height,  \* Chains -> Branches -> Heights \cup {-1}
           sysmsgs  \* Chains -> Seq(Messages)
 
+vars == <<node_active, node_blocks, node_branches, node_headers, node_height, node_incoming, node_sent,
+          active, blocks, branch, chains, mailbox, height, sysmsgs>>
+
 ----------------------------------------------------------------------------
 
 LOCAL INSTANCE DB_Activation  \* Activation and Deactivation actions
@@ -31,7 +34,7 @@ LOCAL INSTANCE DB_Advertise   \* Advertisement actions
 LOCAL INSTANCE DB_Defs        \* ubiquitous definitions
 LOCAL INSTANCE DB_Handle      \* Message handling actions
 LOCAL INSTANCE DB_Maintenance \* Block production, new chain, new branch actions
-Msgs == INSTANCE DB_Messages    \* Message constructors, functions, actions
+LOCAL INSTANCE DB_Messages    \* Message constructors, functions, actions
 LOCAL INSTANCE DB_Receive     \* Receive and drop actions
 LOCAL INSTANCE DB_Request     \* Request actions
 
@@ -45,10 +48,9 @@ DB_Invariants == INSTANCE DB_Invariants  \* other invariants and properties
 (* Initial predicate *)
 (*********************)
 
-\* random initial state
-\*Init == LET n == RandomElement(DB_Init!Init_options) IN DB_Init!Initialize[n]
+\*Init == DB_Init!Init_empty
 
-Init == DB_Init!Init_empty
+Init == \E n \in DB_Init!Init_options : DB_Init!Initialize(n)
 
 ----------------------------------------------------------------------------
 
@@ -78,22 +80,20 @@ Init == DB_Init!Init_empty
 Next ==
     \* Activation actions (nodes)
     \/ Activation
-    \/ Deactivation
+\*    \/ Deactivation
     \* Advertise actions (nodes & sys)
-    \/ Advertise_branch
-    \/ Advertise_sys_branch
-    \/ Advertise_head
-    \/ Advertise_sys_head
+\*    \/ Advertise_branch
+\*    \/ Advertise_head
     \* Handle actions (nodes)
     \/ Handle_msg
-    \/ Send_again
+\*    \/ Send_again
     \* Maintenance actions (sys)
     \/ New_block
     \/ New_chain
     \/ New_branch
     \* Receive actions (nodes & sys)
     \/ Receive
-    \/ Drop
+\*    \/ Drop
     \* Request actions (nodes)
     \/ Get_current_branch_one
     \/ Get_current_branch_all
