@@ -12,6 +12,8 @@ Pick(S) == CHOOSE x \in S : TRUE
 \* Turn a function/sequence into a set
 ToSet(f) == { f[i] : i \in DOMAIN f }
 
+disjoint(S, T) == S \cap T = {}
+
 \* Nonempty subsets of S
 NESubsets(S) == SUBSET S \ {{}}
 
@@ -39,21 +41,23 @@ divide[a, b \in Nat] ==
     IN
       _divide[a, b, 0]
 
-\* maximum element of a nonempty finite set
-RECURSIVE _max_set(_, _)
-_max_set(S, curr) ==
-    CASE S = {} -> curr
-      [] OTHER -> LET x == Pick(S) IN _max_set(S \ {x}, max[x, curr])
+\* maximum element of a nonempty finite set of naturals
+max_set(set) ==
+    LET RECURSIVE _max_set(_, _)
+        _max_set(S, curr) ==
+            CASE S = {} -> curr
+              [] OTHER -> LET x == Pick(S) IN _max_set(S \ {x}, max[x, curr])
+    IN CASE set /= {} -> LET x == Pick(set) IN _max_set(set \ {x}, x)
+         [] OTHER -> -1
 
-max_set(S) == CASE S # {} -> LET x == Pick(S) IN _max_set(S \ {x}, x)
-
-\* minimum element of a nonempty finite set
-RECURSIVE _min_set(_, _)
-_min_set(S, curr) ==
-    CASE S = {} -> curr
-      [] OTHER -> LET x == Pick(S) IN _min_set(S \ {x}, min[x, curr])
-
-min_set(S) == CASE S # {} -> LET x == Pick(S) IN _min_set(S \ {x}, x)
+\* minimum element of a nonempty finite set of naturals
+min_set(set) ==
+    LET RECURSIVE _min_set(_, _)
+        _min_set(S, curr) ==
+            CASE S = {} -> curr
+              [] OTHER -> LET x == Pick(S) IN _min_set(S \ {x}, min[x, curr])
+    IN CASE set /= {} -> LET x == Pick(set) IN _min_set(set\ {x}, x)
+         [] OTHER -> -1
 
 ----------------------------------------------------------------------------
 
@@ -68,7 +72,7 @@ SeqOfLen(S, n) ==
 Seq_n(S, n) == UNION { SeqOfLen(S, l) : l \in 0..n }
 
 \* Enumerable set of nonempty sequences of length <= n
-NESeq_n(S, n) == { f \in Seq_n(S, n) : f # <<>> }
+NESeq_n(S, n) == { f \in Seq_n(S, n) : f /= <<>> }
 
 \* Enumerable set of pairs of elements from sets S1 and S2
 Pairs(S1, S2) == { <<x1, x2>> : x1 \in S1, x2 \in S2 }
@@ -77,13 +81,13 @@ Pairs(S1, S2) == { <<x1, x2>> : x1 \in S1, x2 \in S2 }
 NESeq(S) == Seq(S) \ {<<>>}
 
 \* remove (all occurrences of) an element from a sequence
-RECURSIVE _remove(_, _, _)
-_remove(s, e, acc) ==
-    CASE s = <<>> -> acc
-      [] e # Head(s) -> _remove(Tail(s), e, Append(acc, Head(s)))
-      [] OTHER -> _remove(Tail(s), e, acc)
-
-Remove(s, e) == _remove(s, e, <<>>)
+Remove(seq, elem) ==
+    LET RECURSIVE _remove(_, _, _)
+        _remove(s, e, acc) ==
+            CASE s = <<>> -> acc
+              [] e /= Head(s) -> _remove(Tail(s), e, Append(acc, Head(s)))
+              [] OTHER -> _remove(Tail(s), e, acc)
+    IN _remove(seq, elem, <<>>)
 
 \* (finite) subsequence predicate
 RECURSIVE isSubSeq(_, _)
@@ -128,5 +132,7 @@ Exists(seq, test(_)) ==
     IN exists(seq, test, FALSE)
 
 Cons(elem, seq) == <<elem>> \o seq
+
+Filter(seq, pred(_)) == SelectSeq(seq, pred)
 
 =============================================================================
