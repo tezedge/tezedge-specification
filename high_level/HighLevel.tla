@@ -68,8 +68,7 @@ ASSUME connectionThreshold <= peerThreshold
 ASSUME peerThreshold <= NumNodes
 ASSUME connectionThreshold < NumNodes
 
-LOCAL INSTANCE HL_Utils
-LOCAL INSTANCE HL_Actions
+INSTANCE HL_Actions
 
 TypeOK == INSTANCE HL_TypeOK
 Properties == INSTANCE HL_Properties

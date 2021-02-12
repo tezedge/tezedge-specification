@@ -4,7 +4,7 @@ CONSTANTS NumNodes, NumJoins, ValidStates, peerThreshold, connectionThreshold, s
 
 VARIABLES state, secured, mailbox, recv, sent, joined, peers, phase
 
-LOCAL INSTANCE HL_Utils
+INSTANCE HL_Utils
 
 (*************************************************************************************)
 (* The nodes are already connected to the network and have a valid blockchain state. *)

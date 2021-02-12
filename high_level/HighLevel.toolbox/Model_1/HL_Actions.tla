@@ -4,7 +4,7 @@ CONSTANTS NumNodes, NumJoins, ValidStates, peerThreshold, connectionThreshold, s
 
 VARIABLES state, secured, mailbox, recv, sent, joined, peers, phase
 
-LOCAL INSTANCE HL_Utils
+INSTANCE HL_Utils
 
 (*************************************************************************************)
 (* The nodes are already connected to the network and have a valid blockchain state. *)
@@ -181,59 +181,6 @@ Advertise ==
     \E n \in nodes :
         /\ secured.node[n] \cap bootstrapping /= {}
         /\ Advertise_state(n)
-
-\*(**************)
-\*(* Send_again *)
-\*(**************)
-\*
-\*\* If a node is expecting a response, they can send the corresponding message again *)
-\*Send_again_join(j) ==
-\*    /\ sent.join[j] /= <<>>
-\*    /\ LET exp  == Head(sent.join[j])
-\*           to   == exp.from
-\*           type == exp.msg
-\*       IN CASE type = "Current_state" ->
-\*            mailbox' = [ mailbox EXCEPT !.node[to] =
-\*              CASE check_mailbox(FALSE, to) -> Append(@, Msg(j, to, "Get_current_state"))
-\*                [] OTHER -> @ ]
-\*    /\ UNCHANGED <<sent, joined, peers, phase, recv, secured, state>>
-\*
-\*Send_again_node(n) ==
-\*    /\ sent.node[n] /= <<>>
-\*    /\ LET exp  == Head(sent.node[n])
-\*           to   == exp.from
-\*           type == exp.msg
-\*           curr == state.node[n]
-\*       IN CASE type = "Ack_current_state" ->
-\*            mailbox' = [ mailbox EXCEPT !.join[to] =
-\*              CASE check_mailbox(TRUE, to) -> Append(@, Msg(n, to, <<"Current_state", curr>>))
-\*                [] OTHER -> @ ]
-\*    /\ UNCHANGED <<sent, joined, peers, phase, recv, secured, state>>
-\*
-\*\* If an expected response has not been received, send original message again
-\*Send_again ==
-\*    \/ \E j \in bootstrapping : Send_again_join(j)
-\*    \/ \E n \in nodes : Send_again_node(n)
-\*
-\*(********)
-\*(* Drop *)
-\*(********)
-\*
-\*\* Messages can be dropped only before they are received.
-\*Drop_join(j) ==
-\*    /\ mailbox.join[j] /= <<>>
-\*    /\ mailbox' = [ mailbox EXCEPT !.join[j] = Tail(@) ] \* a message is dropped
-\*    /\ UNCHANGED <<sent, joined, peers, phase, recv, secured, state>>
-\*
-\*Drop_node(n) ==
-\*    /\ mailbox.node[n] /= <<>>
-\*    /\ mailbox' = [ mailbox EXCEPT !.node[n] = Tail(@) ] \* a message is dropped
-\*    /\ UNCHANGED <<sent, joined, peers, phase, recv, secured, state>>
-\*
-\*\* Either an established or joining node drops a message
-\*Drop ==
-\*    \/ \E j \in joining : Drop_join(j)
-\*    \/ \E n \in nodes : Drop_node(n)
 
 (********)
 (* Join *)

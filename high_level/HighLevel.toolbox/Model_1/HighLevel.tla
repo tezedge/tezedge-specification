@@ -68,8 +68,7 @@ ASSUME connectionThreshold <= peerThreshold
 ASSUME peerThreshold <= NumNodes
 ASSUME connectionThreshold < NumNodes
 
-LOCAL INSTANCE HL_Utils
-LOCAL INSTANCE HL_Actions
+INSTANCE HL_Actions
 
 TypeOK == INSTANCE HL_TypeOK
 Properties == INSTANCE HL_Properties
@@ -139,8 +138,6 @@ Next ==
     \/ Handle
     \/ Receive
 \*    \/ Advertise
-\*    \/ Send_again
-\*    \/ Drop
 
 (***********************)
 (* Fairness conditions *)
@@ -155,7 +152,6 @@ Fairness ==
     /\ SF_mailbox(Handle)
     /\ SF_recv(Receive)
 \*    /\ SF_vars(Advertise)
-\*    /\ SF_vars(Send_again)
 
 (***********************)
 (* Liveness conditions *)

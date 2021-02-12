@@ -4,7 +4,7 @@ CONSTANTS NumNodes, NumJoins, ValidStates, peerThreshold, connectionThreshold, s
 
 VARIABLES state, secured, mailbox, recv, sent, joined, peers, phase
 
-LOCAL INSTANCE HL_Utils
+INSTANCE HL_Utils
 
 (***********************)
 (* Liveness properties *)
