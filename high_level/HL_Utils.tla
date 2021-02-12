@@ -108,7 +108,7 @@ filter(queue, msg) ==
           \/ m.to /= msg.to
           \/ msg.type = "Current_state" => m.type = "Get_current_state"
           \/ m.type /= "Current_state"
-    IN Filter(queue, keep)
+    IN SelectSeq(queue, keep)
     
 --------------------------------------------------------------------------------
 

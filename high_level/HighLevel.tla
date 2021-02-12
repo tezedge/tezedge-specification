@@ -139,8 +139,6 @@ Next ==
     \/ Handle
     \/ Receive
 \*    \/ Advertise
-\*    \/ Send_again
-\*    \/ Drop
 
 (***********************)
 (* Fairness conditions *)
@@ -155,7 +153,6 @@ Fairness ==
     /\ SF_mailbox(Handle)
     /\ SF_recv(Receive)
 \*    /\ SF_vars(Advertise)
-\*    /\ SF_vars(Send_again)
 
 (***********************)
 (* Liveness conditions *)

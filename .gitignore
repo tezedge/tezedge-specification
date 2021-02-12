@@ -14,3 +14,5 @@ __tlacache__
 /other
 */Utils.toolbox
 !*.md
+*/x
+!*.dot

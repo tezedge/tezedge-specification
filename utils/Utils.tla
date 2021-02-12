@@ -30,17 +30,6 @@ min[m, n \in Int] == IF m > n THEN n ELSE m
 \* maximum
 max[m, n \in Int] == IF m > n THEN m ELSE n
 
-\* integer division
-divide[a, b \in Nat] ==
-    LET _divide[n, m \in Nat, p \in Nat] ==
-        IF n < m
-        THEN IF m <= 2 * n
-             THEN p + 1
-             ELSE p
-        ELSE _divide[n - m, m, p + 1]
-    IN
-      _divide[a, b, 0]
-
 \* maximum element of a nonempty finite set of naturals
 max_set(set) ==
     LET RECURSIVE _max_set(_, _)
@@ -98,38 +87,37 @@ isSubSeq(s1, s2) ==
             LET n == max_set(DOMAIN s2)
                 i == min_set({ j \in DOMAIN s2 : s2[j] = Head(s1) })
                 s == [ j \in (i + 1)..n |-> s2[j] ]
-            IN
-              isSubSeq(Tail(s1), s)
+            IN isSubSeq(Tail(s1), s)
 
 \* Selects the first element that satisfies the predicate
 \* if no element satisfies the predicate, then return <<>>
 Select(seq, test(_)) ==
-    LET RECURSIVE select(_, _)
-        select(t(_), s) ==
+    LET RECURSIVE select(_)
+        select(s) ==
             CASE s = <<>> -> <<>>
-              [] t(Head(s)) -> Head(s)
-              [] OTHER -> select(t, Tail(s))
-    IN select(test, seq)
+              [] test(Head(s)) -> Head(s)
+              [] OTHER -> select(Tail(s))
+    IN select(seq)
 
 \* returns TRUE if all elements of [seq] satisfy [test], FALSE otherwise
 Forall(seq, test(_)) ==
-    LET RECURSIVE forall(_, _, _)
-        forall(s, t(_), acc) ==
+    LET RECURSIVE forall(_, _)
+        forall(s, acc) ==
           IF s = <<>>
           THEN acc
           ELSE /\ acc
-               /\ forall(Tail(s), t, acc /\ t(Head(s)))
-    IN forall(seq, test, TRUE)
+               /\ forall(Tail(s), acc /\ test(Head(s)))
+    IN forall(seq, TRUE)
 
 \* returns TRUE if any elements of [seq] satisfy [test], FALSE otherwise
 Exists(seq, test(_)) ==
-    LET RECURSIVE exists(_, _, _)
-        exists(s, t(_), acc) ==
+    LET RECURSIVE exists(_, _)
+        exists(s, acc) ==
           IF s = <<>>
           THEN acc
           ELSE \/ acc
-               \/ exists(Tail(s), t, acc \/ t(Head(s)))
-    IN exists(seq, test, FALSE)
+               \/ exists(Tail(s), acc \/ test(Head(s)))
+    IN exists(seq, FALSE)
 
 Cons(elem, seq) == <<elem>> \o seq
 

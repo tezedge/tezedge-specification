@@ -7,45 +7,45 @@ a, b
 ----
 
 \* MV CONSTANT definitions ValidStates
-const_16130128034852000 == 
+const_16131573455652000 ==
 {a, b}
 ----
 
 \* CONSTANT definitions @modelParameterConstants:0peerThreshold
-const_16130128034853000 == 
-3
+const_16131573455653000 ==
+2
 ----
 
 \* CONSTANT definitions @modelParameterConstants:1connectionThreshold
-const_16130128034854000 == 
+const_16131573455654000 ==
 2
 ----
 
 \* CONSTANT definitions @modelParameterConstants:2NumNodes
-const_16130128034855000 == 
-4
+const_16131573455655000 ==
+3
 ----
 
 \* CONSTANT definitions @modelParameterConstants:3NumJoins
-const_16130128034856000 == 
+const_16131573455656000 ==
 2
 ----
 
 \* CONSTANT definitions @modelParameterConstants:5sizeBound
-const_16130128034857000 == 
-4
+const_16131573455657000 ==
+2
 ----
 
 \* INVARIANT definition @modelCorrectnessInvariants:0
-inv_16130128034868000 ==
+inv_16131573455658000 ==
 TypeOK!TypeOK
 ----
 \* PROPERTY definition @modelCorrectnessProperties:0
-prop_16130128034869000 ==
+prop_16131573455669000 ==
 Properties!AllNodesHaveJoined
 ----
 \* PROPERTY definition @modelCorrectnessProperties:1
-prop_161301280348610000 ==
+prop_161315734556610000 ==
 Properties!AllNodesHaveSameState
 ----
 ================================================================================
