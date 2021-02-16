@@ -183,7 +183,7 @@ Init_block_header ==
     LET hdr1 == Header(1, 0, 0)
         blk1  == Block(hdr1, 0)
         hdr2 == Header(1, 0, 1)
-        blk2  == Block(hdr2, 2)
+        blk2  == Block(hdr2, 1)
     IN /\ active  = [ c \in Chains |-> IF c = 1 THEN {1, sys} ELSE {sys} ]
        /\ blocks  = [ c \in Chains |-> [ b \in Branches |->
             IF c = 1 /\ b = 0
@@ -220,7 +220,7 @@ Init_block_header ==
 \* node 1 has block, branch, height
 Init_blocks ==
     LET blk1 == Block(Header(1, 0, 0), 0)
-        blk2 == Block(Header(1, 0, 1), 2)
+        blk2 == Block(Header(1, 0, 1), 1)
     IN /\ active  = [ c \in Chains |-> IF c = 1 THEN {1, sys} ELSE {sys} ]
        /\ blocks  = [ c \in Chains |-> [ b \in Branches |->
             IF c = 1 /\ b = 0

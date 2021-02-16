@@ -189,8 +189,8 @@ Send_head_sys(chain, to, params) ==
 
 \* [from] sends requested block header or error to [to] on [chain]
 Send_header(from, chain, to, params) ==
-    LET b == params.branch
-        h == params.height
+    LET b    == params.branch
+        h    == params.height
         blks == node_blocks[from][chain][b]
     IN CASE \* [from] has seen a block at the requested height [h]
             h \in { block.header.height : block \in ToSet(blks) } ->
@@ -231,8 +231,8 @@ Send_header_sys(chain, to, params) ==
 
 \* [from] sends requested block operations or error to [to] on [chain]
 Send_operations(from, chain, to, params) ==
-    LET b == params.branch
-        h == params.height
+    LET b    == params.branch
+        h    == params.height
         blks == node_blocks[from][chain][b]
     IN CASE \* [from] has seen the requested block
             h \in { block.header.height : block \in ToSet(blks) } ->
@@ -252,8 +252,8 @@ Send_operations(from, chain, to, params) ==
 
 \* [sys] sends requested block operations or error to [to] on [chain]
 Send_operations_sys(chain, to, params) ==
-    LET b == params.branch
-        h == params.height
+    LET b    == params.branch
+        h    == params.height
         blks == blocks[chain][b]
     IN /\ CASE \* [sys] has seen the requested block
                h \in { block.header.height : block \in ToSet(blks) } ->

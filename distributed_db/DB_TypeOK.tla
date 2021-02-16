@@ -127,8 +127,8 @@ NodeBlocksOK ==
             IN /\ DOMAIN node_blocks = Nodes
                /\ DOMAIN node_blocks[node] = Chains
                /\ DOMAIN node_blocks[node][chain] = Branches
-               /\ Len(blks) <= sizeBound \* height of each block <= sizeBound
-               /\ Forall(blks, isBlock)  \* all blocks are valid
+               /\ Len(blks) <= sizeBound + 1 \* height of each block <= sizeBound
+               /\ Forall(blks, isBlock)      \* all blocks are valid
 
 \* node_branches
 NodeBranchesOK ==
