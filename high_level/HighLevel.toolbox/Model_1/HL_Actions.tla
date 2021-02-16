@@ -37,8 +37,6 @@ InitRequestPeers ==
             /\ Cardinality(ps) >= peerThreshold
             /\ Request_peers(j, ps)
 
-
-
 (* Handshake *)
 \* Once peers have been obtained (i.e. the joining node is in the "handshake" phase
 \* and they are peerSaturated), these joining nodes attempt to handshake with their peers

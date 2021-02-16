@@ -102,8 +102,10 @@ Req(from, to, type) ==
     IN CASE isValidReq(msg) -> msg
 
 \* filtering messages
+\* @type: (Seq([from: Int, to: Int, type: Str]), [from: Int, to: Int, type: Str]) => Seq([from: Int, to: Int, type: Str]);
 filter(queue, msg) ==
-    LET keep(m) ==
+    LET \* @type: ([from: Int, to: Int, type: Str]) => Bool;
+        keep(m) ==
           \/ m.from /= msg.from
           \/ m.to /= msg.to
           \/ msg.type = "Current_state" => m.type = "Get_current_state"

@@ -165,7 +165,7 @@ Liveness ==
 (* Specification *)
 (*****************)
 
-Spec == Init /\ Fairness /\ Liveness /\ [][Next]_vars
+Spec == Init /\ [][Next]_vars /\ Fairness \*/\ Liveness
 
 ---------------------------------------------------------------------------------------
 
