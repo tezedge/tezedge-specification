@@ -10,6 +10,7 @@ EXTENDS FiniteSets, Integers, Naturals, Sequences, TLC
 Pick(S) == CHOOSE x \in S : TRUE
 
 \* Turn a function/sequence into a set
+\* @type: (Int -> T) => Set(T);
 ToSet(f) == { f[i] : i \in DOMAIN f }
 
 disjoint(S, T) == S \cap T = {}
@@ -64,6 +65,7 @@ Seq_n(S, n) == UNION { SeqOfLen(S, l) : l \in 0..n }
 NESeq_n(S, n) == { f \in Seq_n(S, n) : f /= <<>> }
 
 \* Enumerable set of pairs of elements from sets S1 and S2
+\* @type: (Set(A), Set(B)) => Set(<<A, B>>);
 Pairs(S1, S2) == { <<x1, x2>> : x1 \in S1, x2 \in S2 }
 
 \* Nonempty sequences of elements from set S

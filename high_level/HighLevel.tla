@@ -13,6 +13,7 @@ EXTENDS Utils
 
 CONSTANTS NumNodes,             \* number of established nodes
           NumJoins,             \* number of joining nodes
+          \* @type: STATES;
           ValidStates,          \* set of valid states
           peerThreshold,        \* number of peers needed before handshaking
           connectionThreshold,  \* number of connections needed before bootstrapping
@@ -49,8 +50,8 @@ VARIABLE recv
     \* sequence of messages received by the given node, deleted as they are handled
 
 VARIABLE sent
-    \* sent \in [ join : [ joining -> Seq(PartialNodeMsgs) ], node : [ nodes -> Seq(JoinMsgs) ] ]
-    \* queue of sent messages by the given node
+    \* sent \in [ join : [ joining -> Seq(NodeMsgs) ], node : [ nodes -> Seq(JoinMsgs) ] ]
+    \* queue of sent messages by the given node, deleted as they are responded to
 
 VARIABLES joined,   \* set of joining nodes who have successfully bootstrapped
           peers,    \* set of peers for the given joining node
@@ -85,8 +86,7 @@ Properties == INSTANCE HL_Properties
 (* - no messages are sent                                                             *)
 (**************************************************************************************)
 
-Init ==
-    \E st \in ValidStates :
+Init == \E st \in ValidStates :
     /\ phase = [ j \in joining |-> "init" ]
     /\ peers = [ j \in joining |-> {} ]
     /\ joined = {}
@@ -137,6 +137,8 @@ Next ==
     \/ BootstrapperJoin
     \/ Handle
     \/ Receive
+    \/ Drop
+    \/ Send_again
 \*    \/ Advertise
 
 (***********************)
@@ -144,28 +146,19 @@ Next ==
 (***********************)
 
 Fairness ==
-    /\ WF_peers(InitRequestPeers)
-    /\ WF_secured(HandshakesHappen)
-    /\ WF_phase(TransitionHappen)
-    /\ WF_state(GettingBootstrap)
-    /\ WF_phase(BootstrapperJoin)
-    /\ SF_mailbox(Handle)
-    /\ SF_recv(Receive)
-\*    /\ SF_vars(Advertise)
-
-(***********************)
-(* Liveness conditions *)
-(***********************)
-
-Liveness ==
-    /\ []<><<Receive>>_recv
-    /\ []<><<Handle>>_mailbox
+    /\ WF_vars(InitRequestPeers)
+    /\ WF_vars(HandshakesHappen)
+    /\ WF_vars(TransitionHappen)
+    /\ SF_vars(GettingBootstrap)
+    /\ WF_vars(BootstrapperJoin)
+    /\ SF_vars(Handle)
+    /\ SF_vars(Receive)
 
 (*****************)
 (* Specification *)
 (*****************)
 
-Spec == Init /\ [][Next]_vars /\ Fairness \*/\ Liveness
+Spec == Init /\ [][Next]_vars /\ Fairness
 
 ---------------------------------------------------------------------------------------
 

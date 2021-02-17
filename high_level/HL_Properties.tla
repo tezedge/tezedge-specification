@@ -5,6 +5,9 @@ CONSTANTS NumNodes, NumJoins, ValidStates, peerThreshold, connectionThreshold, s
 VARIABLES state, secured, mailbox, recv, sent, joined, peers, phase
 
 INSTANCE HL_Utils
+Act == INSTANCE HL_Actions
+
+vars == <<state, secured, mailbox, recv, sent, joined, peers, phase>>
 
 (***********************)
 (* Liveness properties *)
@@ -21,5 +24,11 @@ AllNodesSameState ==
     /\ \A i, j \in joined : ToSet(state.join[i]) = ToSet(state.join[j])
 
 AllNodesHaveSameState == []<>AllNodesSameState
+
+(***********************)
+(* Negative Properties *)
+(***********************)
+
+NeverJoin == \E j \in joining: [](j \notin joined)
 
 ================================================================================

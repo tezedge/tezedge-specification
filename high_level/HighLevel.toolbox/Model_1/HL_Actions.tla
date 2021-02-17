@@ -88,7 +88,7 @@ GettingBootstrap ==
         \E n \in secured.join[j] :
             /\ connected(j, n)                   \* j and n are connected
             /\ ~hasSeenMostRecentStateFrom(j, n) \* j has not seen the most recent state from n
-            /\ check_sent(TRUE, j)             \* j can send a message
+            /\ check_sent(TRUE, j)               \* j can send a message
             /\ Bootstrap(j, n)
 
 (***********)
@@ -149,7 +149,7 @@ Handle_node(n) ==
         j   == m.from
         st  == state.node[n]
         msg == Adv(n, j, "Current_state", st)
-    IN /\ mailbox' = [ mailbox EXCEPT !.join[j] = check_append(@, msg)  ]
+    IN /\ mailbox' = [ mailbox EXCEPT !.join[j] = check_append(@, msg) ]
        /\ recv' = [ recv EXCEPT !.node[n] = Tail(@) ]
        /\ sent' = [ sent EXCEPT !.node[n] = check_append(@, msg) ]
        /\ UNCHANGED <<joined, peers, phase, secured, state>>
@@ -183,6 +183,7 @@ Advertise ==
 (********)
 (* Join *)
 (********)
+
 \* Once a joining node has sufficiently many peers and connections and
 \* has bootstrapped state, they are ready and able to join the network.
 Join(j) ==
@@ -195,5 +196,53 @@ BootstrapperJoin ==
     \E j \in bootstrapping :
         /\ hasState(j)
         /\ Join(j)
+
+(********)
+(* Drop *)
+(********)
+
+Drop_join ==
+    \E j \in bootstrapping:
+        /\ mailbox.join[j] /= <<>>
+        /\ mailbox' = [ mailbox EXCEPT !.join[j] = Tail(@) ]
+        /\ UNCHANGED <<joined, phase, sent, peers, recv, secured, state>>
+
+Drop_node ==
+    \E n \in nodes:
+        /\ mailbox.node[n] /= <<>>
+        /\ mailbox' = [ mailbox EXCEPT !.node[n] = Tail(@) ]
+        /\ UNCHANGED <<joined, phase, sent, peers, recv, secured, state>>
+
+Drop == Drop_join \/ Drop_node
+
+(**************)
+(* Send_again *)
+(**************)
+
+Send_again_join ==
+    \E j \in bootstrapping:
+        /\ sent.join[j] /= <<>>
+        /\ LET msg == Head(sent.join[j])
+               n   == msg.to
+           IN /\ check_mailbox(FALSE, n)
+              /\ msg \notin ToSet(mailbox.node[n]) \* [msg] is not in [n]'s mailbox
+              /\ msg \notin ToSet(recv.node[n])    \* [n] has not received [msg]
+              /\ mailbox' = [ mailbox EXCEPT !.node[n] = Append(@, msg) ]
+              /\ sent' = [ sent EXCEPT !.join[j] = check_append(@, msg) ]
+              /\ UNCHANGED <<joined, peers, phase, recv, secured, state>>
+
+Send_again_node ==
+    \E n \in nodes:
+        /\ sent.node[n] /= <<>>
+        /\ LET msg == Head(sent.node[n])
+               j   == msg.to
+           IN /\ check_mailbox(TRUE, j)
+              /\ msg \notin ToSet(mailbox.join[j]) \* [msg] is not in [j]'s mailbox
+              /\ msg \notin ToSet(recv.join[j])    \* [j] has not received [msg]
+              /\ mailbox' = [ mailbox EXCEPT !.join[j] = Append(@, msg) ]
+              /\ sent' = [ sent EXCEPT !.node[n] = check_append(@, msg) ]
+              /\ UNCHANGED <<joined, peers, phase, recv, secured, state>>
+
+Send_again == Send_again_join \/ Send_again_node
 
 ================================================================================
