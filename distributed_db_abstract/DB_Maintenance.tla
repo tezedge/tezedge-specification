@@ -1,13 +1,12 @@
 -------------------------- MODULE DB_Maintenance ---------------------------
 
-CONSTANTS numChains, numNodes, sizeBound
+CONSTANTS numChains, sizeBound
 
-VARIABLES node_active, node_blocks, node_branches, node_headers, node_height, node_incoming, node_sent,
-          active, chains, mailbox, blocks, branch, height, sysmsgs
+VARIABLES
+    blocks, branch, chains, height,
+    node_active, node_blocks, node_branches, node_headers, node_height
 
-LOCAL INSTANCE DB_Defs
-LOCAL INSTANCE DB_Messages
-LOCAL INSTANCE Utils
+INSTANCE DB_Defs
 
 ----------------------------------------------------------------------------
 
@@ -23,17 +22,16 @@ Produce_block(chain, b, num_ops) ==
     IN \* add the new block to branch [b] on [chain]
        /\ blocks' = [ blocks EXCEPT ![chain][b] = Cons(block, @) ] \* add [block] to branch [b]
        /\ height' = [ height EXCEPT ![chain][b] = hgt ]            \* increase height of branch [b]
-       /\ UNCHANGED <<active, branch, chains, mailbox, sysmsgs>>
-       /\ UNCHANGED <<node_active, node_blocks, node_branches, node_headers,
-                      node_height, node_incoming, node_sent>>
+       /\ UNCHANGED <<active, branch, chains>>
+       /\ UNCHANGED <<node_active, node_blocks, node_branches, node_headers, node_height>>
 
 \* A block is produced on an existing branch of an existing chain
 New_block ==
     \E chain \in activeChains :
         \E b \in activeBranches[chain] :
-            LET num_ops == RandomElement(Op_nums)
-            IN /\ height[chain][b] < sizeBound     \* another block can be produced on branch [b]
-               /\ Produce_block(chain, b, num_ops) \* create a new block on [chain] branch [b]
+            LET num_ops == RandomElement(Op_nums) IN
+            /\ height[chain][b] < sizeBound     \* another block can be produced on branch [b]
+            /\ Produce_block(chain, b, num_ops) \* create a new block on [chain] branch [b]
 
 \* Start a new branch on an existing [chain] with genesis block
 New_branch_on(chain) ==
@@ -42,9 +40,8 @@ New_branch_on(chain) ==
     IN /\ blocks' = [ blocks EXCEPT ![chain][b] = <<blk>> ]
        /\ branch' = [ branch EXCEPT ![chain] = b ]
        /\ height' = [ height EXCEPT ![chain][b] = 0 ]
-       /\ UNCHANGED <<active, chains, mailbox, sysmsgs>>
-       /\ UNCHANGED <<node_active, node_blocks, node_branches, node_headers,
-                      node_height, node_incoming, node_sent>>
+       /\ UNCHANGED <<active, chains>>
+       /\ UNCHANGED <<node_active, node_blocks, node_branches, node_headers, node_height>>
 
 \* A new branch is created on an existing chain
 New_branch ==
@@ -57,13 +54,10 @@ New_chain ==
     /\ chains < numChains \* another chain can be added
     /\ LET chain == chains + 1
            blk   == Block(Header(chain, 0, 0), 0)
-       IN /\ active' = [ active EXCEPT ![chain] = {sys} ]
-          /\ blocks' = [ blocks EXCEPT ![chain][0] = <<blk>> ]
+       IN /\ blocks' = [ blocks EXCEPT ![chain][0] = <<blk>> ]
           /\ branch' = [ branch EXCEPT ![chain] = 0 ]
           /\ chains' = chain
           /\ height' = [ height EXCEPT ![chain][0] = 0 ]
-          /\ UNCHANGED <<mailbox, sysmsgs>>
-          /\ UNCHANGED <<node_active, node_blocks, node_branches, node_headers,
-                         node_height, node_incoming, node_sent>>
+          /\ UNCHANGED <<node_active, node_blocks, node_branches, node_headers, node_height>>
 
 =============================================================================

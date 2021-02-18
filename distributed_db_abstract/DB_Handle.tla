@@ -1,15 +1,12 @@
 ----------------------------- MODULE DB_Handle ------------------------------
 
-CONSTANTS numChains, numNodes, sizeBound
+CONSTANTS numChains, sizeBound
 
-VARIABLES node_active, node_blocks, node_branches, node_headers, node_height, node_incoming, node_sent,
-          active, blocks, branch, chains, mailbox, height, sysmsgs
+VARIABLES
+    blocks, branch, chains, height,
+    node_active, node_blocks, node_branches, node_headers, node_height
 
-LOCAL INSTANCE DB_Activation
-LOCAL INSTANCE DB_Defs
-LOCAL INSTANCE DB_Messages
-LOCAL INSTANCE DB_Request
-LOCAL INSTANCE Utils
+INSTANCE DB_Request
 
 ----------------------------------------------------------------------------
 
@@ -348,20 +345,5 @@ Handle_msg ==
     \/ Handle_active_msg   \* an active node handles a message from an active node
     \/ Handle_inactive_msg \* an active node handles a message from an inactive node
     \/ Sys_handle_msg      \* system handles a message from an active node
-
-----------------------------------------------------------------------------
-
-(**************)
-(* Send again *)
-(**************)
-
-\* A node sends a message, for which they have not seen a response, again
-Send_again ==
-    \E chain \in activeChains :
-        \E node \in activeNodes[chain] :
-            \E msg \in sentSet[node, chain] :
-                /\ SendNoRecord(node, chain, msg)
-                /\ UNCHANGED <<active, blocks, branch, chains, height, sysmsgs>>
-                /\ UNCHANGED <<node_active, node_blocks, node_branches, node_headers, node_height, node_incoming, node_sent>>
 
 =============================================================================

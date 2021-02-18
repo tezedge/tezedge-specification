@@ -2,10 +2,11 @@
 
 EXTENDS Utils
 
-CONSTANTS numChains, numNodes, sizeBound
+CONSTANTS numChains, sizeBound
 
-VARIABLES node_active, node_blocks, node_branches, node_headers, node_height, node_incoming, node_sent,
-          active, blocks, branch, chains, mailbox, height, sysmsgs
+VARIABLES
+    blocks, branch, chains, height,
+    node_active, node_blocks, node_branches, node_headers, node_height
 
 -----------------------------------------------------------------------------
 
@@ -14,12 +15,6 @@ VARIABLES node_active, node_blocks, node_branches, node_headers, node_height, no
 (**********************************)
 
 \* static values
-Nodes == 1..numNodes      \* node ids
-
-sys == 0                  \* system id
-
-SysNodes == sys..numNodes \* nodes and system
-
 Chains == 1..numChains    \* chain ids
 
 Branches == 0..sizeBound  \* branch ids
@@ -31,37 +26,30 @@ Op_nums == 0..sizeBound   \* possible numbers of operations
 \* dynamic values
 activeChains == 1..chains
 
-activeNodes[ chain \in Chains ] == active[chain] \ {sys}
-
-inactiveNodes[ chain \in Chains ] == Nodes \ activeNodes[chain]
+active[ chain \in Chains ] == chain \in node_active
 
 activeBranches[ chain \in Chains ] == 0..branch[chain]
 
 currentHeights(chain, b) == 0..height[chain][b]
 
-branchSet[ node \in Nodes, chain \in Chains ] == ToSet(node_branches[node][chain])
+branchSet[ chain \in Chains ] == ToSet(node_branches[chain])
 
-sentSet[ node \in Nodes, chain \in Chains ] == ToSet(node_sent[node][chain])
+\* set of all blocks node knows about on branch [b] of [chain]
+blockSet(chain, b) == ToSet(node_blocks[chain][b])
 
-\* set of all blocks [node] knows about on [b] of [chain]
-blockSet(node, chain, b) == ToSet(node_blocks[node][chain][b])
+headerSet(chain, b) == { h \in ToSet(node_headers[chain]) : h.branch = b }
 
-headerSet(node, chain, b) == { h \in ToSet(node_headers[node][chain]) : h.branch = b }
+\* heights of known blocks on branch [b] of [chain]
+blockHeights[ chain \in Chains, b \in Branches ] == { blk.header.height : blk \in blockSet(chain, b) }
 
-\* heights of [node] known blocks on branch [b] of [chain]
-blockHeights[ node \in Nodes, chain \in Chains, b \in Branches ] ==
-    { blk.header.height : blk \in blockSet(node, chain, b) }
+\* heights of the headers in node's list on branch [b] of [chain]
+headerHeights[ chain \in Chains, b \in Branches ] == { h.height : h \in headerSet(chain, b) }
 
-\* heights of the headers in [node]'s list on branch [b] of [chain]
-headerHeights[ node \in Nodes, chain \in Chains, b \in Branches ] ==
-    { h.height : h \in headerSet(node, chain, b) }
-
-\* heights of [node] known blocks and headers on branch [b] of [chain]
-heightSet[ node \in Nodes, chain \in Chains, b \in Branches ] ==
-    blockHeights[node, chain, b] \cup headerHeights[node, chain, b]
+\* heights of known blocks and headers on branch [b] of [chain]
+heightSet[ chain \in Chains, b \in Branches ] == blockHeights[chain, b] \cup headerHeights[chain, b]
 
 \* set of all blocks that nodes know about on [chain]
-allNodeBlocks(chain) == UNION { blockSet(node, chain, b) : node \in Nodes, b \in activeBranches[chain] }
+allNodeBlocks(chain) == UNION { blockSet(chain, b) : b \in activeBranches[chain] }
 
 \* set of all blocks on [chain]
 allSysBlocks(chain) == UNION { ToSet(blocks[chain][b]) : b \in activeBranches[chain] }
@@ -100,9 +88,8 @@ isBlock(b) ==
     /\ b.ops \in Operations
 
 \* selects a block on [b] of [chain] at [h]
-\* set must be non-empty
-blockAtHeight(chain, b, h) ==
-    Pick({ blk \in ToSet(blocks[chain][b]) : blk.header.height = h })
+\* set of blocks must be nonempty
+blockAtHeight(chain, b, h) == Pick({ blk \in ToSet(blocks[chain][b]) : blk.header.height = h })
 
 -----------------------------------------------------------------------------
 
@@ -110,36 +97,20 @@ blockAtHeight(chain, b, h) ==
 (* Helper functions *)
 (********************)
 
-\* get the current branch of [node] on [chain]
-current_branch[ node \in Nodes, chain \in Chains ] ==
-    LET bs == node_branches[node][chain]
+\* get node's current branch on [chain]
+current_branch[ chain \in Chains ] ==
+    LET bs == node_branches[chain]
     IN CASE bs = <<>> -> -1
          [] OTHER -> Head(bs)
 
-\* get the current height of [node] on branch [b] [chain]
-current_height[ node \in Nodes, chain \in Chains, b \in Branches ] ==
-    LET blks == node_blocks[node][chain][b]
+\* get node's current height on branch [b] of [chain]
+current_height[ chain \in Chains, b \in Branches ] ==
+    LET blks == node_blocks[chain][b]
     IN CASE blks = <<>> -> -1
          [] OTHER -> Head(blks).header.height
 
-\* check that [node]'s message queue on [chain] is not full
-checkIncoming[ node \in Nodes ] ==
-    [ chain \in Chains |-> Len(node_incoming[node][chain]) < sizeBound ]
-
-\* check that [sys]'s message queue on [chain] is not full
-checkSysMsgs[ chain \in Chains ] == Len(sysmsgs[chain]) < sizeBound
-
-\* check that there is space for [node] to send a message on [chain]
-checkSent[ node \in Nodes ] ==
-    [ chain \in Chains |-> Len(node_sent[node][chain]) < sizeBound ]
-
-\* check that there is space to for [node] to insert a header on [chain]
-checkHeaders[ node \in Nodes ] ==
-    [ chain \in Chains |-> Len(node_headers[node][chain]) < sizeBound ]
-
-\* check that there is space to send [node] a message on [chain]
-checkMailbox[ chain \in Chains ] ==
-    [ node \in SysNodes |-> Len(mailbox[chain][node]) < sizeBound ]
+\* check that there is space for node to insert a header on [chain]
+checkHeaders == [ chain \in Chains |-> Len(node_headers[chain]) < sizeBound ]
 
 \* check that [queue] is not full before including the message at the end
 checkAppend(queue, msg) ==
@@ -217,8 +188,5 @@ checkBranches(branches, chain) ==
     \/ branches = <<>>
     \/ /\ Head(branches) \in activeBranches[chain]
        /\ checkBranches(Tail(branches), chain)
-
-\* do sys or node action
-ifSys(node, action1, action2) == IF node = sys THEN action1 ELSE action2
 
 =============================================================================

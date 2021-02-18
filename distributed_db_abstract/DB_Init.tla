@@ -1,16 +1,16 @@
 -------------------------------- MODULE DB_Init --------------------------------
 
-CONSTANTS numNodes, numChains, sizeBound
+CONSTANTS numChains, sizeBound
 
-VARIABLES node_active, node_blocks, node_branches, node_headers, node_height, node_incoming, node_sent,
-          active, blocks, branch, chains, mailbox, height, sysmsgs
+VARIABLES
+    blocks, branch, chains, height,
+    node_active, node_blocks, node_branches, node_headers, node_height
 
 (************************************************)
 (* Module for defining different initial states *)
 (************************************************)
 
-LOCAL INSTANCE DB_Defs
-LOCAL INSTANCE DB_Messages
+INSTANCE DB_Defs
 
 --------------------------------------------------------------------------------
 
@@ -22,234 +22,112 @@ mkBlock(c, b, h, n) == Block(Header(c, b, h), n)
 
 \* usual
 Init_empty ==
-    /\ active  = [ c \in Chains |-> {sys} ]
+    LET blk == mkBlock(1, 0, 0, 0) IN
     /\ blocks  = [ c \in Chains |-> [ b \in Branches |->
-         IF c = 1 /\ b = 0
-         THEN <<mkBlock(1, 0, 0, 0)>>
-         ELSE <<>> ] ]
+        IF c = 1 /\ b = 0 THEN <<blk>> ELSE <<>> ] ]
     /\ branch  = [ c \in Chains |-> IF c = 1 THEN 0 ELSE -1 ]
     /\ chains  = 1
-    /\ mailbox = [ c \in Chains |-> [ n \in SysNodes |-> <<>> ] ]
-    /\ height  = [ c \in Chains |-> [ b \in Branches |->
-         IF c = 1 /\ b = 0
-         THEN 0
-         ELSE -1 ] ]
-    /\ sysmsgs = [ c \in Chains |-> <<>> ]
-    /\ node_active   = [ n \in Nodes |-> {} ]
-    /\ node_blocks   = [ n \in Nodes |-> [ c \in Chains |-> [ b \in Branches |-> <<>> ] ] ]
-    /\ node_branches = [ n \in Nodes |-> [ c \in Chains |-> <<>> ] ]
-    /\ node_headers  = [ n \in Nodes |-> [ c \in Chains |-> <<>> ] ]
-    /\ node_height   = [ n \in Nodes |-> [ c \in Chains |-> [ b \in Branches |-> -1 ] ] ]
-    /\ node_incoming = [ n \in Nodes |-> [ c \in Chains |-> <<>> ] ]
-    /\ node_sent     = [ n \in Nodes |-> [ c \in Chains |-> <<>> ] ]
+    /\ height  = [ c \in Chains |-> [ b \in Branches |-> IF c = 1 /\ b = 0 THEN 0 ELSE -1 ] ]
+    /\ node_active   = {}
+    /\ node_blocks   = [ c \in Chains |-> [ b \in Branches |-> <<>> ] ]
+    /\ node_branches = [ c \in Chains |-> <<>> ]
+    /\ node_headers  = [ c \in Chains |-> <<>> ]
+    /\ node_height   = [ c \in Chains |-> [ b \in Branches |-> -1 ] ]
 
-\* node 1 has branch 0, no blocks, no headers, no messages
+\* node has branch
 Init_branch ==
-    /\ active  = [ c \in Chains |-> IF c = 1 THEN {1, sys} ELSE {sys} ]
+    LET blk == mkBlock(1, 0, 0, 0) IN
     /\ blocks  = [ c \in Chains |-> [ b \in Branches |->
-         IF c = 1 /\ b = 0
-         THEN <<mkBlock(1, 0, 0, 0)>>
-         ELSE <<>> ] ]
+        IF c = 1 /\ b = 0 THEN <<blk>> ELSE <<>> ] ]
     /\ branch  = [ c \in Chains |-> IF c = 1 THEN 0 ELSE -1 ]
     /\ chains  = 1
-    /\ mailbox = [ c \in Chains |-> [ n \in SysNodes |-> <<>> ] ]
-    /\ height  = [ c \in Chains |-> [ b \in Branches |->
-         IF c = 1 /\ b = 0
-         THEN 0
-         ELSE -1 ] ]
-    /\ mailbox = [ c \in Chains |-> [ n \in SysNodes |-> <<>> ] ]
-    /\ sysmsgs = [ c \in Chains |-> <<>> ]
-    /\ node_active   = [ n \in Nodes |-> IF n = 1 THEN {1} ELSE {} ]
-    /\ node_blocks   = [ n \in Nodes |-> [ c \in Chains |-> [ b \in Branches |-> <<>> ] ] ]
-    /\ node_branches = [ n \in Nodes |-> [ c \in Chains |->
-         IF /\ n = 1
-            /\ c = 1
-         THEN <<0>>
-         ELSE <<>> ] ]
-    /\ node_headers  = [ n \in Nodes |-> [ c \in Chains |-> <<>> ] ]
-    /\ node_height   = [ n \in Nodes |-> [ c \in Chains |-> [ b \in Branches |-> -1 ] ] ]
-    /\ node_incoming = [ n \in Nodes |-> [ c \in Chains |-> <<>> ] ]
-    /\ node_sent     = [ n \in Nodes |-> [ c \in Chains |-> <<>> ] ]
+    /\ height  = [ c \in Chains |-> [ b \in Branches |-> IF c = 1 /\ b = 0 THEN 0 ELSE -1 ] ]
+    /\ node_active   = {1}
+    /\ node_blocks   = [ c \in Chains |-> [ b \in Branches |-> <<>> ] ]
+    /\ node_branches = [ c \in Chains |-> IF c = 1 THEN <<0>> ELSE <<>> ]
+    /\ node_headers  = [ c \in Chains |-> <<>> ]
+    /\ node_height   = [ c \in Chains |-> [ b \in Branches |-> -1 ] ]
 
-\* [sys] has Get_block_header message from node 1, chain 1, branch 0
+\* node has branch, height
 Init_height ==
-    LET msg == Msg(1, 0, "Get_block_header", [ branch |-> 0, height |-> 0 ])
-    IN /\ active  = [ c \in Chains |-> IF c = 1 THEN {1, sys} ELSE {sys} ]
-       /\ blocks  = [ c \in Chains |-> [ b \in Branches |->
-            IF c = 1 /\ b = 0
-            THEN <<mkBlock(1, 0, 0, 0)>>
-            ELSE <<>> ] ]
-       /\ branch  = [ c \in Chains |-> IF c = 1 THEN 0 ELSE -1 ]
-       /\ chains  = 1
-       /\ mailbox = [ c \in Chains |-> [ n \in SysNodes |-> <<>> ] ]
-       /\ height  = [ c \in Chains |-> [ b \in Branches |->
-            IF c = 1 /\ b = 0
-            THEN 0
-            ELSE -1 ] ]
-       /\ mailbox = [ c \in Chains |-> [ n \in SysNodes |-> <<>> ] ]
-       /\ sysmsgs = [ c \in Chains |-> IF c = 1 THEN <<msg>> ELSE <<>> ]
-       /\ node_active   = [ n \in Nodes |-> IF n = 1 THEN {1} ELSE {} ]
-       /\ node_blocks   = [ n \in Nodes |-> [ c \in Chains |-> [ b \in Branches |-> <<>> ] ] ]
-       /\ node_branches = [ n \in Nodes |-> [ c \in Chains |->
-            IF n = 1 /\ c = 1
-            THEN <<0>>
-            ELSE <<>> ] ]
-       /\ node_headers  = [ n \in Nodes |-> [ c \in Chains |-> <<>> ] ]
-       /\ node_height   = [ n \in Nodes |-> [ c \in Chains |-> [ b \in Branches |->
-                IF n = 1 /\ c = 1 /\ b = 0
-                THEN 0
-                ELSE -1 ] ] ]
-       /\ node_incoming = [ n \in Nodes |-> [ c \in Chains |-> <<>> ] ]
-       /\ node_sent     = [ n \in Nodes |-> [ c \in Chains |->
-            IF n = 1 /\ c = 1
-            THEN <<msg>>
-            ELSE <<>> ] ]
+    LET blk == mkBlock(1, 0, 0, 0) IN
+    /\ blocks  = [ c \in Chains |-> [ b \in Branches |->
+        IF c = 1 /\ b = 0 THEN <<blk>> ELSE <<>> ] ]
+    /\ branch  = [ c \in Chains |-> IF c = 1 THEN 0 ELSE -1 ]
+    /\ chains  = 1
+    /\ height  = [ c \in Chains |-> [ b \in Branches |-> IF c = 1 /\ b = 0 THEN 0 ELSE -1 ] ]
+    /\ node_active   = {1}
+    /\ node_blocks   = [ c \in Chains |-> [ b \in Branches |-> <<>> ] ]
+    /\ node_branches = [ c \in Chains |-> IF c = 1 THEN <<0>> ELSE <<>> ]
+    /\ node_headers  = [ c \in Chains |-> <<>> ]
+    /\ node_height   = [ c \in Chains |-> [ b \in Branches |-> IF c = 1 /\ b = 0 THEN 0 ELSE -1 ] ]
 
-\* node 1 has a header
-\* [sys] has Get_operations message from node 1 on chain 1
+\* node has a branch, height, header
 Init_header ==
     LET hdr == Header(1, 0, 0)
         blk == Block(hdr, 0)
-        msg == Msg(1, 0, "Get_operations", [ branch |-> 0, height |-> 0 ])
-    IN /\ active  = [ c \in Chains |-> IF c = 1 THEN {1, sys} ELSE {sys} ]
-       /\ blocks  = [ c \in Chains |-> [ b \in Branches |->
-            IF c = 1 /\ b = 0
-            THEN <<mkBlock(1, 0, 0, 0)>>
-            ELSE <<>> ] ]
-       /\ branch  = [ c \in Chains |-> IF c = 1 THEN 0 ELSE -1 ]
-       /\ chains  = 1
-       /\ mailbox = [ c \in Chains |-> [ n \in SysNodes |-> <<>> ] ]
-       /\ height  = [ c \in Chains |-> [ b \in Branches |->
-            IF c = 1 /\ b = 0
-            THEN 0
-            ELSE -1 ] ]
-       /\ mailbox = [ c \in Chains |-> [ n \in SysNodes |-> <<>> ] ]
-       /\ sysmsgs = [ c \in Chains |-> IF c = 1 THEN <<msg>> ELSE <<>> ]
-       /\ node_active   = [ n \in Nodes |-> IF n = 1 THEN {1} ELSE {} ]
-       /\ node_blocks   = [ n \in Nodes |-> [ c \in Chains |-> [ b \in Branches |-> <<>> ] ] ]
-       /\ node_branches = [ n \in Nodes |-> [ c \in Chains |->
-            IF n = 1 /\ c = 1
-            THEN <<0>>
-            ELSE <<>> ] ]
-       /\ node_headers  = [ n \in Nodes |-> [ c \in Chains |->
-            IF n = 1 /\ c = 1
-            THEN <<hdr>>
-            ELSE <<>> ] ]
-       /\ node_height   = [ n \in Nodes |-> [ c \in Chains |-> [ b \in Branches |->
-            IF n = 1 /\ c = 1 /\ b = 0
-            THEN 0
-            ELSE -1 ] ] ]
-       /\ node_incoming = [ n \in Nodes |-> [ c \in Chains |-> <<>> ] ]
-       /\ node_sent     = [ n \in Nodes |-> [ c \in Chains |->
-            IF n = 1 /\ c = 1
-            THEN <<msg>>
-            ELSE <<>> ] ]
+    IN
+    /\ blocks  = [ c \in Chains |-> [ b \in Branches |->
+        IF c = 1 /\ b = 0 THEN <<blk>> ELSE <<>> ] ]
+    /\ branch  = [ c \in Chains |-> IF c = 1 THEN 0 ELSE -1 ]
+    /\ chains  = 1
+    /\ height  = [ c \in Chains |-> [ b \in Branches |-> IF c = 1 /\ b = 0 THEN 0 ELSE -1 ] ]
+    /\ node_active   = {1}
+    /\ node_blocks   = [ c \in Chains |-> [ b \in Branches |-> <<>> ] ]
+    /\ node_branches = [ c \in Chains |-> IF c = 1 THEN <<0>> ELSE <<>> ]
+    /\ node_headers  = [ c \in Chains |-> IF c = 1 THEN <<hdr>> ELSE <<>> ]
+    /\ node_height   = [ c \in Chains |-> [ b \in Branches |-> IF c = 1 /\ b = 0 THEN 0 ELSE -1 ] ]
 
-\* node 1 has block, branch, height
+\* node 1 has branch, height, block
 Init_block ==
-    LET blk == mkBlock(1, 0, 0, 0)
-    IN /\ active   = [ c \in Chains |-> IF c = 1 THEN {1, sys} ELSE {sys} ]
-       /\ blocks   = [ c \in Chains |-> [ b \in Branches |->
-            IF c = 1 /\ b = 0
-            THEN <<blk>>
-            ELSE <<>> ] ]
-       /\ branch   = [ c \in Chains |-> IF c = 1 THEN 0 ELSE -1 ]
-       /\ chains   = 1
-       /\ height   = [ c \in Chains |-> [ b \in Branches |->
-            IF c = 1 /\ b = 0
-            THEN 0
-            ELSE -1 ] ]
-       /\ mailbox  = [ c \in Chains |-> [ n \in SysNodes |-> <<>> ] ]
-       /\ sysmsgs  = [ c \in Chains |-> <<>> ]
-       /\ node_active   = [ n \in Nodes |-> IF n = 1 THEN {1} ELSE {} ]
-       /\ node_blocks   = [ n \in Nodes |-> [ c \in Chains |-> [ b \in Branches |->
-            IF n = 1 /\ c = 1 /\ b = 0
-            THEN <<blk>>
-            ELSE <<>> ] ] ]
-       /\ node_branches = [ n \in Nodes |-> [ c \in Chains |->
-            IF n = 1 /\ c = 1
-            THEN <<0>>
-            ELSE <<>> ] ]
-       /\ node_headers  = [ n \in Nodes |-> [ c \in Chains |-> <<>> ] ]
-       /\ node_height   = [ n \in Nodes |-> [ c \in Chains |-> [ b \in Branches |->
-            IF n = 1 /\ c = 1 /\ b = 0
-            THEN 0
-            ELSE -1 ] ] ]
-       /\ node_incoming = [ n \in Nodes |-> [ c \in Chains |-> <<>> ] ]
-       /\ node_sent     = [ n \in Nodes |-> [ c \in Chains |-> <<>> ] ]
+    LET blk == mkBlock(1, 0, 0, 0) IN
+    /\ blocks   = [ c \in Chains |-> [ b \in Branches |->
+        IF c = 1 /\ b = 0 THEN <<blk>> ELSE <<>> ] ]
+    /\ branch  = [ c \in Chains |-> IF c = 1 THEN 0 ELSE -1 ]
+    /\ chains  = 1
+    /\ height  = [ c \in Chains |-> [ b \in Branches |-> IF c = 1 /\ b = 0 THEN 0 ELSE -1 ] ]
+    /\ node_active   = {1}
+    /\ node_blocks   = [ c \in Chains |-> [ b \in Branches |->
+        IF c = 1 /\ b = 0 THEN <<blk>> ELSE <<>> ] ]
+    /\ node_branches = [ c \in Chains |-> IF c = 1 THEN <<0>> ELSE <<>> ]
+    /\ node_headers  = [ c \in Chains |-> <<>> ]
+    /\ node_height   = [ c \in Chains |-> [ b \in Branches |-> IF c = 1 /\ b = 0 THEN 0 ELSE -1 ] ]
 
-\* node 1 has block, branch, height
+\* node has branch, height, header, block
 Init_block_header ==
     LET hdr1 == Header(1, 0, 0)
         blk1  == Block(hdr1, 0)
         hdr2 == Header(1, 0, 1)
         blk2  == Block(hdr2, 1)
-    IN /\ active  = [ c \in Chains |-> IF c = 1 THEN {1, sys} ELSE {sys} ]
-       /\ blocks  = [ c \in Chains |-> [ b \in Branches |->
-            IF c = 1 /\ b = 0
-            THEN <<blk2, blk1>>
-            ELSE <<>> ] ]
-       /\ branch  = [ c \in Chains |-> IF c = 1 THEN 0 ELSE -1 ]
-       /\ chains  = 1
-       /\ height  = [ c \in Chains |-> [ b \in Branches |->
-            IF c = 1 /\ b = 0
-            THEN 1
-            ELSE -1 ] ]
-       /\ mailbox = [ c \in Chains |-> [ n \in SysNodes |-> <<>> ] ]
-       /\ sysmsgs = [ c \in Chains |-> <<>> ]
-       /\ node_active   = [ n \in Nodes |-> IF n = 1 THEN {1} ELSE {} ]
-       /\ node_blocks   = [ n \in Nodes |-> [ c \in Chains |-> [ b \in Branches |->
-            IF n = 1 /\ c = 1 /\ b = 0
-            THEN <<blk1>>
-            ELSE <<>> ] ] ]
-       /\ node_branches = [ n \in Nodes |-> [ c \in Chains |->
-            IF n = 1 /\ c = 1
-            THEN <<0>>
-            ELSE <<>> ] ]
-       /\ node_headers  = [ n \in Nodes |-> [ c \in Chains |->
-            IF n = 1 /\ c = 1
-            THEN <<hdr2>>
-            ELSE <<>> ] ]
-       /\ node_height   = [ n \in Nodes |-> [ c \in Chains |-> [ b \in Branches |->
-            IF n = 1 /\ c = 1 /\ b = 0
-            THEN 1
-            ELSE -1 ] ] ]
-       /\ node_incoming = [ n \in Nodes |-> [ c \in Chains |-> <<>> ] ]
-       /\ node_sent     = [ n \in Nodes |-> [ c \in Chains |-> <<>> ] ]
+    IN
+    /\ blocks  = [ c \in Chains |-> [ b \in Branches |->
+        IF c = 1 /\ b = 0 THEN <<blk2, blk1>> ELSE <<>> ] ]
+    /\ branch  = [ c \in Chains |-> IF c = 1 THEN 0 ELSE -1 ]
+    /\ chains  = 1
+    /\ height  = [ c \in Chains |-> [ b \in Branches |-> IF c = 1 /\ b = 0 THEN 1 ELSE -1 ] ]
+    /\ node_active   = {1}
+    /\ node_blocks   = [ c \in Chains |-> [ b \in Branches |->
+        IF c = 1 /\ b = 0 THEN <<blk1>> ELSE <<>> ] ]
+    /\ node_branches = [ c \in Chains |-> IF c = 1 THEN <<0>> ELSE <<>> ]
+    /\ node_headers  = [ c \in Chains |-> IF c = 1 THEN <<hdr2>> ELSE <<>> ]
+    /\ node_height   = [ c \in Chains |-> [ b \in Branches |-> IF c = 1 /\ b = 0 THEN 1 ELSE -1 ] ]
 
 \* node 1 has block, branch, height
 Init_blocks ==
     LET blk1 == Block(Header(1, 0, 0), 0)
         blk2 == Block(Header(1, 0, 1), 1)
-    IN /\ active  = [ c \in Chains |-> IF c = 1 THEN {1, sys} ELSE {sys} ]
-       /\ blocks  = [ c \in Chains |-> [ b \in Branches |->
-            IF c = 1 /\ b = 0
-            THEN <<blk2, blk1>>
-            ELSE <<>> ] ]
-       /\ branch  = [ c \in Chains |-> IF c = 1 THEN 0 ELSE -1 ]
-       /\ chains  = 1
-       /\ height  = [ c \in Chains |-> [ b \in Branches |->
-            IF c = 1 /\ b = 0
-            THEN 1
-            ELSE -1 ] ]
-       /\ mailbox = [ c \in Chains |-> [ n \in SysNodes |-> <<>> ] ]
-       /\ sysmsgs = [ c \in Chains |-> <<>> ]
-       /\ node_active   = [ n \in Nodes |-> IF n = 1 THEN {1} ELSE {} ]
-       /\ node_blocks   = [ n \in Nodes |-> [ c \in Chains |-> [ b \in Branches |->
-            IF n = 1 /\ c = 1 /\ b = 0
-            THEN <<blk1>>
-            ELSE <<>> ] ] ]
-       /\ node_branches = [ n \in Nodes |-> [ c \in Chains |->
-            IF n = 1 /\ c = 1
-            THEN <<0>>
-            ELSE <<>> ] ]
-       /\ node_headers  = [ n \in Nodes |-> [ c \in Chains |-> <<>> ] ]
-       /\ node_height   = [ n \in Nodes |-> [ c \in Chains |-> [ b \in Branches |->
-            IF n = 1 /\ c = 1 /\ b = 0
-            THEN 1
-            ELSE -1 ] ] ]
-       /\ node_incoming = [ n \in Nodes |-> [ c \in Chains |-> <<>> ] ]
-       /\ node_sent     = [ n \in Nodes |-> [ c \in Chains |-> <<>> ] ]
+    IN
+    /\ blocks  = [ c \in Chains |-> [ b \in Branches |->
+        IF c = 1 /\ b = 0 THEN <<blk2, blk1>> ELSE <<>> ] ]
+    /\ branch  = [ c \in Chains |-> IF c = 1 THEN 0 ELSE -1 ]
+    /\ chains  = 1
+    /\ height  = [ c \in Chains |-> [ b \in Branches |-> IF c = 1 /\ b = 0 THEN 1 ELSE -1 ] ]
+    /\ node_active   = {1}
+    /\ node_blocks   = [ c \in Chains |-> [ b \in Branches |->
+        IF c = 1 /\ b = 0 THEN <<blk1>> ELSE <<>> ] ]
+    /\ node_branches = [ c \in Chains |-> IF c = 1 THEN <<0>> ELSE <<>> ]
+    /\ node_headers  = [ c \in Chains |-> <<>> ]
+    /\ node_height   = [ c \in Chains |-> [ b \in Branches |-> IF c = 1 /\ b = 0 THEN 1 ELSE -1 ] ]
 
 Init_options == 0..6
 
