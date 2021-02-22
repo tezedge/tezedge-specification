@@ -1,12 +1,6 @@
 -------------------------- MODULE DB_Maintenance ---------------------------
 
-CONSTANTS numChains, sizeBound
-
-VARIABLES
-    blocks, branch, chains, height,
-    node_active, node_blocks, node_branches, node_headers, node_height
-
-INSTANCE DB_Defs
+EXTENDS DB_Defs
 
 ----------------------------------------------------------------------------
 
@@ -22,7 +16,7 @@ Produce_block(chain, b, num_ops) ==
     IN \* add the new block to branch [b] on [chain]
        /\ blocks' = [ blocks EXCEPT ![chain][b] = Cons(block, @) ] \* add [block] to branch [b]
        /\ height' = [ height EXCEPT ![chain][b] = hgt ]            \* increase height of branch [b]
-       /\ UNCHANGED <<active, branch, chains>>
+       /\ UNCHANGED <<branch, chains>>
        /\ UNCHANGED <<node_active, node_blocks, node_branches, node_headers, node_height>>
 
 \* A block is produced on an existing branch of an existing chain
@@ -40,7 +34,7 @@ New_branch_on(chain) ==
     IN /\ blocks' = [ blocks EXCEPT ![chain][b] = <<blk>> ]
        /\ branch' = [ branch EXCEPT ![chain] = b ]
        /\ height' = [ height EXCEPT ![chain][b] = 0 ]
-       /\ UNCHANGED <<active, chains>>
+       /\ UNCHANGED chains
        /\ UNCHANGED <<node_active, node_blocks, node_branches, node_headers, node_height>>
 
 \* A new branch is created on an existing chain

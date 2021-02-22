@@ -1,18 +1,10 @@
 ------------------------------- MODULE DB_TypeOK -------------------------------
 
-EXTENDS Utils
-
-CONSTANTS numChains, sizeBound
-
-VARIABLES
-    blocks, branch, chains, height,
-    node_active, node_blocks, node_branches, node_headers, node_height
-
 (******************************)
 (* Enumerable type invariants *)
 (******************************)
 
-INSTANCE DB_Defs
+EXTENDS DB_Defs
 
 --------------------------------------------------------------------------------
 
@@ -99,7 +91,7 @@ NodeHeadersOK ==
     \A chain \in Chains :
         LET headers == node_headers[chain] IN
         /\ DOMAIN node_headers = Chains
-        /\ Len(headers) <= sizeBound \* bounded list of headers
+        /\ Len(headers) <= sizeBound * (sizeBound + 1) \* bounded list of headers
         /\ Forall(headers, isHeader) \* all headers are valid headers
 
 \* node_height

@@ -1,16 +1,10 @@
 -------------------------------- MODULE DB_Init --------------------------------
 
-CONSTANTS numChains, sizeBound
-
-VARIABLES
-    blocks, branch, chains, height,
-    node_active, node_blocks, node_branches, node_headers, node_height
-
 (************************************************)
 (* Module for defining different initial states *)
 (************************************************)
 
-INSTANCE DB_Defs
+EXTENDS DB_Defs
 
 --------------------------------------------------------------------------------
 

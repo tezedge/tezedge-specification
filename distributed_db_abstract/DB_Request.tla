@@ -4,22 +4,14 @@
 (* Messages are implicitly passed *)
 (**********************************)
 
-CONSTANTS numChains, sizeBound
-
-VARIABLES
-    blocks, branch, chains, height,
-    node_active, node_blocks, node_branches, node_headers, node_height
-
-INSTANCE DB_Defs
-
-----------------------------------------------------------------------------
+EXTENDS DB_Defs
 
 (**********************)
 (* Get_current_branch *)
 (**********************)
 
 \* node learns about the current branch of [chain]
-Get_curr_branch(chain) ==
+get_current_branch(chain) ==
     /\ node_branches' = [ node_branches EXCEPT ![chain] = insertBranch(branch[chain], @) ]
     /\ UNCHANGED <<blocks, branch, chains, height>>
     /\ UNCHANGED <<node_active, node_blocks, node_headers, node_height>>
@@ -28,14 +20,14 @@ Get_current_branch ==
     \E chain \in activeChains :
         /\ active[chain]
         /\ Len(node_branches[chain]) < sizeBound
-        /\ Get_curr_branch(chain)
+        /\ get_current_branch(chain)
 
 (********************)
 (* Get_current_head *)
 (********************)
 
 \* node learns about the current head of branch [b] on [chain]
-Get_curr_head(chain, b) ==
+get_current_head(chain, b) ==
     /\ node_height' = [ node_height EXCEPT ![chain][b] = height[chain][b] ]
     /\ UNCHANGED <<blocks, branch, chains, height>>
     /\ UNCHANGED <<node_active, node_blocks, node_branches, node_headers>>
@@ -46,21 +38,21 @@ Get_current_head ==
            /\ height[chain][b] >= 0
            /\ active[chain]
            /\ node_height[chain][b] /= height[chain][b]
-           /\ Get_curr_head(chain, b)
+           /\ get_current_head(chain, b)
 
 (********************)
 (* Get_block_header *)
 (********************)
 
 \* node learns about the header for the block at height [h] on branch [b] of [chain]
-Get_block_header_(chain, b, h) ==
+get_block_header(chain, b, h) ==
     /\ h \in { blk.header.height : blk \in ToSet(blocks[chain][b]) }
     /\ LET hdr == blockAtHeight(chain, b, h).header IN
-        /\ node_headers' = [ node_headers EXCEPT ![chain][b] = insertHeader(hdr, @) ]
+        /\ node_headers' = [ node_headers EXCEPT ![chain] = insertHeader(hdr, @) ]
         /\ UNCHANGED <<blocks, branch, chains, height>>
         /\ UNCHANGED <<node_active, node_blocks, node_branches, node_height>>
 
-\* A node requests a block header on some branch at some height from an active peer on some chain
+\* node retrieves a block header on some branch at some height on some chain
 Get_block_header ==
     \E chain \in activeChains :
         /\ active[chain]
@@ -68,33 +60,29 @@ Get_block_header ==
             \* there are blocks which node has not seen
             /\ currentHeights(chain, b) \ heightSet[chain, b] /= {}
             /\ LET h == min_set(currentHeights(chain, b) \ heightSet[chain, b]) IN
-                \* [from] knows about a block at height [h] but has not gotten a header
                 /\ h <= node_height[chain][b]
-                /\ Get_block_header_(chain, b, h)
+                /\ get_block_header(chain, b, h)
 
 (******************)
 (* Get_operations *)
 (******************)
 
-\* The requester must have the block's header before requesting its operations
-\* [from] requests the operations of the block on [b] at [h] on [chain] from active peer [to]
-Get_operations_1(from, chain, b, h, to) ==
-    LET msg == Msg(from, to, "Get_operations", [ branch |-> b, height |-> h ])
-    IN /\ msg \notin ToSet(mailbox[chain][to])
-       /\ Send(from, chain, msg)
-       /\ UNCHANGED <<active, blocks, branch, chains, height, sysmsgs>>
-       /\ UNCHANGED <<node_active, node_blocks, node_branches, node_headers, node_height, node_incoming>>
+\* node has a block header with height [h] on branch [b] of [chain]
+get_operations(chain, hdr) ==
+    LET b   == hdr.branch
+        ops == blockAtHeight(chain, b, hdr.height).ops
+        blk == Block(hdr, ops)
+    IN
+    /\ node_headers' = [ node_headers EXCEPT ![chain] = Tail(@) ]
+    /\ node_blocks' = [ node_blocks EXCEPT ![chain][b] = insertBlock(blk, @) ]
+    /\ UNCHANGED <<blocks, branch, chains, height>>
+    /\ UNCHANGED <<node_active, node_branches, node_height>>
 
-\* A node requests the operations of a block on a chain from an active peer who can have a message sent to them
-Get_operations_one ==
+\* node retrieves the operations of a block for which they have a header
+Get_operations ==
     \E chain \in activeChains :
-        \E from \in activeNodes[chain] :
-            \E to \in activeNodes[chain] \ {from} :
-                /\ checkMailbox[chain][to] \* a message can be sent to [to]
-                /\ LET headers == node_headers[from][chain]
-                   IN /\ headers /= <<>>  \* [from] has a block's header and needs its operations
-                      /\ LET b == Head(headers).branch
-                             h == Head(headers).height
-                         IN Get_operations_1(from, chain, b, h, to) \* send Get_operations request
+        LET headers == node_headers[chain] IN
+        /\ headers /= <<>>
+        /\ get_operations(chain, Head(headers))
 
 =============================================================================
