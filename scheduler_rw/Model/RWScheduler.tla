@@ -10,7 +10,7 @@ CONSTANTS
     \* how fast quota is updated
     \* @type: Int;
     Max_speed,
-    
+
     \* maximum number of connections for scheduler to handle
     \* @type: Int;
     Max_conn,
@@ -233,16 +233,27 @@ Update_quota ==
 (* Initial predicate *)
 (*********************)
 
+\* Init ==
+\*     /\ state \in [ counter : [ Connections -> 0..Max_count \cup {None} ]
+\*                  , quota   : [ Connections -> (-Max_quota)..Max_quota \cup {None} ] ]
+\*     /\ counter \in 0..Max_count
+\*     /\ queue \in [ high : Seq_n(FullMsg, HL_queue), low : Seq_n(FullMsg, HL_queue) ]
+\*     /\ quota \in (-Max_quota)..Max_quota
+\*     /\ connections \in SUBSET Connections
+\*     /\ waiting \in BOOLEAN
+\*     /\ handle \in [ prio : BOOLEAN , msg : Seq_n(BOOLEAN \times FullMsg, HL_queue) ]
+\*     /\ in_param \in [ Connections -> Seq_n(PartialMsg, In_queue) ]
+
 Init ==
-    /\ state \in [ counter : [ Connections -> 0..Max_count \cup {None} ]
-                 , quota   : [ Connections -> (-Max_quota)..Max_quota \cup {None} ] ]
-    /\ counter \in 0..Max_count
-    /\ queue \in [ high : Seq_n(FullMsg, HL_queue), low : Seq_n(FullMsg, HL_queue) ]
-    /\ quota \in (-Max_quota)..Max_quota
-    /\ connections \in SUBSET Connections
-    /\ waiting \in BOOLEAN
-    /\ handle \in [ prio : BOOLEAN , msg : Seq_n(BOOLEAN \times FullMsg, HL_queue) ]
-    /\ in_param \in [ Connections -> Seq_n(PartialMsg, In_queue) ]
+    /\ state = [ counter |-> [ x \in Connections |-> None ]
+               , quota   |-> [ x \in Connections |-> None ] ]
+    /\ counter = 0
+    /\ queue = [ high |-> <<>>, low |-> <<>> ]
+    /\ quota = Max_speed
+    /\ connections = {}
+    /\ waiting = FALSE
+    /\ handle = [ prio |-> FALSE, msg |-> <<>> ]
+    /\ in_param = [ x \in Connections |-> <<>> ]
 
 (****************)
 (* Next actions *)
