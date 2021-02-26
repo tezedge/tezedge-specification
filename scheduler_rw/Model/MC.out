@@ -1,16 +1,9 @@
-@!@!@STARTMSG 2262:0 @!@!@
-TLC2 Version 2.16 of 31 December 2020 (rev: cdddf55)
-@!@!@ENDMSG 2262 @!@!@
-@!@!@STARTMSG 2187:0 @!@!@
-Running breadth-first search Model-Checking with fp 68 and seed 121853026885632990 with 1 worker on 12 cores with 7118MB heap and 64MB offheap memory [pid: 17647] (Linux 4.19.0-13-amd64 amd64, Debian 11.0.9.1 x86_64, MSBDiskFPSet, DiskStateQueue).
-@!@!@ENDMSG 2187 @!@!@
-@!@!@STARTMSG 2220:0 @!@!@
-Starting SANY...
-@!@!@ENDMSG 2220 @!@!@
-Parsing file /home/isaac/Documents/SimpleStaking/model-p2p/scheduler_rw/Model/MC.tla
-Parsing file /home/isaac/Documents/SimpleStaking/model-p2p/scheduler_rw/Model/RWScheduler.tla
+TLC2 Version 2.15 of Day Month 20?? (rev: eb3ff99)
+Running breadth-first search Model-Checking with fp 41 and seed -7379494827048490468 with 4096 workers on 64 cores with 27305MB heap and 64MB offheap memory [pid: 45720] (Linux 5.3.0-26-generic amd64, Ubuntu 11.0.7 x86_64, MSBDiskFPSet, DiskStateQueue).
+Parsing file /home/tla/models/scheduler_rw/Model/MC.tla
+Parsing file /home/tla/models/scheduler_rw/Model/RWScheduler.tla
 Parsing file /tmp/TLC.tla
-Parsing file /home/isaac/Documents/SimpleStaking/model-p2p/scheduler_rw/Model/Utils.tla
+Parsing file /home/tla/models/scheduler_rw/Model/Utils.tla
 Parsing file /tmp/FiniteSets.tla
 Parsing file /tmp/Integers.tla
 Parsing file /tmp/Naturals.tla
@@ -23,477 +16,58 @@ Semantic processing of module TLC
 Semantic processing of module Utils
 Semantic processing of module RWScheduler
 Semantic processing of module MC
-@!@!@STARTMSG 2219:0 @!@!@
-SANY finished.
-@!@!@ENDMSG 2219 @!@!@
-@!@!@STARTMSG 2185:0 @!@!@
-Starting... (2021-02-24 20:13:45)
-@!@!@ENDMSG 2185 @!@!@
-@!@!@STARTMSG 2189:0 @!@!@
+Starting... (2021-02-26 01:07:48)
 Computing initial states...
-@!@!@ENDMSG 2189 @!@!@
-@!@!@STARTMSG 2190:0 @!@!@
-Finished computing initial states: 1 distinct state generated at 2021-02-24 20:13:45.
-@!@!@ENDMSG 2190 @!@!@
-@!@!@STARTMSG 2193:0 @!@!@
+Computed 2 initial states...
+Computed 4 initial states...
+Computed 8 initial states...
+Computed 16 initial states...
+Computed 32 initial states...
+Computed 64 initial states...
+Computed 128 initial states...
+Computed 256 initial states...
+Computed 512 initial states...
+Computed 1024 initial states...
+Computed 2048 initial states...
+Computed 4096 initial states...
+Computed 8192 initial states...
+Computed 16384 initial states...
+Computed 32768 initial states...
+Computed 65536 initial states...
+Computed 131072 initial states...
+Computed 262144 initial states...
+Computed 524288 initial states...
+Computed 1048576 initial states...
+Computed 2097152 initial states...
+Computed 4194304 initial states...
+Computed 8388608 initial states...
+Computed 16777216 initial states...
+Computed 33554432 initial states...
+Computed 67108864 initial states...
+Computed 134217728 initial states...
+Computed 268435456 initial states...
+Finished computing initial states: 475891200 distinct states generated at 2021-02-26 01:57:06.
+Checkpointing of run states/21-02-26-01-07-48
+Checkpointing completed at (2021-02-26 01:57:12)
+Progress(1) at 2021-02-26 01:57:12: 482,281,246 states generated (482,281,246 s/min), 475,891,200 distinct states found (475,891,200 ds/min), 473,134,693 states left on queue.
+Progress(1) at 2021-02-26 01:58:12: 578,315,170 states generated (96,033,924 s/min), 475,891,200 distinct states found (0 ds/min), 432,299,886 states left on queue.
+Progress(1) at 2021-02-26 01:59:12: 673,315,204 states generated (95,000,034 s/min), 475,891,200 distinct states found (0 ds/min), 392,488,448 states left on queue.
+Progress(1) at 2021-02-26 02:00:12: 769,448,507 states generated (96,133,303 s/min), 475,891,200 distinct states found (0 ds/min), 352,438,941 states left on queue.
+Progress(1) at 2021-02-26 02:01:12: 865,536,703 states generated (96,088,196 s/min), 475,891,200 distinct states found (0 ds/min), 312,338,637 states left on queue.
+Progress(1) at 2021-02-26 02:02:12: 960,628,549 states generated (95,091,846 s/min), 475,891,200 distinct states found (0 ds/min), 272,856,797 states left on queue.
+Progress(1) at 2021-02-26 02:03:12: 1,055,681,907 states generated (95,053,358 s/min), 475,891,200 distinct states found (0 ds/min), 233,774,280 states left on queue.
+Progress(1) at 2021-02-26 02:04:12: 1,150,892,998 states generated (95,211,091 s/min), 475,891,200 distinct states found (0 ds/min), 194,904,760 states left on queue.
+Progress(1) at 2021-02-26 02:05:12: 1,246,123,390 states generated (95,230,392 s/min), 475,891,200 distinct states found (0 ds/min), 156,349,920 states left on queue.
+Progress(1) at 2021-02-26 02:06:12: 1,341,201,614 states generated (95,078,224 s/min), 475,891,200 distinct states found (0 ds/min), 116,635,546 states left on queue.
+Progress(1) at 2021-02-26 02:07:12: 1,435,944,237 states generated (94,742,623 s/min), 475,891,200 distinct states found (0 ds/min), 77,560,808 states left on queue.
+Progress(1) at 2021-02-26 02:08:12: 1,530,859,853 states generated (94,915,616 s/min), 475,891,200 distinct states found (0 ds/min), 38,664,930 states left on queue.
+Progress(1) at 2021-02-26 02:09:12: 1,626,030,720 states generated (95,170,867 s/min), 475,891,200 distinct states found (0 ds/min), 0 states left on queue.
 Model checking completed. No error has been found.
   Estimates of the probability that TLC did not check all reachable states
   because two distinct states had the same fingerprint:
-  calculated (optimistic):  val = 1.7E-13
-@!@!@ENDMSG 2193 @!@!@
-@!@!@STARTMSG 2201:0 @!@!@
-The coverage statistics at 2021-02-24 20:13:45
-@!@!@ENDMSG 2201 @!@!@
-@!@!@STARTMSG 2773:0 @!@!@
-<Init line 247, col 1 to line 247, col 4 of module RWScheduler>: 1:1
-@!@!@ENDMSG 2773 @!@!@
-@!@!@STARTMSG 2221:0 @!@!@
-  line 248, col 5 to line 256, col 48 of module RWScheduler: 1
-@!@!@ENDMSG 2221 @!@!@
-@!@!@STARTMSG 2772:0 @!@!@
-<Create_connection line 136, col 1 to line 136, col 21 of module RWScheduler>: 12:966
-@!@!@ENDMSG 2772 @!@!@
-@!@!@STARTMSG 2221:0 @!@!@
-  line 137, col 8 to line 137, col 28 of module RWScheduler: 3302
-@!@!@ENDMSG 2221 @!@!@
-@!@!@STARTMSG 2221:0 @!@!@
-  |line 137, col 8 to line 137, col 9 of module RWScheduler: 2336
-@!@!@ENDMSG 2221 @!@!@
-@!@!@STARTMSG 2221:0 @!@!@
-  |line 137, col 18 to line 137, col 28 of module RWScheduler: 2336
-@!@!@ENDMSG 2221 @!@!@
-@!@!@STARTMSG 2221:0 @!@!@
-  line 138, col 8 to line 138, col 67 of module RWScheduler: 966
-@!@!@ENDMSG 2221 @!@!@
-@!@!@STARTMSG 2221:0 @!@!@
-  line 139, col 8 to line 139, col 43 of module RWScheduler: 966
-@!@!@ENDMSG 2221 @!@!@
-@!@!@STARTMSG 2221:0 @!@!@
-  line 140, col 8 to line 140, col 69 of module RWScheduler: 966
-@!@!@ENDMSG 2221 @!@!@
-@!@!@STARTMSG 2772:0 @!@!@
-<Handle line 151, col 1 to line 151, col 6 of module RWScheduler>: 36:72
-@!@!@ENDMSG 2772 @!@!@
-@!@!@STARTMSG 2221:0 @!@!@
-  line 152, col 8 to line 152, col 18 of module RWScheduler: 1240
-@!@!@ENDMSG 2221 @!@!@
-@!@!@STARTMSG 2221:0 @!@!@
-  |line 152, col 8 to line 152, col 13 of module RWScheduler: 1168
-@!@!@ENDMSG 2221 @!@!@
-@!@!@STARTMSG 2221:0 @!@!@
-  line 153, col 8 to line 153, col 25 of module RWScheduler: 1064
-@!@!@ENDMSG 2221 @!@!@
-@!@!@STARTMSG 2221:0 @!@!@
-  |line 153, col 8 to line 153, col 17 of module RWScheduler: 992
-@!@!@ENDMSG 2221 @!@!@
-@!@!@STARTMSG 2221:0 @!@!@
-  |line 153, col 22 to line 153, col 25 of module RWScheduler: 992
-@!@!@ENDMSG 2221 @!@!@
-@!@!@STARTMSG 2221:0 @!@!@
-  line 159, col 14 to line 159, col 31 of module RWScheduler: 504
-@!@!@ENDMSG 2221 @!@!@
-@!@!@STARTMSG 2221:0 @!@!@
-  |line 159, col 14 to line 159, col 15 of module RWScheduler: 432
-@!@!@ENDMSG 2221 @!@!@
-@!@!@STARTMSG 2221:0 @!@!@
-  |line 159, col 21 to line 159, col 31 of module RWScheduler: 432
-@!@!@ENDMSG 2221 @!@!@
-@!@!@STARTMSG 2221:0 @!@!@
-  line 160, col 14 to line 160, col 39 of module RWScheduler: 72
-@!@!@ENDMSG 2221 @!@!@
-@!@!@STARTMSG 2221:0 @!@!@
-  |line 160, col 14 to line 160, col 20 of module RWScheduler: 252
-@!@!@ENDMSG 2221 @!@!@
-@!@!@STARTMSG 2221:0 @!@!@
-  |line 160, col 25 to line 160, col 39 of module RWScheduler: 252
-@!@!@ENDMSG 2221 @!@!@
-@!@!@STARTMSG 2221:0 @!@!@
-  line 161, col 14 to line 161, col 49 of module RWScheduler: 72
-@!@!@ENDMSG 2221 @!@!@
-@!@!@STARTMSG 2221:0 @!@!@
-  line 162, col 14 to line 162, col 37 of module RWScheduler: 72
-@!@!@ENDMSG 2221 @!@!@
-@!@!@STARTMSG 2221:0 @!@!@
-  line 163, col 14 to line 163, col 33 of module RWScheduler: 72
-@!@!@ENDMSG 2221 @!@!@
-@!@!@STARTMSG 2221:0 @!@!@
-  line 164, col 14 to line 166, col 66 of module RWScheduler: 72
-@!@!@ENDMSG 2221 @!@!@
-@!@!@STARTMSG 2221:0 @!@!@
-  line 167, col 8 to line 167, col 22 of module RWScheduler: 72
-@!@!@ENDMSG 2221 @!@!@
-@!@!@STARTMSG 2221:0 @!@!@
-  line 168, col 8 to line 170, col 38 of module RWScheduler: 72
-@!@!@ENDMSG 2221 @!@!@
-@!@!@STARTMSG 2221:0 @!@!@
-  line 171, col 8 to line 171, col 49 of module RWScheduler: 72
-@!@!@ENDMSG 2221 @!@!@
-@!@!@STARTMSG 2772:0 @!@!@
-<Wait_data line 197, col 1 to line 197, col 9 of module RWScheduler>: 4:4
-@!@!@ENDMSG 2772 @!@!@
-@!@!@STARTMSG 2221:0 @!@!@
-  line 198, col 8 to line 198, col 19 of module RWScheduler: 1172
-@!@!@ENDMSG 2221 @!@!@
-@!@!@STARTMSG 2221:0 @!@!@
-  |line 198, col 9 to line 198, col 19 of module RWScheduler: 1168
-@!@!@ENDMSG 2221 @!@!@
-@!@!@STARTMSG 2221:0 @!@!@
-  line 199, col 8 to line 199, col 15 of module RWScheduler: 180
-@!@!@ENDMSG 2221 @!@!@
-@!@!@STARTMSG 2221:0 @!@!@
-  |line 199, col 9 to line 199, col 15 of module RWScheduler: 176
-@!@!@ENDMSG 2221 @!@!@
-@!@!@STARTMSG 2221:0 @!@!@
-  line 96, col 8 to line 96, col 24 of module RWScheduler: 104
-@!@!@ENDMSG 2221 @!@!@
-@!@!@STARTMSG 2221:0 @!@!@
-  |line 96, col 8 to line 96, col 17 of module RWScheduler: 100
-@!@!@ENDMSG 2221 @!@!@
-@!@!@STARTMSG 2221:0 @!@!@
-  |line 96, col 21 to line 96, col 24 of module RWScheduler: 100
-@!@!@ENDMSG 2221 @!@!@
-@!@!@STARTMSG 2221:0 @!@!@
-  line 97, col 8 to line 97, col 23 of module RWScheduler: 104
-@!@!@ENDMSG 2221 @!@!@
-@!@!@STARTMSG 2221:0 @!@!@
-  |line 97, col 8 to line 97, col 16 of module RWScheduler: 100
-@!@!@ENDMSG 2221 @!@!@
-@!@!@STARTMSG 2221:0 @!@!@
-  |line 97, col 20 to line 97, col 23 of module RWScheduler: 100
-@!@!@ENDMSG 2221 @!@!@
-@!@!@STARTMSG 2221:0 @!@!@
-  line 201, col 8 to line 201, col 22 of module RWScheduler: 4
-@!@!@ENDMSG 2221 @!@!@
-@!@!@STARTMSG 2221:0 @!@!@
-  line 202, col 8 to line 202, col 80 of module RWScheduler: 4
-@!@!@ENDMSG 2221 @!@!@
-@!@!@STARTMSG 2772:0 @!@!@
-<Update_quota line 220, col 1 to line 220, col 12 of module RWScheduler>: 0:0
-@!@!@ENDMSG 2772 @!@!@
-@!@!@STARTMSG 2221:0 @!@!@
-  line 221, col 8 to line 221, col 16 of module RWScheduler: 1168
-@!@!@ENDMSG 2221 @!@!@
-@!@!@STARTMSG 2221:0 @!@!@
-  line 222, col 8 to line 222, col 41 of module RWScheduler: 0
-@!@!@ENDMSG 2221 @!@!@
-@!@!@STARTMSG 2221:0 @!@!@
-  line 224, col 13 to line 226, col 60 of module RWScheduler: 0
-@!@!@ENDMSG 2221 @!@!@
-@!@!@STARTMSG 2221:0 @!@!@
-  line 227, col 13 to line 227, col 27 of module RWScheduler: 0
-@!@!@ENDMSG 2221 @!@!@
-@!@!@STARTMSG 2221:0 @!@!@
-  line 228, col 8 to line 228, col 75 of module RWScheduler: 0
-@!@!@ENDMSG 2221 @!@!@
-@!@!@STARTMSG 2772:0 @!@!@
-<Close_conn line 264, col 1 to line 264, col 10 of module RWScheduler>: 399:1118
-@!@!@ENDMSG 2772 @!@!@
-@!@!@STARTMSG 2221:0 @!@!@
-  line 144, col 8 to line 144, col 32 of module RWScheduler: 2488
-@!@!@ENDMSG 2221 @!@!@
-@!@!@STARTMSG 2221:0 @!@!@
-  |line 144, col 8 to line 144, col 9 of module RWScheduler: 1370
-@!@!@ENDMSG 2221 @!@!@
-@!@!@STARTMSG 2221:0 @!@!@
-  |line 144, col 18 to line 144, col 32 of module RWScheduler: 1370
-@!@!@ENDMSG 2221 @!@!@
-@!@!@STARTMSG 2221:0 @!@!@
-  ||line 100, col 11 to line 100, col 38 of module RWScheduler: 1370
-@!@!@ENDMSG 2221 @!@!@
-@!@!@STARTMSG 2221:0 @!@!@
-  |||line 100, col 13 to line 100, col 19 of module RWScheduler: 504
-@!@!@ENDMSG 2221 @!@!@
-@!@!@STARTMSG 2221:0 @!@!@
-  |||line 100, col 29 to line 100, col 36 of module RWScheduler: 1370
-@!@!@ENDMSG 2221 @!@!@
-@!@!@STARTMSG 2221:0 @!@!@
-  ||line 144, col 22 to line 144, col 31 of module RWScheduler: 1370
-@!@!@ENDMSG 2221 @!@!@
-@!@!@STARTMSG 2221:0 @!@!@
-  line 145, col 8 to line 145, col 73 of module RWScheduler: 1118
-@!@!@ENDMSG 2221 @!@!@
-@!@!@STARTMSG 2221:0 @!@!@
-  line 146, col 8 to line 146, col 40 of module RWScheduler: 1118
-@!@!@ENDMSG 2221 @!@!@
-@!@!@STARTMSG 2221:0 @!@!@
-  line 147, col 8 to line 147, col 69 of module RWScheduler: 1118
-@!@!@ENDMSG 2221 @!@!@
-@!@!@STARTMSG 2221:0 @!@!@
-  line 264, col 55 to line 264, col 56 of module RWScheduler: 1370
-@!@!@ENDMSG 2221 @!@!@
-@!@!@STARTMSG 2221:0 @!@!@
-  line 264, col 25 to line 264, col 35 of module RWScheduler: 1168
-@!@!@ENDMSG 2221 @!@!@
-@!@!@STARTMSG 2772:0 @!@!@
-<Popping line 266, col 1 to line 266, col 7 of module RWScheduler>: 144:504
-@!@!@ENDMSG 2772 @!@!@
-@!@!@STARTMSG 2221:0 @!@!@
-  line 183, col 8 to line 183, col 18 of module RWScheduler: 1874
-@!@!@ENDMSG 2221 @!@!@
-@!@!@STARTMSG 2221:0 @!@!@
-  |line 183, col 8 to line 183, col 13 of module RWScheduler: 1370
-@!@!@ENDMSG 2221 @!@!@
-@!@!@STARTMSG 2221:0 @!@!@
-  line 116, col 8 to line 118, col 37 of module RWScheduler: 1152
-@!@!@ENDMSG 2221 @!@!@
-@!@!@STARTMSG 2221:0 @!@!@
-  line 119, col 11 to line 119, col 27 of module RWScheduler: 1656
-@!@!@ENDMSG 2221 @!@!@
-@!@!@STARTMSG 2221:0 @!@!@
-  |line 119, col 11 to line 119, col 19 of module RWScheduler: 1152
-@!@!@ENDMSG 2221 @!@!@
-@!@!@STARTMSG 2221:0 @!@!@
-  |line 119, col 24 to line 119, col 27 of module RWScheduler: 1152
-@!@!@ENDMSG 2221 @!@!@
-@!@!@STARTMSG 2221:0 @!@!@
-  line 120, col 11 to line 120, col 36 of module RWScheduler: 1008
-@!@!@ENDMSG 2221 @!@!@
-@!@!@STARTMSG 2221:0 @!@!@
-  |line 120, col 11 to line 120, col 28 of module RWScheduler: 504
-@!@!@ENDMSG 2221 @!@!@
-@!@!@STARTMSG 2221:0 @!@!@
-  |line 120, col 33 to line 120, col 36 of module RWScheduler: 504
-@!@!@ENDMSG 2221 @!@!@
-@!@!@STARTMSG 2221:0 @!@!@
-  line 121, col 11 to line 121, col 36 of module RWScheduler: 1008
-@!@!@ENDMSG 2221 @!@!@
-@!@!@STARTMSG 2221:0 @!@!@
-  |line 121, col 11 to line 121, col 28 of module RWScheduler: 504
-@!@!@ENDMSG 2221 @!@!@
-@!@!@STARTMSG 2221:0 @!@!@
-  |line 121, col 33 to line 121, col 36 of module RWScheduler: 504
-@!@!@ENDMSG 2221 @!@!@
-@!@!@STARTMSG 2221:0 @!@!@
-  line 185, col 11 to line 185, col 28 of module RWScheduler: 504
-@!@!@ENDMSG 2221 @!@!@
-@!@!@STARTMSG 2221:0 @!@!@
-  line 188, col 16 to line 188, col 77 of module RWScheduler: 0
-@!@!@ENDMSG 2221 @!@!@
-@!@!@STARTMSG 2221:0 @!@!@
-  line 189, col 16 to line 189, col 57 of module RWScheduler: 0
-@!@!@ENDMSG 2221 @!@!@
-@!@!@STARTMSG 2221:0 @!@!@
-  line 192, col 13 to line 193, col 56 of module RWScheduler: 504
-@!@!@ENDMSG 2221 @!@!@
-@!@!@STARTMSG 2221:0 @!@!@
-  line 194, col 8 to line 194, col 74 of module RWScheduler: 504
-@!@!@ENDMSG 2221 @!@!@
-@!@!@STARTMSG 2221:0 @!@!@
-  line 266, col 22 to line 266, col 32 of module RWScheduler: 1168
-@!@!@ENDMSG 2221 @!@!@
-@!@!@STARTMSG 2772:0 @!@!@
-<Waiting line 268, col 1 to line 268, col 7 of module RWScheduler>: 116:144
-@!@!@ENDMSG 2772 @!@!@
-@!@!@STARTMSG 2221:0 @!@!@
-  line 206, col 8 to line 206, col 14 of module RWScheduler: 144
-@!@!@ENDMSG 2221 @!@!@
-@!@!@STARTMSG 2221:0 @!@!@
-  line 207, col 8 to line 207, col 27 of module RWScheduler: 350
-@!@!@ENDMSG 2221 @!@!@
-@!@!@STARTMSG 2221:0 @!@!@
-  |line 207, col 8 to line 207, col 19 of module RWScheduler: 206
-@!@!@ENDMSG 2221 @!@!@
-@!@!@STARTMSG 2221:0 @!@!@
-  |line 207, col 24 to line 207, col 27 of module RWScheduler: 206
-@!@!@ENDMSG 2221 @!@!@
-@!@!@STARTMSG 2221:0 @!@!@
-  line 208, col 11 to line 208, col 21 of module RWScheduler: 144
-@!@!@ENDMSG 2221 @!@!@
-@!@!@STARTMSG 2221:0 @!@!@
-  line 209, col 13 to line 209, col 28 of module RWScheduler: 144
-@!@!@ENDMSG 2221 @!@!@
-@!@!@STARTMSG 2221:0 @!@!@
-  line 210, col 13 to line 210, col 29 of module RWScheduler: 0
-@!@!@ENDMSG 2221 @!@!@
-@!@!@STARTMSG 2221:0 @!@!@
-  line 213, col 14 to line 213, col 32 of module RWScheduler: 144
-@!@!@ENDMSG 2221 @!@!@
-@!@!@STARTMSG 2221:0 @!@!@
-  line 214, col 16 to line 214, col 64 of module RWScheduler: 0
-@!@!@ENDMSG 2221 @!@!@
-@!@!@STARTMSG 2221:0 @!@!@
-  line 215, col 16 to line 215, col 64 of module RWScheduler: 144
-@!@!@ENDMSG 2221 @!@!@
-@!@!@STARTMSG 2221:0 @!@!@
-  line 216, col 8 to line 216, col 54 of module RWScheduler: 144
-@!@!@ENDMSG 2221 @!@!@
-@!@!@STARTMSG 2221:0 @!@!@
-  line 217, col 8 to line 217, col 63 of module RWScheduler: 144
-@!@!@ENDMSG 2221 @!@!@
-@!@!@STARTMSG 2221:0 @!@!@
-  line 268, col 42 to line 268, col 43 of module RWScheduler: 206
-@!@!@ENDMSG 2221 @!@!@
-@!@!@STARTMSG 2221:0 @!@!@
-  line 268, col 22 to line 268, col 32 of module RWScheduler: 1168
-@!@!@ENDMSG 2221 @!@!@
-@!@!@STARTMSG 2772:0 @!@!@
-<Incoming_msg line 270, col 1 to line 270, col 12 of module RWScheduler>: 456:980
-@!@!@ENDMSG 2772 @!@!@
-@!@!@STARTMSG 2221:0 @!@!@
-  line 176, col 8 to line 176, col 35 of module RWScheduler: 980
-@!@!@ENDMSG 2221 @!@!@
-@!@!@STARTMSG 2221:0 @!@!@
-  |line 176, col 8 to line 176, col 24 of module RWScheduler: 2740
-@!@!@ENDMSG 2221 @!@!@
-@!@!@STARTMSG 2221:0 @!@!@
-  |line 176, col 28 to line 176, col 35 of module RWScheduler: 2740
-@!@!@ENDMSG 2221 @!@!@
-@!@!@STARTMSG 2221:0 @!@!@
-  line 177, col 8 to line 177, col 48 of module RWScheduler: 980
-@!@!@ENDMSG 2221 @!@!@
-@!@!@STARTMSG 2221:0 @!@!@
-  line 178, col 8 to line 178, col 70 of module RWScheduler: 980
-@!@!@ENDMSG 2221 @!@!@
-@!@!@STARTMSG 2221:0 @!@!@
-  line 179, col 8 to line 179, col 71 of module RWScheduler: 980
-@!@!@ENDMSG 2221 @!@!@
-@!@!@STARTMSG 2221:0 @!@!@
-  line 271, col 75 to line 271, col 76 of module RWScheduler: 2740
-@!@!@ENDMSG 2221 @!@!@
-@!@!@STARTMSG 2221:0 @!@!@
-  line 271, col 79 to line 271, col 81 of module RWScheduler: 980
-@!@!@ENDMSG 2221 @!@!@
-@!@!@STARTMSG 2221:0 @!@!@
-  line 271, col 84 to line 271, col 86 of module RWScheduler: 980
-@!@!@ENDMSG 2221 @!@!@
-@!@!@STARTMSG 2221:0 @!@!@
-  line 271, col 15 to line 271, col 25 of module RWScheduler: 1168
-@!@!@ENDMSG 2221 @!@!@
-@!@!@STARTMSG 2221:0 @!@!@
-  line 271, col 36 to line 271, col 43 of module RWScheduler: 1168
-@!@!@ENDMSG 2221 @!@!@
-@!@!@STARTMSG 2221:0 @!@!@
-  line 271, col 54 to line 271, col 63 of module RWScheduler: 1168
-@!@!@ENDMSG 2221 @!@!@
-@!@!@STARTMSG 2774:0 @!@!@
-<StateOK line 338, col 1 to line 338, col 7 of module RWScheduler>
-@!@!@ENDMSG 2774 @!@!@
-@!@!@STARTMSG 2221:0 @!@!@
-  line 339, col 5 to line 343, col 86 of module RWScheduler: 1168
-@!@!@ENDMSG 2221 @!@!@
-@!@!@STARTMSG 2221:0 @!@!@
-  |line 339, col 8 to line 339, col 44 of module RWScheduler: 1168
-@!@!@ENDMSG 2221 @!@!@
-@!@!@STARTMSG 2221:0 @!@!@
-  |line 340, col 8 to line 340, col 41 of module RWScheduler: 1168
-@!@!@ENDMSG 2221 @!@!@
-@!@!@STARTMSG 2221:0 @!@!@
-  |line 341, col 8 to line 341, col 39 of module RWScheduler: 1168
-@!@!@ENDMSG 2221 @!@!@
-@!@!@STARTMSG 2221:0 @!@!@
-  |line 342, col 8 to line 342, col 77 of module RWScheduler: 1168
-@!@!@ENDMSG 2221 @!@!@
-@!@!@STARTMSG 2221:0 @!@!@
-  ||line 342, col 32 to line 342, col 77 of module RWScheduler: 2336
-@!@!@ENDMSG 2221 @!@!@
-@!@!@STARTMSG 2221:0 @!@!@
-  ||line 342, col 18 to line 342, col 28 of module RWScheduler: 1168
-@!@!@ENDMSG 2221 @!@!@
-@!@!@STARTMSG 2221:0 @!@!@
-  |line 343, col 8 to line 343, col 86 of module RWScheduler: 1168
-@!@!@ENDMSG 2221 @!@!@
-@!@!@STARTMSG 2221:0 @!@!@
-  ||line 343, col 32 to line 343, col 86 of module RWScheduler: 2336
-@!@!@ENDMSG 2221 @!@!@
-@!@!@STARTMSG 2221:0 @!@!@
-  ||line 343, col 18 to line 343, col 28 of module RWScheduler: 1168
-@!@!@ENDMSG 2221 @!@!@
-@!@!@STARTMSG 2774:0 @!@!@
-<QueueOK line 329, col 1 to line 329, col 7 of module RWScheduler>
-@!@!@ENDMSG 2774 @!@!@
-@!@!@STARTMSG 2221:0 @!@!@
-  line 330, col 5 to line 334, col 33 of module RWScheduler: 1168
-@!@!@ENDMSG 2221 @!@!@
-@!@!@STARTMSG 2221:0 @!@!@
-  |line 330, col 8 to line 330, col 39 of module RWScheduler: 1168
-@!@!@ENDMSG 2221 @!@!@
-@!@!@STARTMSG 2221:0 @!@!@
-  |line 331, col 8 to line 331, col 61 of module RWScheduler: 1168
-@!@!@ENDMSG 2221 @!@!@
-@!@!@STARTMSG 2221:0 @!@!@
-  |line 332, col 8 to line 332, col 34 of module RWScheduler: 1168
-@!@!@ENDMSG 2221 @!@!@
-@!@!@STARTMSG 2221:0 @!@!@
-  |line 333, col 8 to line 333, col 59 of module RWScheduler: 1168
-@!@!@ENDMSG 2221 @!@!@
-@!@!@STARTMSG 2221:0 @!@!@
-  ||line 333, col 36 to line 333, col 59 of module RWScheduler: 528
-@!@!@ENDMSG 2221 @!@!@
-@!@!@STARTMSG 2221:0 @!@!@
-  ||line 333, col 17 to line 333, col 32 of module RWScheduler: 1168
-@!@!@ENDMSG 2221 @!@!@
-@!@!@STARTMSG 2221:0 @!@!@
-  |line 334, col 8 to line 334, col 33 of module RWScheduler: 1168
-@!@!@ENDMSG 2221 @!@!@
-@!@!@STARTMSG 2774:0 @!@!@
-<ConnOK line 313, col 1 to line 313, col 6 of module RWScheduler>
-@!@!@ENDMSG 2774 @!@!@
-@!@!@STARTMSG 2221:0 @!@!@
-  line 313, col 11 to line 313, col 43 of module RWScheduler: 1168
-@!@!@ENDMSG 2221 @!@!@
-@!@!@STARTMSG 2774:0 @!@!@
-<QuotaOK line 336, col 1 to line 336, col 7 of module RWScheduler>
-@!@!@ENDMSG 2774 @!@!@
-@!@!@STARTMSG 2221:0 @!@!@
-  line 336, col 12 to line 336, col 44 of module RWScheduler: 1168
-@!@!@ENDMSG 2221 @!@!@
-@!@!@STARTMSG 2774:0 @!@!@
-<CounterOK line 315, col 1 to line 315, col 9 of module RWScheduler>
-@!@!@ENDMSG 2774 @!@!@
-@!@!@STARTMSG 2221:0 @!@!@
-  line 315, col 14 to line 315, col 37 of module RWScheduler: 1168
-@!@!@ENDMSG 2221 @!@!@
-@!@!@STARTMSG 2774:0 @!@!@
-<WaitingOK line 345, col 1 to line 345, col 9 of module RWScheduler>
-@!@!@ENDMSG 2774 @!@!@
-@!@!@STARTMSG 2221:0 @!@!@
-  line 345, col 14 to line 345, col 32 of module RWScheduler: 1168
-@!@!@ENDMSG 2221 @!@!@
-@!@!@STARTMSG 2774:0 @!@!@
-<InParamOK line 323, col 1 to line 323, col 9 of module RWScheduler>
-@!@!@ENDMSG 2774 @!@!@
-@!@!@STARTMSG 2221:0 @!@!@
-  line 324, col 5 to line 327, col 72 of module RWScheduler: 1168
-@!@!@ENDMSG 2221 @!@!@
-@!@!@STARTMSG 2221:0 @!@!@
-  |line 324, col 8 to line 324, col 36 of module RWScheduler: 1168
-@!@!@ENDMSG 2221 @!@!@
-@!@!@STARTMSG 2221:0 @!@!@
-  |line 325, col 8 to line 327, col 72 of module RWScheduler: 1168
-@!@!@ENDMSG 2221 @!@!@
-@!@!@STARTMSG 2221:0 @!@!@
-  ||line 326, col 9 to line 327, col 72 of module RWScheduler: 2336
-@!@!@ENDMSG 2221 @!@!@
-@!@!@STARTMSG 2221:0 @!@!@
-  |||line 326, col 12 to line 326, col 40 of module RWScheduler: 2336
-@!@!@ENDMSG 2221 @!@!@
-@!@!@STARTMSG 2221:0 @!@!@
-  |||line 327, col 12 to line 327, col 72 of module RWScheduler: 2336
-@!@!@ENDMSG 2221 @!@!@
-@!@!@STARTMSG 2221:0 @!@!@
-  ||||line 327, col 43 to line 327, col 72 of module RWScheduler: 1504
-@!@!@ENDMSG 2221 @!@!@
-@!@!@STARTMSG 2221:0 @!@!@
-  ||||line 327, col 21 to line 327, col 39 of module RWScheduler: 2336
-@!@!@ENDMSG 2221 @!@!@
-@!@!@STARTMSG 2221:0 @!@!@
-  ||line 325, col 18 to line 325, col 32 of module RWScheduler: 1168
-@!@!@ENDMSG 2221 @!@!@
-@!@!@STARTMSG 2202:0 @!@!@
-End of statistics.
-@!@!@ENDMSG 2202 @!@!@
-@!@!@STARTMSG 2200:0 @!@!@
-Progress(15) at 2021-02-24 20:13:45: 3,789 states generated (378,900 s/min), 1,168 distinct states found (116,800 ds/min), 0 states left on queue.
-@!@!@ENDMSG 2200 @!@!@
-@!@!@STARTMSG 2199:0 @!@!@
-3789 states generated, 1168 distinct states found, 0 states left on queue.
-@!@!@ENDMSG 2199 @!@!@
-@!@!@STARTMSG 2194:0 @!@!@
-The depth of the complete state graph search is 15.
-@!@!@ENDMSG 2194 @!@!@
-@!@!@STARTMSG 2268:0 @!@!@
-The average outdegree of the complete state graph is 1 (minimum is 0, the maximum 6 and the 95th percentile is 3).
-@!@!@ENDMSG 2268 @!@!@
-@!@!@STARTMSG 2186:0 @!@!@
-Finished in 605ms at (2021-02-24 20:13:45)
-@!@!@ENDMSG 2186 @!@!@
+  calculated (optimistic):  val = .030
+  based on the actual fingerprints:  val = .001
+1626030720 states generated, 475891200 distinct states found, 0 states left on queue.
+The depth of the complete state graph search is 1.
+The average outdegree of the complete state graph is 0 (minimum is 0, the maximum 0 and the 95th percentile is 0).
+Finished in 01h 01min at (2021-02-26 02:09:30)

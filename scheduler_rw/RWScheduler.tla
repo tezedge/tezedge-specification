@@ -241,7 +241,8 @@ Init ==
     /\ quota \in (-Max_quota)..Max_quota
     /\ connections \in SUBSET Connections
     /\ waiting \in BOOLEAN
-    /\ handle \in [ prio : BOOLEAN , msg : Seq_n(BOOLEAN \times FullMsg, HL_queue) ]
+    /\ handle \in [ prio : BOOLEAN
+                  , msg  : Seq_n(BOOLEAN \times Connections \times Messages \times MsgSize, HL_queue) ]
     /\ in_param \in [ Connections -> Seq_n(PartialMsg, In_queue) ]
 
 (****************)
