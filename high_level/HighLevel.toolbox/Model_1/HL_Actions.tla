@@ -48,7 +48,7 @@ Handshake(j, n) ==
 HandshakesHappen ==
     \E j \in handshaking :
         \E n \in peers[j] :
-            /\ ~connected(j, n)
+            /\ ~connected[j, n]
             /\ ~connectionSaturated(j)
             /\ Handshake(j, n)
 
@@ -86,7 +86,7 @@ Bootstrap(j, n) ==
 GettingBootstrap ==
     \E j \in bootstrapping :
         \E n \in secured.join[j] :
-            /\ connected(j, n)                   \* j and n are connected
+            /\ connected[j, n]                   \* j and n are connected
             /\ ~hasSeenMostRecentStateFrom(j, n) \* j has not seen the most recent state from n
             /\ check_sent(TRUE, j)               \* j can send a message
             /\ Bootstrap(j, n)

@@ -10,7 +10,7 @@ EXTENDS FiniteSets, Integers, Naturals, Sequences, TLC
 Pick(S) == CHOOSE x \in S : TRUE
 
 \* Turn a function/sequence into a set
-\* @type: (Seq(T)) => Set(T);
+\* @type: (Seq(t)) => Set(t);
 ToSet(f) == { f[i] : i \in DOMAIN f }
 
 disjoint(S, T) == S \cap T = {}
@@ -72,6 +72,7 @@ Pairs(S1, S2) == { <<x1, x2>> : x1 \in S1, x2 \in S2 }
 NESeq(S) == Seq(S) \ {<<>>}
 
 \* remove (all occurrences of) an element from a sequence
+\* @type: (Seq(t), t) => Seq(t);
 Remove(seq, elem) ==
     LET RECURSIVE _remove(_, _, _)
         _remove(s, e, acc) ==

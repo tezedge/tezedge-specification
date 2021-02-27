@@ -1,0 +1,138 @@
+21:04:18.160 [main] INFO  a.f.a.t.Tool$ - Type checking MC.tla
+21:04:18.348 [main] INFO  a.f.a.i.p.PassChainExecutor - PASS #0: SanyParser
+21:04:18.858 [main] WARN  a.f.a.t.i.ModuleTranslator - WORKAROUND #130: labelling operator Act!isSubSeq as recursive, though SANY did not tell us so.
+21:04:18.924 [main] WARN  a.f.a.t.i.ModuleTranslator - WORKAROUND #130: labelling operator TypeOK!isSubSeq as recursive, though SANY did not tell us so.
+21:04:18.945 [main] WARN  a.f.a.t.i.ModuleTranslator - WORKAROUND #130: labelling operator Properties!isSubSeq as recursive, though SANY did not tell us so.
+21:04:18.966 [main] WARN  a.f.a.t.i.ModuleTranslator - WORKAROUND #130: labelling operator Properties!Act!isSubSeq as recursive, though SANY did not tell us so.
+21:04:19.023 [main] WARN  a.f.a.t.i.ModuleTranslator - WORKAROUND #130: labelling operator TypeOK!isSubSeq as recursive, though SANY did not tell us so.
+21:04:19.039 [main] WARN  a.f.a.t.i.ModuleTranslator - WORKAROUND #130: labelling operator Properties!isSubSeq as recursive, though SANY did not tell us so.
+21:04:19.059 [main] WARN  a.f.a.t.i.ModuleTranslator - WORKAROUND #130: labelling operator Properties!Act!isSubSeq as recursive, though SANY did not tell us so.
+21:04:19.404 [main] DEBUG a.f.a.i.p.PassChainExecutor - PASS #0: SanyParser [OK]
+21:04:19.404 [main] INFO  a.f.a.i.p.PassChainExecutor - PASS #1: TypeChecker
+21:04:19.405 [main] INFO  a.f.a.t.t.p.EtcTypeCheckerPassImpl -  > Running Snowcat .::.
+21:04:19.745 [main] ERROR a.f.a.t.t.p.LoggingTypeCheckerListener - [HL_Utils.tla:79:14-79:28]: Need annotation. Arguments match 2 operator signatures: (((a2420 -> a2421), a2420) => a2421) and ((Seq(a2420), Int) => a2420)
+21:04:19.745 [main] ERROR a.f.a.t.t.p.LoggingTypeCheckerListener - [HL_Utils.tla:80:14-80:28]: Need annotation. Arguments match 2 operator signatures: (((a2424 -> a2425), a2424) => a2425) and ((Seq(a2424), Int) => a2424)
+21:04:19.745 [main] ERROR a.f.a.t.t.p.LoggingTypeCheckerListener - [HL_Utils.tla:79:5-80:28]: Error when computing the type of connected
+21:04:19.745 [main] INFO  a.f.a.t.t.p.EtcTypeCheckerPassImpl -  > Snowcat asks you to fix the types. Meow.
+21:04:19.745 [main] DEBUG a.f.a.i.p.PassChainExecutor - PASS #1: TypeChecker [FAIL]
+21:04:19.746 [main] INFO  a.f.a.t.Tool$ - Type checker [FAILED]
+21:04:19.746 [main] INFO  a.f.a.t.Tool$ - It took me 0 days  0 hours  0 min  1 sec
+21:04:19.746 [main] INFO  a.f.a.t.Tool$ - Total time: 1.586 sec
+21:22:59.215 [main] INFO  a.f.a.t.Tool$ - Type checking MC.tla
+21:22:59.424 [main] INFO  a.f.a.i.p.PassChainExecutor - PASS #0: SanyParser
+21:22:59.949 [main] WARN  a.f.a.t.i.ModuleTranslator - WORKAROUND #130: labelling operator Act!isSubSeq as recursive, though SANY did not tell us so.
+21:23:00.020 [main] WARN  a.f.a.t.i.ModuleTranslator - WORKAROUND #130: labelling operator TypeOK!isSubSeq as recursive, though SANY did not tell us so.
+21:23:00.042 [main] WARN  a.f.a.t.i.ModuleTranslator - WORKAROUND #130: labelling operator Properties!isSubSeq as recursive, though SANY did not tell us so.
+21:23:00.066 [main] WARN  a.f.a.t.i.ModuleTranslator - WORKAROUND #130: labelling operator Properties!Act!isSubSeq as recursive, though SANY did not tell us so.
+21:23:00.132 [main] WARN  a.f.a.t.i.ModuleTranslator - WORKAROUND #130: labelling operator TypeOK!isSubSeq as recursive, though SANY did not tell us so.
+21:23:00.152 [main] WARN  a.f.a.t.i.ModuleTranslator - WORKAROUND #130: labelling operator Properties!isSubSeq as recursive, though SANY did not tell us so.
+21:23:00.173 [main] WARN  a.f.a.t.i.ModuleTranslator - WORKAROUND #130: labelling operator Properties!Act!isSubSeq as recursive, though SANY did not tell us so.
+21:23:00.544 [main] DEBUG a.f.a.i.p.PassChainExecutor - PASS #0: SanyParser [OK]
+21:23:00.545 [main] INFO  a.f.a.i.p.PassChainExecutor - PASS #1: TypeChecker
+21:23:00.545 [main] INFO  a.f.a.t.t.p.EtcTypeCheckerPassImpl -  > Running Snowcat .::.
+21:23:00.902 [main] ERROR a.f.a.t.t.p.LoggingTypeCheckerListener - [HL_Utils.tla:67:14-67:28]: Need annotation. Arguments match 2 operator signatures: (((a2420 -> a2421), a2420) => a2421) and ((Seq(a2420), Int) => a2420)
+21:23:00.902 [main] ERROR a.f.a.t.t.p.LoggingTypeCheckerListener - [HL_Utils.tla:68:14-68:28]: Need annotation. Arguments match 2 operator signatures: (((a2424 -> a2425), a2424) => a2425) and ((Seq(a2424), Int) => a2424)
+21:23:00.902 [main] ERROR a.f.a.t.t.p.LoggingTypeCheckerListener - [HL_Utils.tla:67:5-68:28]: Error when computing the type of connected
+21:23:00.902 [main] INFO  a.f.a.t.t.p.EtcTypeCheckerPassImpl -  > Snowcat asks you to fix the types. Meow.
+21:23:00.902 [main] DEBUG a.f.a.i.p.PassChainExecutor - PASS #1: TypeChecker [FAIL]
+21:23:00.902 [main] INFO  a.f.a.t.Tool$ - Type checker [FAILED]
+21:23:00.903 [main] INFO  a.f.a.t.Tool$ - It took me 0 days  0 hours  0 min  1 sec
+21:23:00.903 [main] INFO  a.f.a.t.Tool$ - Total time: 1.688 sec
+21:26:48.243 [main] INFO  a.f.a.t.Tool$ - Type checking MC.tla
+21:26:48.430 [main] INFO  a.f.a.i.p.PassChainExecutor - PASS #0: SanyParser
+21:26:48.980 [main] WARN  a.f.a.t.i.ModuleTranslator - WORKAROUND #130: labelling operator Act!isSubSeq as recursive, though SANY did not tell us so.
+21:26:49.041 [main] WARN  a.f.a.t.i.ModuleTranslator - WORKAROUND #130: labelling operator TypeOK!isSubSeq as recursive, though SANY did not tell us so.
+21:26:49.060 [main] WARN  a.f.a.t.i.ModuleTranslator - WORKAROUND #130: labelling operator Properties!isSubSeq as recursive, though SANY did not tell us so.
+21:26:49.082 [main] WARN  a.f.a.t.i.ModuleTranslator - WORKAROUND #130: labelling operator Properties!Act!isSubSeq as recursive, though SANY did not tell us so.
+21:26:49.144 [main] WARN  a.f.a.t.i.ModuleTranslator - WORKAROUND #130: labelling operator TypeOK!isSubSeq as recursive, though SANY did not tell us so.
+21:26:49.162 [main] WARN  a.f.a.t.i.ModuleTranslator - WORKAROUND #130: labelling operator Properties!isSubSeq as recursive, though SANY did not tell us so.
+21:26:49.182 [main] WARN  a.f.a.t.i.ModuleTranslator - WORKAROUND #130: labelling operator Properties!Act!isSubSeq as recursive, though SANY did not tell us so.
+21:26:49.544 [main] DEBUG a.f.a.i.p.PassChainExecutor - PASS #0: SanyParser [OK]
+21:26:49.545 [main] INFO  a.f.a.i.p.PassChainExecutor - PASS #1: TypeChecker
+21:26:49.545 [main] INFO  a.f.a.t.t.p.EtcTypeCheckerPassImpl -  > Running Snowcat .::.
+21:26:49.903 [main] ERROR a.f.a.t.t.p.LoggingTypeCheckerListener - [HL_Utils.tla:114:8-114:17]: Need annotation. Arguments match 4 operator signatures: (((a2456 -> a2457)) => Set(a2456)) and ((Seq(a2456)) => Set(Int)) and (([]) => Set(Str)) and (({}) => Set(Int))
+21:26:49.903 [main] ERROR a.f.a.t.t.p.LoggingTypeCheckerListener - [HL_Utils.tla:115:8-115:15]: Need annotation. Arguments match 2 operator signatures: (((Str -> a2460), Str) => a2460) and (([type: a2460], Str) => a2460)
+21:26:49.903 [main] ERROR a.f.a.t.t.p.LoggingTypeCheckerListener - [HL_Utils.tla:116:8-116:15]: Need annotation. Arguments match 2 operator signatures: (((Str -> a2462), Str) => a2462) and (([data: a2462], Str) => a2462)
+21:26:49.903 [main] ERROR a.f.a.t.t.p.LoggingTypeCheckerListener - [HL_Utils.tla:116:8-116:31]: Mismatch in argument types. Expected: ((a2461, Set(a2461)) => Bool)
+21:26:49.903 [main] ERROR a.f.a.t.t.p.LoggingTypeCheckerListener - [HL_Utils.tla:114:5-116:31]: Error when computing the type of isValidAdv
+21:26:49.904 [main] INFO  a.f.a.t.t.p.EtcTypeCheckerPassImpl -  > Snowcat asks you to fix the types. Meow.
+21:26:49.904 [main] DEBUG a.f.a.i.p.PassChainExecutor - PASS #1: TypeChecker [FAIL]
+21:26:49.904 [main] INFO  a.f.a.t.Tool$ - Type checker [FAILED]
+21:26:49.904 [main] INFO  a.f.a.t.Tool$ - It took me 0 days  0 hours  0 min  1 sec
+21:26:49.904 [main] INFO  a.f.a.t.Tool$ - Total time: 1.661 sec
+21:29:23.225 [main] INFO  a.f.a.t.Tool$ - Type checking MC.tla
+21:29:23.421 [main] INFO  a.f.a.i.p.PassChainExecutor - PASS #0: SanyParser
+21:29:23.931 [main] WARN  a.f.a.t.i.ModuleTranslator - WORKAROUND #130: labelling operator Act!isSubSeq as recursive, though SANY did not tell us so.
+21:29:23.992 [main] WARN  a.f.a.t.i.ModuleTranslator - WORKAROUND #130: labelling operator TypeOK!isSubSeq as recursive, though SANY did not tell us so.
+21:29:24.013 [main] WARN  a.f.a.t.i.ModuleTranslator - WORKAROUND #130: labelling operator Properties!isSubSeq as recursive, though SANY did not tell us so.
+21:29:24.038 [main] WARN  a.f.a.t.i.ModuleTranslator - WORKAROUND #130: labelling operator Properties!Act!isSubSeq as recursive, though SANY did not tell us so.
+21:29:24.096 [main] WARN  a.f.a.t.i.ModuleTranslator - WORKAROUND #130: labelling operator TypeOK!isSubSeq as recursive, though SANY did not tell us so.
+21:29:24.113 [main] WARN  a.f.a.t.i.ModuleTranslator - WORKAROUND #130: labelling operator Properties!isSubSeq as recursive, though SANY did not tell us so.
+21:29:24.133 [main] WARN  a.f.a.t.i.ModuleTranslator - WORKAROUND #130: labelling operator Properties!Act!isSubSeq as recursive, though SANY did not tell us so.
+21:29:24.487 [main] DEBUG a.f.a.i.p.PassChainExecutor - PASS #0: SanyParser [OK]
+21:29:24.488 [main] INFO  a.f.a.i.p.PassChainExecutor - PASS #1: TypeChecker
+21:29:24.488 [main] INFO  a.f.a.t.t.p.EtcTypeCheckerPassImpl -  > Running Snowcat .::.
+21:29:24.853 [main] ERROR a.f.a.t.t.p.LoggingTypeCheckerListener - [HL_Utils.tla:119:8-119:31]: Mismatch in argument types. Expected: ((a2461, Set(a2461)) => Bool)
+21:29:24.854 [main] ERROR a.f.a.t.t.p.LoggingTypeCheckerListener - [HL_Utils.tla:117:5-119:31]: Error when computing the type of isValidAdv
+21:29:24.854 [main] INFO  a.f.a.t.t.p.EtcTypeCheckerPassImpl -  > Snowcat asks you to fix the types. Meow.
+21:29:24.854 [main] DEBUG a.f.a.i.p.PassChainExecutor - PASS #1: TypeChecker [FAIL]
+21:29:24.854 [main] INFO  a.f.a.t.Tool$ - Type checker [FAILED]
+21:29:24.854 [main] INFO  a.f.a.t.Tool$ - It took me 0 days  0 hours  0 min  1 sec
+21:29:24.854 [main] INFO  a.f.a.t.Tool$ - Total time: 1.630 sec
+21:31:22.038 [main] INFO  a.f.a.t.Tool$ - Type checking MC.tla
+21:31:22.235 [main] INFO  a.f.a.i.p.PassChainExecutor - PASS #0: SanyParser
+21:31:22.771 [main] WARN  a.f.a.t.i.ModuleTranslator - WORKAROUND #130: labelling operator Act!isSubSeq as recursive, though SANY did not tell us so.
+21:31:22.838 [main] WARN  a.f.a.t.i.ModuleTranslator - WORKAROUND #130: labelling operator TypeOK!isSubSeq as recursive, though SANY did not tell us so.
+21:31:22.864 [main] WARN  a.f.a.t.i.ModuleTranslator - WORKAROUND #130: labelling operator Properties!isSubSeq as recursive, though SANY did not tell us so.
+21:31:22.898 [main] WARN  a.f.a.t.i.ModuleTranslator - WORKAROUND #130: labelling operator Properties!Act!isSubSeq as recursive, though SANY did not tell us so.
+21:31:22.976 [main] WARN  a.f.a.t.i.ModuleTranslator - WORKAROUND #130: labelling operator TypeOK!isSubSeq as recursive, though SANY did not tell us so.
+21:31:23.003 [main] WARN  a.f.a.t.i.ModuleTranslator - WORKAROUND #130: labelling operator Properties!isSubSeq as recursive, though SANY did not tell us so.
+21:31:23.032 [main] WARN  a.f.a.t.i.ModuleTranslator - WORKAROUND #130: labelling operator Properties!Act!isSubSeq as recursive, though SANY did not tell us so.
+21:31:23.391 [main] DEBUG a.f.a.i.p.PassChainExecutor - PASS #0: SanyParser [OK]
+21:31:23.392 [main] INFO  a.f.a.i.p.PassChainExecutor - PASS #1: TypeChecker
+21:31:23.392 [main] INFO  a.f.a.t.t.p.EtcTypeCheckerPassImpl -  > Running Snowcat .::.
+21:31:23.751 [main] ERROR a.f.a.t.t.p.LoggingTypeCheckerListener - [HL_Actions.tla:29:17-29:51]: Need annotation. Arguments match 2 operator signatures: (((a2437 -> a2438), a2437, a2438) => (a2437 -> a2438)) and ((Seq(a2437), Int, a2437) => Seq(a2437))
+21:31:23.752 [main] ERROR a.f.a.t.t.p.LoggingTypeCheckerListener - [HL_Actions.tla:30:17-30:49]: Need annotation. Arguments match 2 operator signatures: (((a2442 -> a2443), a2442, a2443) => (a2442 -> a2443)) and ((Seq(a2442), Int, a2442) => Seq(a2442))
+21:31:23.752 [main] ERROR a.f.a.t.t.p.LoggingTypeCheckerListener - [HL_Actions.tla:29:5-31:64]: Error when computing the type of Request_peers
+21:31:23.752 [main] INFO  a.f.a.t.t.p.EtcTypeCheckerPassImpl -  > Snowcat asks you to fix the types. Meow.
+21:31:23.752 [main] DEBUG a.f.a.i.p.PassChainExecutor - PASS #1: TypeChecker [FAIL]
+21:31:23.752 [main] INFO  a.f.a.t.Tool$ - Type checker [FAILED]
+21:31:23.752 [main] INFO  a.f.a.t.Tool$ - It took me 0 days  0 hours  0 min  1 sec
+21:31:23.753 [main] INFO  a.f.a.t.Tool$ - Total time: 1.714 sec
+21:37:30.899 [main] INFO  a.f.a.t.Tool$ - Type checking MC.tla
+21:37:31.084 [main] INFO  a.f.a.i.p.PassChainExecutor - PASS #0: SanyParser
+21:37:31.598 [main] WARN  a.f.a.t.i.ModuleTranslator - WORKAROUND #130: labelling operator Act!isSubSeq as recursive, though SANY did not tell us so.
+21:37:31.661 [main] WARN  a.f.a.t.i.ModuleTranslator - WORKAROUND #130: labelling operator TypeOK!isSubSeq as recursive, though SANY did not tell us so.
+21:37:31.680 [main] WARN  a.f.a.t.i.ModuleTranslator - WORKAROUND #130: labelling operator Properties!isSubSeq as recursive, though SANY did not tell us so.
+21:37:31.704 [main] WARN  a.f.a.t.i.ModuleTranslator - WORKAROUND #130: labelling operator Properties!Act!isSubSeq as recursive, though SANY did not tell us so.
+21:37:31.765 [main] WARN  a.f.a.t.i.ModuleTranslator - WORKAROUND #130: labelling operator TypeOK!isSubSeq as recursive, though SANY did not tell us so.
+21:37:31.786 [main] WARN  a.f.a.t.i.ModuleTranslator - WORKAROUND #130: labelling operator Properties!isSubSeq as recursive, though SANY did not tell us so.
+21:37:31.809 [main] WARN  a.f.a.t.i.ModuleTranslator - WORKAROUND #130: labelling operator Properties!Act!isSubSeq as recursive, though SANY did not tell us so.
+21:37:32.171 [main] DEBUG a.f.a.i.p.PassChainExecutor - PASS #0: SanyParser [OK]
+21:37:32.172 [main] INFO  a.f.a.i.p.PassChainExecutor - PASS #1: TypeChecker
+21:37:32.172 [main] INFO  a.f.a.t.t.p.EtcTypeCheckerPassImpl -  > Running Snowcat .::.
+21:37:32.551 [main] ERROR a.f.a.t.t.p.LoggingTypeCheckerListener - [HL_Actions.tla:30:17-30:51]: Need annotation. Arguments match 2 operator signatures: (((a2437 -> a2438), a2437, a2438) => (a2437 -> a2438)) and ((Seq(a2437), Int, a2437) => Seq(a2437))
+21:37:32.551 [main] ERROR a.f.a.t.t.p.LoggingTypeCheckerListener - [HL_Actions.tla:31:17-31:49]: Need annotation. Arguments match 2 operator signatures: (((a2442 -> a2443), a2442, a2443) => (a2442 -> a2443)) and ((Seq(a2442), Int, a2442) => Seq(a2442))
+21:37:32.551 [main] ERROR a.f.a.t.t.p.LoggingTypeCheckerListener - [HL_Actions.tla:30:5-32:64]: Error when computing the type of Request_peers
+21:37:32.551 [main] INFO  a.f.a.t.t.p.EtcTypeCheckerPassImpl -  > Snowcat asks you to fix the types. Meow.
+21:37:32.552 [main] DEBUG a.f.a.i.p.PassChainExecutor - PASS #1: TypeChecker [FAIL]
+21:37:32.552 [main] INFO  a.f.a.t.Tool$ - Type checker [FAILED]
+21:37:32.552 [main] INFO  a.f.a.t.Tool$ - It took me 0 days  0 hours  0 min  1 sec
+21:37:32.552 [main] INFO  a.f.a.t.Tool$ - Total time: 1.654 sec
+21:38:41.855 [main] INFO  a.f.a.t.Tool$ - Checker options: filename=MC.tla, init=, next=, inv=
+21:38:42.187 [main] INFO  a.f.a.t.Tool$ - Tuning: 
+21:38:42.188 [main] INFO  a.f.a.i.p.PassChainExecutor - PASS #0: SanyParser
+21:38:42.685 [main] WARN  a.f.a.t.i.ModuleTranslator - WORKAROUND #130: labelling operator Act!isSubSeq as recursive, though SANY did not tell us so.
+21:38:42.751 [main] WARN  a.f.a.t.i.ModuleTranslator - WORKAROUND #130: labelling operator TypeOK!isSubSeq as recursive, though SANY did not tell us so.
+21:38:42.772 [main] WARN  a.f.a.t.i.ModuleTranslator - WORKAROUND #130: labelling operator Properties!isSubSeq as recursive, though SANY did not tell us so.
+21:38:42.799 [main] WARN  a.f.a.t.i.ModuleTranslator - WORKAROUND #130: labelling operator Properties!Act!isSubSeq as recursive, though SANY did not tell us so.
+21:38:42.859 [main] WARN  a.f.a.t.i.ModuleTranslator - WORKAROUND #130: labelling operator TypeOK!isSubSeq as recursive, though SANY did not tell us so.
+21:38:42.879 [main] WARN  a.f.a.t.i.ModuleTranslator - WORKAROUND #130: labelling operator Properties!isSubSeq as recursive, though SANY did not tell us so.
+21:38:42.912 [main] WARN  a.f.a.t.i.ModuleTranslator - WORKAROUND #130: labelling operator Properties!Act!isSubSeq as recursive, though SANY did not tell us so.
+21:38:43.232 [main] DEBUG a.f.a.i.p.PassChainExecutor - PASS #0: SanyParser [OK]
+21:38:43.232 [main] INFO  a.f.a.i.p.PassChainExecutor - PASS #1: ConfigurationPass
+21:38:43.270 [main] INFO  a.f.a.t.p.p.ConfigurationPassImpl -   > MC.cfg: Loading TLC configuration
+21:38:43.334 [main] ERROR a.f.a.t.p.p.ConfigurationPassImpl - Operator Spec of 0 arguments is defined as: (Init() ∧ ☐([Next()]_vars())) ∧ Fairness()
+21:38:43.336 [main] ERROR a.f.a.t.Tool$ - Configuration error (see the manual): MC.cfg: Expected Spec to be in the canonical form Init /\ [][Next]_vars /\ ...
+21:38:43.337 [main] INFO  a.f.a.t.Tool$ - It took me 0 days  0 hours  0 min  1 sec
+21:38:43.337 [main] INFO  a.f.a.t.Tool$ - Total time: 1.482 sec
