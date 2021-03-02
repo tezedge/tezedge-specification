@@ -36,7 +36,7 @@ vars == <<state, registered>>
 
 ASSUME alpha \in 1..1000
 ASSUME id \in Nat
-ASSUME NumCounters \in Nat
+ASSUME NumCounters \in Nat /\ NumCounters > 0
 ASSUME sizeBound \in Nat /\ sizeBound > alpha
 
 ----------------------------------------------------------------------------
@@ -100,7 +100,7 @@ destroy(c) ==
 
 Destroy == \E c \in registered : destroy(c)
 
-\* Enabled by having all registered counters with average < alpha
+\* Enabled by having all registered counter averages < alpha
 Work ==
     /\ registered /= {}
     /\ \A c \in registered : state[c].avg < alpha
@@ -135,11 +135,21 @@ Next ==
     \/ Destroy
     \/ Work
 
+(************)
+(* Fairness *)
+(************)
+
+Fairness ==
+    /\ WF_vars(Include_one)
+    /\ WF_vars(Add)
+    /\ WF_vars(Reset)
+    /\ WF_vars(Work)
+
 (*****************)
 (* Specification *)
 (*****************)
 
-Spec == Init /\ [][Next]_vars
+Spec == Init /\ [][Next]_vars /\ Fairness
 
 ----------------------------------------------------------------------------
 
@@ -165,7 +175,7 @@ OnlyUnregisteredNullState ==
 (* Properties *)
 (**************)
 
-\* TODO
-\* Characterize fairness of scheduling as a liveness property
+\* Fairness of scheduling as a liveness property modulo a notion of peer score
+FarinessOfScheduling == TRUE
 
 =============================================================================
