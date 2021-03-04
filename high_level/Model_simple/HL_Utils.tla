@@ -2,37 +2,9 @@
 
 EXTENDS Utils
 
-CONSTANTS NumNodes, NumJoins,
-    \* @type: Set(MSG);
-    ValidStates, peerThreshold, connectionThreshold, sizeBound
+CONSTANTS NumNodes, NumJoins, ValidStates, peerThreshold, connectionThreshold, sizeBound
 
-VARIABLE
-    \* @type: [ join : (Int => Seq(STATES)), node : (Int => STATES) ];
-    state
-
-VARIABLE
-    \* @type: [ join : (Int => Set(Int)), node : (Int => Set(Int)) ];
-    secured
-
-VARIABLE
-    \* @type: [ join : (Int => Seq([from : Int, to : Int, type : Str])), node : (Int => Seq([from : Int, to : Int, type : Str, data : STATES])) ];
-    mailbox
-
-VARIABLE
-    \* @type: [ join : (Int => Seq([from : Int, to : Int, type : Str])), node : (Int => Seq([from : Int, to : Int, type : Str, data : STATES])) ];
-    recv
-
-VARIABLE
-    \* @type: [ join : (Int => Seq([from : Int, to : Int, type : Str])), node : (Int => Seq([from : Int, to : Int, type : Str, data : STATES])) ];
-    sent
-
-VARIABLES
-    \* @type: Set(Int);
-    joined,
-    \* @type: Set(Int);
-    peers,
-    \* @type: Str;
-    phase
+VARIABLES state, secured, mailbox, recv, sent, joined, peers, phase
 
 nodes == 1..NumNodes
 
@@ -64,12 +36,11 @@ PossiblePhases == { "init", "handshake", "bootstrap", "joined" }
 
 peerSaturated(j) == Cardinality(peers[j]) >= peerThreshold
 
-\* @type: (Int, Int) => Bool;
-connected[ j \in joining , n \in nodes ] ==
+connected(j, n) ==
     /\ n \in secured.join[j]
     /\ j \in secured.node[n]
 
-connections(j) == { n \in nodes : connected[j, n] }
+connections(j) == { n \in nodes : connected(j, n) }
 
 connectionSaturated(j) == Cardinality(connections(j)) >= connectionThreshold
 
@@ -112,32 +83,33 @@ Ack(from, to, type) ==
     IN CASE isValidAck(msg) -> msg
 
 \* advertisement
-\* @type: ([from : Int, to : Int, type : Str, data : MSG]) => Bool;
-isValidAdv[ msg \in NodeMsgs ] ==
+isValidAdv(msg) ==
+    /\ DOMAIN msg = { "from", "to", "type", "data" }
     /\ msg.type \in AdvMsgTypes
     /\ msg.data \in ValidStates
 
 Adv(from, to, type, data) ==
     LET msg == [ from |-> from, to |-> to, type |-> type, data |-> data ]
-    IN CASE isValidAdv[msg] -> msg
+    IN CASE isValidAdv(msg) -> msg
 
 \* request
-isValidReq[ msg \in JoinMsgs ] == msg.type \in ReqMsgTypes
+isValidReq(msg) ==
+    /\ DOMAIN msg = { "from", "to", "type" }
+    /\ msg.type \in ReqMsgTypes
 
 Req(from, to, type) ==
     LET msg == [ from |-> from, to |-> to, type |-> type ]
-    IN CASE isValidReq[msg] -> msg
+    IN CASE isValidReq(msg) -> msg
 
 \* filtering messages
 \* @type: (Seq([from: Int, to: Int, type: Str]), [from: Int, to: Int, type: Str]) => Seq([from: Int, to: Int, type: Str]);
 filter(queue, msg) ==
     LET \* @type: ([from: Int, to: Int, type: Str]) => Bool;
-        _keep[ m \in JoinMsgs ] ==
+        keep(m) ==
           \/ m.from /= msg.from
           \/ m.to /= msg.to
           \/ msg.type = "Current_state" => m.type = "Get_current_state"
           \/ m.type /= "Current_state"
-        keep(m) == _keep[m]
     IN SelectSeq(queue, keep)
     
 --------------------------------------------------------------------------------

@@ -10,7 +10,7 @@ EXTENDS FiniteSets, Integers, Naturals, Sequences, TLC
 Pick(S) == CHOOSE x \in S : TRUE
 
 \* Turn a function/sequence into a set
-\* @type: (Seq(t)) => Set(t);
+\* @type: (Seq(T)) => Set(T);
 ToSet(f) == { f[i] : i \in DOMAIN f }
 
 disjoint(S, T) == S \cap T = {}
@@ -72,7 +72,6 @@ Pairs(S1, S2) == { <<x1, x2>> : x1 \in S1, x2 \in S2 }
 NESeq(S) == Seq(S) \ {<<>>}
 
 \* remove (all occurrences of) an element from a sequence
-\* @type: (Seq(t), t) => Seq(t);
 Remove(seq, elem) ==
     LET RECURSIVE _remove(_, _, _)
         _remove(s, e, acc) ==
@@ -83,11 +82,12 @@ Remove(seq, elem) ==
 
 \* (finite) subsequence predicate
 RECURSIVE isSubSeq(_, _)
+\* @type: (Seq(t), Seq(t)) => Bool;
 isSubSeq(s1, s2) ==
     \/ s1 = <<>>
     \/ CASE { j \in DOMAIN s2 : s2[j] = Head(s1) } = {} -> FALSE
          [] OTHER ->
-            LET n == max_set(DOMAIN s2)
+            LET n == Len(s2)
                 i == min_set({ j \in DOMAIN s2 : s2[j] = Head(s1) })
                 s == [ j \in (i + 1)..n |-> s2[j] ]
             IN isSubSeq(Tail(s1), s)

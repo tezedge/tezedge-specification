@@ -31,45 +31,31 @@ CONSTANTS NumNodes,             \* number of established nodes
 (* - phase: tuple of the phase each joining node is in                            *)
 (**********************************************************************************)
 
-VARIABLE
-    \* @type: [ join : (Int => Seq(STATES)), node : (Int => STATES) ];
-    state
+VARIABLE state
     \* state \in [ join : [ joining -> Seq(ValidStates) ], node : [ nodes -> ValidStates ] ]
     \* join : seq of states for the given joining node
     \* node : current state of the given established node
 
-VARIABLE
-    \* @type: [ join : (Int => Set(Int)), node : (Int => Set(Int)) ];
-    secured
+VARIABLE secured
     \* secured \in [ join : [ joining -> SUBSET nodes ], node : [ nodes -> SUBSET joining ] ]
     \* set of nodes with which the given node has a secure connection
     \* As a simplification, established nodes only connect to joining nodes.
 
-VARIABLE
-    \* @type: [ join : (Int => Seq([from : Int, to : Int, type : Str])), node : (Int => Seq([from : Int, to : Int, type : Str, data : STATES])) ];
-    mailbox
+VARIABLE mailbox
     \* mailbox \in [ join : [ joining -> Seq(NodeMsgs) ], node : [ nodes -> Seq(JoinMsgs) ] ]
     \* queue of messages sent to the given node, either deleted once they are received or dropped
 
-VARIABLE
-    \* @type: [ join : (Int => Seq([from : Int, to : Int, type : Str])), node : (Int => Seq([from : Int, to : Int, type : Str, data : STATES])) ];
-    recv
+VARIABLE recv
     \* recv \in [ join : [ joining -> Seq(NodeMsgs) ], node : [ nodes -> Seq(JoinMsgs) ] ]
     \* sequence of messages received by the given node, deleted as they are handled
 
-VARIABLE
-    \* @type: [ join : (Int => Seq([from : Int, to : Int, type : Str])), node : (Int => Seq([from : Int, to : Int, type : Str, data : STATES])) ];
-    sent
+VARIABLE sent
     \* sent \in [ join : [ joining -> Seq(NodeMsgs) ], node : [ nodes -> Seq(JoinMsgs) ] ]
     \* queue of sent messages by the given node, deleted as they are responded to
 
-VARIABLES
-    \* @type: Set(Int);
-    joined,   \* set of joining nodes who have successfully bootstrapped
-    \* @type: Set(Int);
-    peers,    \* set of peers for the given joining node
-    \* @type: Str;
-    phase     \* current phase of the given joining node
+VARIABLES joined,   \* set of joining nodes who have successfully bootstrapped
+          peers,    \* set of peers for the given joining node
+          phase     \* current phase of the given joining node
 
 vars == <<state, joined, peers, phase, secured, mailbox, recv, sent>>
 
@@ -85,7 +71,7 @@ ASSUME connectionThreshold < NumNodes
 
 INSTANCE HL_Actions
 
-TypeOK     == INSTANCE HL_TypeOK
+TypeOK == INSTANCE HL_TypeOK
 Properties == INSTANCE HL_Properties
 
 (**************************************************************************************)
@@ -159,7 +145,21 @@ Next ==
 (* Fairness conditions *)
 (***********************)
 
-Fairness ==
+\* Fairness ==
+\*     /\ WF_vars(InitRequestPeers)
+\*     /\ WF_vars(HandshakesHappen)
+\*     /\ WF_vars(TransitionHappen)
+\*     /\ SF_vars(GettingBootstrap)
+\*     /\ WF_vars(BootstrapperJoin)
+\*     /\ SF_vars(Handle)
+\*     /\ SF_vars(Receive)
+
+(*****************)
+(* Specification *)
+(*****************)
+
+Spec ==
+    Init /\ [][Next]_vars
     /\ WF_vars(InitRequestPeers)
     /\ WF_vars(HandshakesHappen)
     /\ WF_vars(TransitionHappen)
@@ -167,12 +167,6 @@ Fairness ==
     /\ WF_vars(BootstrapperJoin)
     /\ SF_vars(Handle)
     /\ SF_vars(Receive)
-
-(*****************)
-(* Specification *)
-(*****************)
-
-Spec == Init /\ [][Next]_vars /\ Fairness
 
 ---------------------------------------------------------------------------------------
 
