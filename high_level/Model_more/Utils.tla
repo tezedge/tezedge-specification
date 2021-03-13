@@ -10,6 +10,7 @@ EXTENDS FiniteSets, Integers, Naturals, Sequences, TLC
 Pick(S) == CHOOSE x \in S : TRUE
 
 \* Turn a function/sequence into a set
+\* @type: (Seq(T)) => Set(T);
 ToSet(f) == { f[i] : i \in DOMAIN f }
 
 disjoint(S, T) == S \cap T = {}
@@ -64,6 +65,7 @@ Seq_n(S, n) == UNION { SeqOfLen(S, l) : l \in 0..n }
 NESeq_n(S, n) == { f \in Seq_n(S, n) : f /= <<>> }
 
 \* Enumerable set of pairs of elements from sets S1 and S2
+\* @type: (Set(A), Set(B)) => Set(<<A, B>>);
 Pairs(S1, S2) == { <<x1, x2>> : x1 \in S1, x2 \in S2 }
 
 \* Nonempty sequences of elements from set S
@@ -80,6 +82,7 @@ Remove(seq, elem) ==
 
 \* (finite) subsequence predicate
 RECURSIVE isSubSeq(_, _)
+\* @type: (Seq(t), Seq(t)) => Bool;
 isSubSeq(s1, s2) ==
     \/ s1 = <<>>
     \/ CASE { j \in DOMAIN s2 : s2[j] = Head(s1) } = {} -> FALSE
@@ -87,8 +90,7 @@ isSubSeq(s1, s2) ==
             LET n == max_set(DOMAIN s2)
                 i == min_set({ j \in DOMAIN s2 : s2[j] = Head(s1) })
                 s == [ j \in (i + 1)..n |-> s2[j] ]
-            IN
-              isSubSeq(Tail(s1), s)
+            IN isSubSeq(Tail(s1), s)
 
 \* Selects the first element that satisfies the predicate
 \* if no element satisfies the predicate, then return <<>>
@@ -122,6 +124,6 @@ Exists(seq, test(_)) ==
 
 Cons(elem, seq) == <<elem>> \o seq
 
-\*Filter(seq, pred(_)) == SelectSeq(seq, pred)
+Filter(seq, pred(_)) == SelectSeq(seq, pred)
 
 =============================================================================

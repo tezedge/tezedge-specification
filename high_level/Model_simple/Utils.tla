@@ -82,11 +82,12 @@ Remove(seq, elem) ==
 
 \* (finite) subsequence predicate
 RECURSIVE isSubSeq(_, _)
+\* @type: (Seq(t), Seq(t)) => Bool;
 isSubSeq(s1, s2) ==
     \/ s1 = <<>>
     \/ CASE { j \in DOMAIN s2 : s2[j] = Head(s1) } = {} -> FALSE
          [] OTHER ->
-            LET n == max_set(DOMAIN s2)
+            LET n == Len(s2)
                 i == min_set({ j \in DOMAIN s2 : s2[j] = Head(s1) })
                 s == [ j \in (i + 1)..n |-> s2[j] ]
             IN isSubSeq(Tail(s1), s)

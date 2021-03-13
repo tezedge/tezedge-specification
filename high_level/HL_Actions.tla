@@ -67,10 +67,6 @@ TransitionHappen ==
         /\ connectionSaturated(j)
         /\ Transition(j)
 
-(*************************)
-(* Bootstrapping Actions *)
-(*************************)
-
 (*************)
 (* Bootstrap *)
 (*************)
@@ -119,12 +115,12 @@ Receive_join(j) ==
 \* If a message has been sent to a node, they can receive it
 Receive ==
     \/ \E j \in bootstrapping :
-           /\ check_recv(TRUE, j)  \* the node can receive a message
-           /\ mailbox.join[j] /= <<>> \* messages have been sent to the node
+           /\ check_recv(TRUE, j)       \* the node can receive a message
+           /\ mailbox.join[j] /= <<>>   \* messages have been sent to the node
            /\ Receive_join(j)
     \/ \E n \in nodes :
-           /\ check_recv(FALSE, n) \* the node can receive a message
-           /\ mailbox.node[n] /= <<>> \* messages have been sent to the node
+           /\ check_recv(FALSE, n)      \* the node can receive a message
+           /\ mailbox.node[n] /= <<>>   \* messages have been sent to the node
            /\ Receive_node(n)
 
 (**********)

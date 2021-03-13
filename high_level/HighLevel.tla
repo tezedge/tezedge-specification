@@ -145,7 +145,21 @@ Next ==
 (* Fairness conditions *)
 (***********************)
 
-Fairness ==
+\* Fairness ==
+\*     /\ WF_vars(InitRequestPeers)
+\*     /\ WF_vars(HandshakesHappen)
+\*     /\ WF_vars(TransitionHappen)
+\*     /\ SF_vars(GettingBootstrap)
+\*     /\ WF_vars(BootstrapperJoin)
+\*     /\ SF_vars(Handle)
+\*     /\ SF_vars(Receive)
+
+(*****************)
+(* Specification *)
+(*****************)
+
+Spec ==
+    Init /\ [][Next]_vars
     /\ WF_vars(InitRequestPeers)
     /\ WF_vars(HandshakesHappen)
     /\ WF_vars(TransitionHappen)
@@ -153,12 +167,6 @@ Fairness ==
     /\ WF_vars(BootstrapperJoin)
     /\ SF_vars(Handle)
     /\ SF_vars(Receive)
-
-(*****************)
-(* Specification *)
-(*****************)
-
-Spec == Init /\ [][Next]_vars /\ Fairness
 
 ---------------------------------------------------------------------------------------
 

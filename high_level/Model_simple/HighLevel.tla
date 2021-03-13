@@ -13,6 +13,7 @@ EXTENDS Utils
 
 CONSTANTS NumNodes,             \* number of established nodes
           NumJoins,             \* number of joining nodes
+          \* @type: STATES;
           ValidStates,          \* set of valid states
           peerThreshold,        \* number of peers needed before handshaking
           connectionThreshold,  \* number of connections needed before bootstrapping
@@ -49,8 +50,8 @@ VARIABLE recv
     \* sequence of messages received by the given node, deleted as they are handled
 
 VARIABLE sent
-    \* sent \in [ join : [ joining -> Seq(PartialNodeMsgs) ], node : [ nodes -> Seq(JoinMsgs) ] ]
-    \* queue of sent messages by the given node
+    \* sent \in [ join : [ joining -> Seq(NodeMsgs) ], node : [ nodes -> Seq(JoinMsgs) ] ]
+    \* queue of sent messages by the given node, deleted as they are responded to
 
 VARIABLES joined,   \* set of joining nodes who have successfully bootstrapped
           peers,    \* set of peers for the given joining node
@@ -68,8 +69,7 @@ ASSUME connectionThreshold <= peerThreshold
 ASSUME peerThreshold <= NumNodes
 ASSUME connectionThreshold < NumNodes
 
-LOCAL INSTANCE HL_Utils
-LOCAL INSTANCE HL_Actions
+INSTANCE HL_Actions
 
 TypeOK == INSTANCE HL_TypeOK
 Properties == INSTANCE HL_Properties
@@ -86,9 +86,7 @@ Properties == INSTANCE HL_Properties
 (* - no messages are sent                                                             *)
 (**************************************************************************************)
 
-\* Arbitrary initial states
-Init ==
-    \E st \in ValidStates :
+Init == \E st \in ValidStates :
     /\ phase = [ j \in joining |-> "init" ]
     /\ peers = [ j \in joining |-> {} ]
     /\ joined = {}
@@ -139,38 +137,36 @@ Next ==
     \/ BootstrapperJoin
     \/ Handle
     \/ Receive
+    \/ Drop
+    \/ Send_again
 \*    \/ Advertise
-\*    \/ Send_again
-\*    \/ Drop
 
 (***********************)
 (* Fairness conditions *)
 (***********************)
 
-Fairness ==
-    /\ WF_peers(InitRequestPeers)
-    /\ WF_secured(HandshakesHappen)
-    /\ WF_phase(TransitionHappen)
-    /\ WF_state(GettingBootstrap)
-    /\ WF_phase(BootstrapperJoin)
-    /\ SF_mailbox(Handle)
-    /\ SF_recv(Receive)
-\*    /\ SF_vars(Advertise)
-\*    /\ SF_vars(Send_again)
-
-(***********************)
-(* Liveness conditions *)
-(***********************)
-
-Liveness ==
-    /\ []<><<Receive>>_recv
-    /\ []<><<Handle>>_mailbox
+\* Fairness ==
+\*     /\ WF_vars(InitRequestPeers)
+\*     /\ WF_vars(HandshakesHappen)
+\*     /\ WF_vars(TransitionHappen)
+\*     /\ SF_vars(GettingBootstrap)
+\*     /\ WF_vars(BootstrapperJoin)
+\*     /\ SF_vars(Handle)
+\*     /\ SF_vars(Receive)
 
 (*****************)
 (* Specification *)
 (*****************)
 
-Spec == Init /\ Fairness /\ Liveness /\ [][Next]_vars
+Spec ==
+    Init /\ [][Next]_vars
+    /\ WF_vars(InitRequestPeers)
+    /\ WF_vars(HandshakesHappen)
+    /\ WF_vars(TransitionHappen)
+    /\ SF_vars(GettingBootstrap)
+    /\ WF_vars(BootstrapperJoin)
+    /\ SF_vars(Handle)
+    /\ SF_vars(Receive)
 
 ---------------------------------------------------------------------------------------
 
