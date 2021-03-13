@@ -10,7 +10,7 @@ CONSTANTS
     \* how fast quota is updated
     \* @type: Int;
     Max_speed,
-    
+
     \* maximum number of connections for scheduler to handle
     \* @type: Int;
     Max_conn,
@@ -134,36 +134,24 @@ PartialMsg == Messages \times MsgSize
 
 \* New connections can be created
 Create_connection(id) ==
-    /\ id \notin connections
     /\ state' = [ state EXCEPT !.counter[id] = 0, !.quota[id] = 0 ]
     /\ connections' = connections \cup {id}
     /\ UNCHANGED <<counter, queue, quota, waiting, handle, in_param>>
 
 \* Connections can be closed as long as we are not handling a message from this connection
 Close_connection(id) ==
-    /\ id \notin ids(handle.msg)
     /\ state' = [ state EXCEPT !.counter[id] = None, !.quota[id] = None ]
     /\ connections' = connections \ {id}
     /\ UNCHANGED <<counter, queue, quota, waiting, handle, in_param>>
 
 \* When there are messages to handle, we adjust all the counters and quotas, enables Waiter
 \* message = <<id, msg, size>>
-Handle ==
-    /\ handle.prio
-    /\ handle.msg /= <<>>
-    /\ LET hd  == Head(handle.msg)
-           b   == hd[1]  \* if b then high prio else low prio
-           id  == hd[2]
-           msg == hd[3]
-           len == hd[4]
-       IN /\ id \in connections
-          /\ counter <= Max_count - len
-          /\ state.counter[id] <= Max_count - len
-          /\ counter' = counter + len
-          /\ quota' = quota - len
-          /\ state' = [ state EXCEPT
-                        !.counter[id] = @ + len,
-                        !.quota[id]   = IF b THEN @ - len ELSE @ ]
+Handle(b, id, len) ==
+    /\ counter' = counter + len
+    /\ quota' = quota - len
+    /\ state' = [ state EXCEPT
+                    !.counter[id] = @ + len,
+                    !.quota[id]   = IF b THEN @ - len ELSE @ ]
     /\ waiting' = TRUE
     /\ handle' = [ handle EXCEPT
                     !.prio = Len(handle.msg) /= 1, \* are there more messages to handle?
@@ -173,24 +161,22 @@ Handle ==
 \* Incoming message on in_param
 \* check that in_param is not full already
 Message(id, msg, len) ==
-    /\ Len(in_param[id]) < In_queue
     /\ handle' = [ handle EXCEPT !.prio = TRUE ]
     /\ in_param' = [ in_param EXCEPT ![id] = Append(@, <<msg, len>>) ]
     /\ UNCHANGED <<state, counter, queue, quota, connections, waiting>>
 
 \* Pop a message from one of the queues, enables Handle
 Pop(id) ==
-    /\ handle.prio
     /\ ValidMsgInQueue
     /\ IF queue.high /= <<>>
        THEN \* take msg from queue.high
          LET msg == Head(queue.high)
          IN /\ handle' = [ handle EXCEPT !.msg = Append(@, <<TRUE>> \o msg) ]
-            /\ queue' = [ queue EXCEPT !.high = Tail(@) ]
+            /\ queue'  = [ queue  EXCEPT !.high = Tail(@) ]
        ELSE \* take msg from queue.low
          LET msg == Head(queue.low)
          IN /\ handle' = [ handle EXCEPT !.msg = Append(@, <<FALSE>> \o msg) ]
-            /\ queue' = [ queue EXCEPT !.low = Tail(@) ]
+            /\ queue'  = [ queue  EXCEPT !.low = Tail(@) ]
     /\ UNCHANGED <<state, counter, quota, waiting, connections, in_param>>
 
 \* When we are not handling data or already waiting for data, we can enable Waiter
@@ -203,12 +189,10 @@ Wait_data ==
 
 \* When waiting for data, once we get a msg from in_param, we place it in the appropriate queue
 Waiter(id) ==
-    /\ waiting
-    /\ in_param[id] /= <<>>
     /\ IF queuesEmpty
        THEN waiting' = FALSE
        ELSE UNCHANGED waiting
-    /\ LET hd == Head(in_param[id])
+    /\ LET hd  == Head(in_param[id])
            msg == <<id, hd[1], hd[2]>>
        IN IF state.quota[id] > 0
           THEN queue' = [ queue EXCEPT !.high = Append(@, msg) ]
@@ -245,26 +229,73 @@ Init ==
                   , msg  : Seq_n(BOOLEAN \times Connections \times Messages \times MsgSize, HL_queue) ]
     /\ in_param \in [ Connections -> Seq_n(PartialMsg, In_queue) ]
 
+\* Init ==
+\*     /\ state = [ counter |-> [ x \in Connections |-> None ]
+\*                , quota   |-> [ x \in Connections |-> None ] ]
+\*     /\ counter = 0
+\*     /\ queue = [ high |-> <<>>, low |-> <<>> ]
+\*     /\ quota = Max_speed
+\*     /\ connections = {}
+\*     /\ waiting = FALSE
+\*     /\ handle = [ prio |-> FALSE, msg |-> <<>> ]
+\*     /\ in_param = [ x \in Connections |-> <<>> ]
+
 (****************)
 (* Next actions *)
 (****************)
 
-Create_conn == \E id \in Connections: Create_connection(id)
+Create_conn ==
+    \E id \in Connections:
+        /\ id \notin connections
+        /\ Create_connection(id)
 
-Close_conn == \E id \in connections: Close_connection(id)
+Close_conn ==
+    \E id \in connections:
+        /\ id \notin ids(handle.msg)
+        /\ Close_connection(id)
 
-Popping == \E id \in connections: Pop(id)
+Popping ==
+    \E id \in connections:
+        /\ handle.prio
+        /\ Len(handle.msg) < HL_queue
+        /\ Pop(id)
 
-Waiting == \E id \in connections: Waiter(id)
+Handling ==
+    /\ handle.prio
+    /\ handle.msg /= <<>>
+    /\ LET hd  == Head(handle.msg)
+           b   == hd[1]  \* if b then high prio else low prio
+           id  == hd[2]
+           len == hd[4]
+       IN /\ id \in connections
+          /\ counter <= Max_count - len
+          /\ state.counter[id] /= None
+          /\ state.counter[id] <= Max_count - len
+          /\ state.quota[id] /= None
+          /\ state.quota[id] >= len - Max_quota
+          /\ quota >= len - Max_quota
+          /\ Handle(b, id, len)
+
+Waiting ==
+    \E id \in connections:
+        /\ waiting
+        /\ in_param[id] /= <<>>
+        /\ state.quota[id] /= None
+        /\ IF state.quota[id] > 0
+           THEN Len(queue.high) < HL_queue
+           ELSE Len(queue.low)  < HL_queue
+        /\ Waiter(id)
 
 Incoming_msg ==
-    \E id \in connections, msg \in Messages, len \in 1..Max_msg : Message(id, msg, len)
+    \E id \in connections, msg \in Messages, len \in 1..Max_msg :
+        /\ Len(in_param[id]) < In_queue
+        /\ Message(id, msg, len)
 
 Next ==
     \/ Create_conn
     \/ Close_conn
     \/ Popping
-    \/ Handle
+    \/ Handling
     \/ Wait_data
     \/ Waiting
     \/ Update_quota
@@ -279,7 +310,7 @@ Next ==
 Fairness ==
     /\ SF_vars(Create_conn)
     /\ SF_vars(Popping)
-    /\ SF_vars(Handle)
+    /\ SF_vars(Handling)
     /\ SF_vars(Update_quota)
     /\ SF_vars(Incoming_msg)
     /\ WF_vars(Wait_data)
