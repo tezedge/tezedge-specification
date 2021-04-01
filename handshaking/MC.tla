@@ -2,7 +2,7 @@
 
 EXTENDS Handshaking, TLC
 
-Nodes == 1..3
+Nodes == 0..2
 
 Max == 2
 

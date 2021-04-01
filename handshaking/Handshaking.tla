@@ -157,11 +157,13 @@ Safety ==
         /\ n \notin { msg.from : msg \in messages[n] }
     \* symmetric connections
     /\ \A m, n \in NODES : m \in connections[n] <=> n \in connections[m]
-    \* never exceed MAX connections
+    \* nodes never exceed MAX connections
     /\ \A n \in NODES : Cardinality(connections[n]) <= MAX
 
 Liveness ==
+    \* requests are always responded to with ack or nack
     /\ \A m, n \in NODES : Requested(m, n) => []<><<ack(n, m) \/ nack(n, m)>>_vars
-    /\ <>[](\A n \in NODES : Cardinality(connections[n]) >= MIN)
+    \* eventually it's always the case that all nodes will have >= MIN connections and <= MAX connections
+    /\ <>[](\A n \in NODES : Cardinality(connections[n]) \in MIN..MAX)
 
 ========================================
