@@ -1,4 +1,4 @@
----- MODULE MC ----
+---- MODULE MC_liveness ----
 
 EXTENDS Handshaking, TLC
 
@@ -10,4 +10,4 @@ Max == 2
 
 Min == 1
 
-===================
+============================
