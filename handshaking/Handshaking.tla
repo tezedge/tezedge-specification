@@ -9,13 +9,14 @@ CONSTANTS
     MAX         \* maximum number of connections
 
 VARIABLES
-    blacklist,        \* tuple of each node's blacklisted peers
-    connections,      \* tuple of each node's accepted connections
-    handshaking,      \* tuple of each node's in-progress handshake
-    messages,         \* tuple of each node's incoming messages
-    received_conn_msg \* tuple of each node's peers who have sent a conn_msg
+    blacklist,         \* tuple of each node's blacklisted peers
+    connections,       \* tuple of each node's accepted connections
+    handshaking,       \* tuple of each node's in-progress handshake
+    messages,          \* tuple of each node's incoming messages
+    received_conn_msg, \* tuple of each node's peers who have sent a conn_msg
+    timeout_count      \* tuple of each node's timeout count
 
-vars == <<blacklist, connections, handshaking, messages, received_conn_msg>>
+vars == <<blacklist, connections, handshaking, messages, received_conn_msg, timeout_count>>
 
 ASSUME NODES \subseteq Nat
 ASSUME GOOD_NODES \subseteq NODES
@@ -38,7 +39,11 @@ conn_msg(from) == [ type |-> "conn_msg", from |-> from ]
 
 ack_msg(from) == [ type |-> "ack", from |-> from ]
 
+nack_msg(from) == [ type |-> "nack", from |-> from ]
+
 Bad_nodes == NODES \ GOOD_NODES
+
+Bad(n) == n \in Bad_nodes
 
 Bad_messages == [ type : {"conn_msg", "ack", "nack", "bad"}, from : Bad_nodes ]
 
@@ -52,9 +57,9 @@ Messages == [ type : {"conn_msg", "ack", "nack"}, from : NODES ] \cup Bad_messag
 
 \* connection messages
 send_conn_msg(m, n) ==
-    /\ messages' = [ messages EXCEPT ![n] = @ \cup {conn_msg(m)} ]
+    /\ messages' = [ messages EXCEPT ![n] = IF Bad(n) THEN @ ELSE @ \cup {conn_msg(m)} ]
     /\ handshaking' = [ handshaking EXCEPT ![m] = @ \cup {n} ]
-    /\ UNCHANGED <<blacklist, connections, received_conn_msg>>
+    /\ UNCHANGED <<blacklist, connections, received_conn_msg, timeout_count>>
 
 SendConnectionMessage == \E g \in GOOD_NODES, n \in NODES :
     /\ g /= n
@@ -63,21 +68,25 @@ SendConnectionMessage == \E g \in GOOD_NODES, n \in NODES :
     /\ n \notin connections[g]
     /\ n \notin handshaking[g]
     /\ n \notin received_conn_msg[g]
+    \* [g] currently has a nack from [n]
+    /\ n \notin { m.from : m \in { mm \in messages[g] : mm.type = "nack" } }
     /\ send_conn_msg(g, n)
 
 handle_conn_msg(m, n, msg) ==
     /\ CASE n \notin handshaking[m] \cup received_conn_msg[m] \cup connections[m] ->
                     /\ handshaking' = [ handshaking EXCEPT ![m] = @ \cup {n} ]
-                    /\ messages' = [ messages EXCEPT ![m] = @ \ {msg}, ![n] = @ \cup {conn_msg(m)} ]
+                    /\ messages' = [ messages EXCEPT ![m] = @ \ {msg},
+                                                     ![n] = IF Bad(n) THEN @ ELSE @ \cup {conn_msg(m)} ]
                     /\ received_conn_msg' = [ received_conn_msg EXCEPT ![m] = @ \cup {n} ]
              [] n \in handshaking[m] /\ n \notin received_conn_msg[m] \cup connections[m] ->
-                    /\ messages' = [ messages EXCEPT ![m] = @ \ {msg}, ![n] = @ \cup {ack_msg(m)} ]
+                    /\ messages' = [ messages EXCEPT ![m] = @ \ {msg},
+                                                     ![n] = IF Bad(n) THEN @ ELSE @ \cup {ack_msg(m)} ]
                     /\ received_conn_msg' = [ received_conn_msg EXCEPT ![m] = @ \cup {n} ]
                     /\ UNCHANGED handshaking
              [] OTHER ->
                     /\ messages' = [ messages EXCEPT ![n] = @ \ {msg} ]
                     /\ UNCHANGED <<handshaking, received_conn_msg>>
-    /\ UNCHANGED <<blacklist, connections>>
+    /\ UNCHANGED <<blacklist, connections, timeout_count>>
 
 HandleConnectionMessage == \E g \in GOOD_NODES :
     \E msg \in { m \in messages[g] : m.type = "conn_msg" } :
@@ -92,17 +101,19 @@ ack(m, n, msg) ==
     THEN IF type = "ack"
          THEN /\ connections' = [ connections EXCEPT ![m] = @ \cup {n} ]
               /\ handshaking' = [ handshaking EXCEPT ![m] = @ \ {n} ]
-              /\ messages' = [ messages EXCEPT ![m] = @ \ {msg}, ![n] = @ \cup {ack_msg(m)} ]
+              /\ messages' = [ messages EXCEPT ![m] = @ \ {msg},
+                                               ![n] = IF Bad(n) THEN @ ELSE @ \cup {ack_msg(m)} ]
               /\ received_conn_msg' = [ received_conn_msg EXCEPT ![m] = @ \ {n} ]
-              /\ UNCHANGED blacklist
+              /\ UNCHANGED <<blacklist, timeout_count>>
          ELSE /\ messages' = [ messages EXCEPT ![m] = @ \ {msg} ]
-              /\ UNCHANGED <<blacklist, connections, handshaking, received_conn_msg>>
+              /\ UNCHANGED <<blacklist, connections, handshaking, received_conn_msg, timeout_count>>
     ELSE IF type = "conn_msg"
-         THEN /\ messages' = [ messages EXCEPT ![m] = @ \ {msg}, ![n] = @ \cup {ack_msg(m)} ]
+         THEN /\ messages' = [ messages EXCEPT ![m] = @ \ {msg},
+                                               ![n] = IF Bad(n) THEN @ ELSE @ \cup {ack_msg(m)} ]
               /\ received_conn_msg' = [ received_conn_msg EXCEPT ![m] = @ \cup {n} ]
-              /\ UNCHANGED <<blacklist, connections, handshaking>>
+              /\ UNCHANGED <<blacklist, connections, handshaking, timeout_count>>
          ELSE /\ messages' = [ messages EXCEPT ![m] = @ \cup {msg} ]
-              /\ UNCHANGED <<blacklist, connections, handshaking, received_conn_msg>>
+              /\ UNCHANGED <<blacklist, connections, handshaking, received_conn_msg, timeout_count>>
 
 Ack == \E g \in GOOD_NODES :
     \E msg \in { m \in messages[g] : m.type = "conn_msg" \/ m.type = "ack" } :
@@ -116,7 +127,7 @@ handle_ack(m, n, msg) ==
     /\ handshaking' = [ handshaking EXCEPT ![m] = @ \ {n} ]
     /\ messages' = [ messages EXCEPT ![m] = @ \ {msg} ]
     /\ received_conn_msg' = [ received_conn_msg EXCEPT ![m] = @ \ {n} ]
-    /\ UNCHANGED blacklist
+    /\ UNCHANGED <<blacklist, timeout_count>>
 
 HandleAck == \E g \in GOOD_NODES :
     \E msg \in { m \in messages[g] : m.type = "ack" } :
@@ -129,9 +140,9 @@ nack(m, n, msg) ==
     /\ connections' = [ connections EXCEPT ![m] = @ \ {n} ]
     /\ handshaking' = [ handshaking EXCEPT ![m] = @ \ {n} ]
     /\ messages' = [ messages EXCEPT ![m] = @ \ {msg},
-                                     ![n] = @ \cup {[type |-> "nack", from |-> m]} ]
+                                     ![n] = IF Bad(n) THEN @ ELSE @ \cup {nack_msg(m)} ]
     /\ received_conn_msg' = [ received_conn_msg EXCEPT ![m] = @ \ {n} ]
-    /\ UNCHANGED blacklist
+    /\ UNCHANGED <<blacklist, timeout_count>>
 
 Nack == \E g \in GOOD_NODES :
     \E msg \in { m \in messages[g] : m.type = "conn_msg" \/ m.type = "ack" } :
@@ -147,7 +158,7 @@ HandleNack == \E g \in GOOD_NODES :
         /\ handshaking' = [ handshaking EXCEPT ![g] = @ \ {n} ]
         /\ messages' = [ messages EXCEPT ![g] = @ \ {msg} ]
         /\ received_conn_msg' = [ received_conn_msg EXCEPT ![g] = @ \ {n} ]
-        /\ UNCHANGED blacklist
+        /\ UNCHANGED <<blacklist, timeout_count>>
 
 HandleBad == \E g \in GOOD_NODES :
     \E msg \in { m \in messages[g] : m.type = "bad" } :
@@ -157,6 +168,7 @@ HandleBad == \E g \in GOOD_NODES :
         /\ handshaking' = [ handshaking EXCEPT ![g] = @ \ {n} ]
         /\ messages' = [ messages EXCEPT ![g] = @ \ {msg} ]
         /\ received_conn_msg' = [ received_conn_msg EXCEPT ![g] = @ \ {n} ]
+        /\ UNCHANGED timeout_count
 
 \* Undesirable actions
 
@@ -164,13 +176,14 @@ HandleBad == \E g \in GOOD_NODES :
 BadNodeSendsGoodNodeArbitraryMessage == \E n \in GOOD_NODES :
     \E msg \in Bad_messages :
         /\ messages' = [ messages EXCEPT ![n] = @ \cup {msg} ]
-        /\ UNCHANGED <<blacklist, connections, handshaking, received_conn_msg>>
+        /\ UNCHANGED <<blacklist, connections, handshaking, received_conn_msg, timeout_count>>
 
 Timeout(n) == \E m \in handshaking[n] :
     /\ m \notin connections[n]
     /\ handshaking' = [ handshaking EXCEPT ![n] = @ \ {m} ]
     /\ received_conn_msg' = [ received_conn_msg EXCEPT ![n] = @ \ {m} ]
     /\ messages' = [ messages EXCEPT ![n] = { mm \in @ : mm /= conn_msg(m) /\ mm /= ack_msg(m) } ]
+    /\ timeout_count' = [ timeout_count EXCEPT ![n] = @ + 1 ]
     /\ UNCHANGED <<blacklist, connections>>
 
 (*****************)
@@ -184,6 +197,7 @@ Init ==
     /\ handshaking = [ n \in NODES |-> {} ]
     /\ messages = [ n \in NODES |-> {} ]
     /\ received_conn_msg = [ n \in NODES |-> {} ]
+    /\ timeout_count = [ n \in NODES |-> 0 ]
 
 Next ==
     \/ SendConnectionMessage
@@ -204,7 +218,9 @@ Fairness ==
     /\ WF_vars(HandleBad)
     /\ WF_vars(HandleNack)
 
-Spec == Init /\ [][Next]_vars /\ Fairness
+Timeout_bound == \A n \in NODES : timeout_count[n] < 3
+
+Spec == Init /\ [][Next /\ Timeout_bound]_vars /\ Fairness
 
 (***************************)
 (* Invariants & Properties *)
@@ -236,7 +252,7 @@ Safety ==
 
 Liveness ==
     \* good nodes always respond to requests with an ack or nack
-    /\ \A m, n \in GOOD_NODES : conn_msg(m) \in messages[n] ~>
+    /\ \A m, n \in GOOD_NODES : conn_msg(m) \in messages[n] =>
         LET msg == conn_msg(m) IN
         []<><<ack(n, m, msg) \/ nack(n, m, msg)>>_vars
     \* eventually it's always the case that all good nodes will have >= MIN connections
