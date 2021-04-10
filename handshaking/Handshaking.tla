@@ -3,25 +3,30 @@
 EXTENDS FiniteSets, Naturals
 
 CONSTANTS
-    NODES,      \* set of nodes in the network
-    GOOD_NODES, \* set of nodes which follow the protocol, bad nodes can act arbitrarily
-    MIN,        \* minimum number of connections
-    MAX         \* maximum number of connections
+    NODES,        \* set of nodes in the network
+    GOOD_NODES,   \* set of nodes which follow the protocol, bad nodes can act arbitrarily
+    MIN,          \* minimum number of connections
+    MAX,          \* maximum number of connections
+    CONN_ATTEMPT, \* maximum number of connection attempts with any given node
+    TIMEOUT       \* maximum number of timeouts with any given node
 
 VARIABLES
     blacklist,         \* tuple of each node's blacklisted peers
     connections,       \* tuple of each node's accepted connections
+    conn_attempts,     \* tuple of each node's connection attempt count
     handshaking,       \* tuple of each node's in-progress handshake
     messages,          \* tuple of each node's incoming messages
     received_conn_msg, \* tuple of each node's peers who have sent a conn_msg
     timeout_count      \* tuple of each node's timeout count
 
-vars == <<blacklist, connections, handshaking, messages, received_conn_msg, timeout_count>>
+vars == <<blacklist, connections, conn_attempts, handshaking, messages, received_conn_msg, timeout_count>>
 
 ASSUME NODES \subseteq Nat
 ASSUME GOOD_NODES \subseteq NODES
 ASSUME MIN \in Nat /\ MIN > 0
 ASSUME MAX \in Nat /\ MIN <= MAX /\ MAX < Cardinality(NODES)
+ASSUME CONN_ATTEMPT \in Nat
+ASSUME TIMEOUT \in Nat
 ASSUME Cardinality(NODES \ GOOD_NODES) < Cardinality(GOOD_NODES)
 \* For combinatorial reasons, we must also have:
 ASSUME Cardinality(GOOD_NODES) > MIN
@@ -49,7 +54,7 @@ Bad_messages == [ type : {"conn_msg", "ack", "nack", "bad"}, from : Bad_nodes ]
 
 Messages == [ type : {"conn_msg", "ack", "nack"}, from : NODES ] \cup Bad_messages
 
-Timeout_bound == \A n \in NODES : timeout_count[n] < 3
+Timeout_bound == \A g \in GOOD_NODES : \A n \in NODES \ {g} : timeout_count[g][n] <= TIMEOUT
 
 (***********)
 (* Actions *)
@@ -59,6 +64,7 @@ Timeout_bound == \A n \in NODES : timeout_count[n] < 3
 
 \* connection messages
 send_conn_msg(m, n) ==
+    /\ conn_attempts' = [ conn_attempts EXCEPT ![m][n] = @ + 1 ]
     /\ messages' = [ messages EXCEPT ![n] = IF Bad(n) THEN @ ELSE @ \cup {conn_msg(m)} ]
     /\ handshaking' = [ handshaking EXCEPT ![m] = @ \cup {n} ]
     /\ UNCHANGED <<blacklist, connections, received_conn_msg, timeout_count>>
@@ -66,6 +72,7 @@ send_conn_msg(m, n) ==
 SendConnectionMessage == \E g \in GOOD_NODES, n \in NODES :
     /\ g /= n
     /\ Cardinality(connections[g]) < MAX
+    /\ conn_attempts[g][n] < CONN_ATTEMPT
     /\ n \notin blacklist[g]
     /\ n \notin connections[g]
     /\ n \notin handshaking[g]
@@ -77,19 +84,23 @@ SendConnectionMessage == \E g \in GOOD_NODES, n \in NODES :
 
 handle_conn_msg(m, n, msg) ==
     /\ CASE n \notin handshaking[m] \cup received_conn_msg[m] \cup connections[m] ->
-                    /\ handshaking' = [ handshaking EXCEPT ![m] = @ \cup {n} ]
-                    /\ messages' = [ messages EXCEPT ![m] = @ \ {msg},
-                                                     ![n] = IF Bad(n) THEN @ ELSE @ \cup {conn_msg(m)} ]
-                    /\ received_conn_msg' = [ received_conn_msg EXCEPT ![m] = @ \cup {n} ]
-             [] n \in handshaking[m] /\ n \notin received_conn_msg[m] \cup connections[m] ->
-                    /\ messages' = [ messages EXCEPT ![m] = @ \ {msg},
-                                                     ![n] = IF Bad(n) THEN @ ELSE @ \cup {ack_msg(m)} ]
-                    /\ received_conn_msg' = [ received_conn_msg EXCEPT ![m] = @ \cup {n} ]
-                    /\ UNCHANGED handshaking
-             [] OTHER ->
-                    /\ messages' = [ messages EXCEPT ![n] = @ \ {msg} ]
-                    /\ UNCHANGED <<handshaking, received_conn_msg>>
-    /\ UNCHANGED <<blacklist, connections, timeout_count>>
+                /\ conn_attempts[m][n] < CONN_ATTEMPT
+                /\ conn_attempts' = [ conn_attempts EXCEPT ![m][n] = @ + 1 ]
+                /\ handshaking' = [ handshaking EXCEPT ![m] = @ \cup {n} ]
+                /\ messages' = [ messages EXCEPT ![m] = @ \ {msg},
+                                                    ![n] = IF Bad(n) THEN @ ELSE @ \cup {conn_msg(m)} ]
+                /\ received_conn_msg' = [ received_conn_msg EXCEPT ![m] = @ \cup {n} ]
+                /\ UNCHANGED blacklist
+         [] n \in handshaking[m] /\ n \notin received_conn_msg[m] \cup connections[m] ->
+                /\ messages' = [ messages EXCEPT ![m] = @ \ {msg},
+                                                    ![n] = IF Bad(n) THEN @ ELSE @ \cup {ack_msg(m)} ]
+                /\ received_conn_msg' = [ received_conn_msg EXCEPT ![m] = @ \cup {n} ]
+                /\ UNCHANGED <<blacklist, conn_attempts, handshaking>>
+         [] OTHER ->
+                /\ blacklist' = [ blacklist EXCEPT ![m] = @ \cup {n} ]
+                /\ messages' = [ messages EXCEPT ![m] = @ \ {msg} ]
+                /\ UNCHANGED <<conn_attempts, handshaking, received_conn_msg>>
+    /\ UNCHANGED <<connections, timeout_count>>
 
 HandleConnectionMessage == \E g \in GOOD_NODES :
     \E msg \in { m \in messages[g] : m.type = "conn_msg" } :
@@ -108,16 +119,16 @@ ack(m, n, msg) ==
               /\ messages' = [ messages EXCEPT ![m] = @ \ {msg},
                                                ![n] = IF Bad(n) THEN @ ELSE @ \cup {ack_msg(m)} ]
               /\ received_conn_msg' = [ received_conn_msg EXCEPT ![m] = @ \ {n} ]
-              /\ UNCHANGED <<blacklist, timeout_count>>
+              /\ UNCHANGED <<blacklist, conn_attempts, timeout_count>>
          ELSE /\ messages' = [ messages EXCEPT ![m] = @ \ {msg} ]
-              /\ UNCHANGED <<blacklist, connections, handshaking, received_conn_msg, timeout_count>>
+              /\ UNCHANGED <<blacklist, connections, conn_attempts, handshaking, received_conn_msg, timeout_count>>
     ELSE IF type = "conn_msg"
          THEN /\ messages' = [ messages EXCEPT ![m] = @ \ {msg},
                                                ![n] = IF Bad(n) THEN @ ELSE @ \cup {ack_msg(m)} ]
               /\ received_conn_msg' = [ received_conn_msg EXCEPT ![m] = @ \cup {n} ]
-              /\ UNCHANGED <<blacklist, connections, handshaking, timeout_count>>
+              /\ UNCHANGED <<blacklist, connections, conn_attempts, handshaking, timeout_count>>
          ELSE /\ messages' = [ messages EXCEPT ![m] = @ \cup {msg} ]
-              /\ UNCHANGED <<blacklist, connections, handshaking, received_conn_msg, timeout_count>>
+              /\ UNCHANGED <<blacklist, connections, conn_attempts, handshaking, received_conn_msg, timeout_count>>
 
 Ack == \E g \in GOOD_NODES :
     \E msg \in { m \in messages[g] : m.type = "conn_msg" \/ m.type = "ack" } :
@@ -132,7 +143,7 @@ handle_ack(m, n, msg) ==
     /\ handshaking' = [ handshaking EXCEPT ![m] = @ \ {n} ]
     /\ messages' = [ messages EXCEPT ![m] = @ \ {msg} ]
     /\ received_conn_msg' = [ received_conn_msg EXCEPT ![m] = @ \ {n} ]
-    /\ UNCHANGED <<blacklist, timeout_count>>
+    /\ UNCHANGED <<blacklist, conn_attempts, timeout_count>>
 
 HandleAck == \E g \in GOOD_NODES :
     \E msg \in { m \in messages[g] : m.type = "ack" } :
@@ -148,7 +159,7 @@ nack(m, n, msg) ==
     /\ messages' = [ messages EXCEPT ![m] = @ \ {msg},
                                      ![n] = IF Bad(n) THEN @ ELSE @ \cup {nack_msg(m)} ]
     /\ received_conn_msg' = [ received_conn_msg EXCEPT ![m] = @ \ {n} ]
-    /\ UNCHANGED <<blacklist, timeout_count>>
+    /\ UNCHANGED <<blacklist, conn_attempts, timeout_count>>
 
 Nack == \E g \in GOOD_NODES :
     \E msg \in { m \in messages[g] : m.type = "conn_msg" \/ m.type = "ack" } :
@@ -165,7 +176,7 @@ handle_nack(m, n, msg) ==
     /\ handshaking' = [ handshaking EXCEPT ![m] = @ \ {n} ]
     /\ messages' = [ messages EXCEPT ![m] = @ \ {msg} ]
     /\ received_conn_msg' = [ received_conn_msg EXCEPT ![m] = @ \ {n} ]
-    /\ UNCHANGED <<blacklist, timeout_count>>
+    /\ UNCHANGED <<blacklist, conn_attempts, timeout_count>>
 
 HandleNack == \E g \in GOOD_NODES :
     \E msg \in { m \in messages[g] : m.type = "nack" } :
@@ -182,7 +193,7 @@ handle_bad(m, n, msg) ==
     /\ handshaking' = [ handshaking EXCEPT ![m] = @ \ {n} ]
     /\ messages' = [ messages EXCEPT ![m] = @ \ {msg} ]
     /\ received_conn_msg' = [ received_conn_msg EXCEPT ![m] = @ \ {n} ]
-    /\ UNCHANGED timeout_count
+    /\ UNCHANGED <<conn_attempts, timeout_count>>
 
 HandleBad == \E g \in GOOD_NODES :
     \E msg \in { m \in messages[g] : m.type = "bad" } :
@@ -205,30 +216,38 @@ BadNodeSendsGoodNodeMessage == \E n \in GOOD_NODES :
     \E msg \in Bad_messages :
         /\ msg.from \notin blacklist[n]
         /\ messages' = [ messages EXCEPT ![n] = @ \cup {msg} ]
-        /\ UNCHANGED <<blacklist, connections, handshaking, received_conn_msg, timeout_count>>
+        /\ UNCHANGED <<blacklist, connections, conn_attempts, handshaking, received_conn_msg, timeout_count>>
         /\ Timeout_bound
 
-Timeout(n) == \E m \in handshaking[n] :
-    /\ m \notin connections[n]
+timeout(n, m) ==
+    /\ connections' = [ connections EXCEPT ![n] = @ \ {m} ]
     /\ handshaking' = [ handshaking EXCEPT ![n] = @ \ {m} ]
     /\ received_conn_msg' = [ received_conn_msg EXCEPT ![n] = @ \ {m} ]
     /\ messages' = [ messages EXCEPT ![n] = { mm \in @ : mm /= conn_msg(m) /\ mm /= ack_msg(m) } ]
-    /\ timeout_count' = [ timeout_count EXCEPT ![n] = @ + 1 ]
-    /\ UNCHANGED <<blacklist, connections>>
-    /\ Timeout_bound
+    /\ timeout_count' = [ timeout_count EXCEPT ![n][m] = @ + 1 ]
+    /\ UNCHANGED <<blacklist, conn_attempts>>
+
+Timeout_handshaking(n) == \E m \in handshaking[n] :
+    /\ timeout_count[n][m] < TIMEOUT
+    /\ timeout(n, m)
+
+Timeout_connection(n) == \E m \in connections[n] :
+    /\ n \notin connections[m]
+    /\ timeout_count[n][m] < TIMEOUT
+    /\ timeout(n, m)
 
 (*****************)
 (* Specification *)
 (*****************)
 
-\* initially there are no connections
 Init ==
     /\ blacklist = [ n \in NODES |-> {} ]
     /\ connections = [ n \in NODES |-> {} ]
     /\ handshaking = [ n \in NODES |-> {} ]
     /\ messages = [ n \in NODES |-> {} ]
     /\ received_conn_msg = [ n \in NODES |-> {} ]
-    /\ timeout_count = [ n \in NODES |-> 0 ]
+    /\ conn_attempts = [ m \in NODES |-> [ n \in NODES \ {m} |-> 0 ] ]
+    /\ timeout_count = [ m \in NODES |-> [ n \in NODES \ {m} |-> 0 ] ]
 
 Next ==
     \/ SendConnectionMessage
@@ -240,7 +259,8 @@ Next ==
     \/ HandleBad
     \/ HandleBadAckNack
     \/ BadNodeSendsGoodNodeMessage
-    \/ \E n \in NODES : Timeout(n)
+    \/ \E n \in GOOD_NODES : Timeout_handshaking(n)
+    \/ \E n \in GOOD_NODES : Timeout_connection(n)
 
 Fairness ==
     /\ WF_vars(SendConnectionMessage)
@@ -250,47 +270,67 @@ Fairness ==
     /\ WF_vars(HandleBad)
     /\ WF_vars(HandleBadAckNack)
     /\ WF_vars(HandleNack)
+    /\ WF_vars(\E n \in GOOD_NODES : Timeout_connection(n))
 
 Spec == Init /\ [][Next]_vars /\ Fairness
 
-(***************************)
-(* Invariants & Properties *)
-(***************************)
+(*********************)
+(* Invariants/Safety *)
+(*********************)
 
 TypeOK ==
-    /\ \A n \in NODES : blacklist[n] \subseteq NODES
-    /\ \A n \in NODES : connections[n] \subseteq NODES
-    /\ \A n \in NODES : handshaking[n] \subseteq NODES
-    /\ \A n \in NODES : messages[n] \subseteq Messages
-    /\ \A n \in NODES : received_conn_msg[n] \subseteq NODES
+    /\ \A n \in GOOD_NODES : blacklist[n] \subseteq NODES
+    /\ \A n \in GOOD_NODES : connections[n] \subseteq NODES
+    /\ \A n \in GOOD_NODES : handshaking[n] \subseteq NODES
+    /\ \A n \in GOOD_NODES : messages[n] \subseteq Messages
+    /\ \A n \in GOOD_NODES : received_conn_msg[n] \subseteq NODES
+    /\ \A m \in GOOD_NODES : \A n \in NODES \ {m} : conn_attempts[m][n] \in Nat
+    /\ \A m \in GOOD_NODES : \A n \in NODES \ {m} : timeout_count[m][n] \in Nat
 
-Safety ==
-    \* no self blacklisting, connections, handshaking, messages, or received_conn_msgs
-    /\ \A n \in NODES :
-        /\ n \notin blacklist[n]
-        /\ n \notin connections[n]
-        /\ n \notin handshaking[n]
-        /\ n \notin { msg.from : msg \in messages[n] }
-        /\ n \notin received_conn_msg[n]
-    \* good nodes never exceed MAX connections
-    /\ \A n \in GOOD_NODES : Cardinality(connections[n]) <= MAX
-    \* good nodes are never both handshaking and connected to another node
-    /\ \A n \in GOOD_NODES : connections[n] \cap handshaking[n] = {}
-    \* if a good node has received a conn_msg from another node, they must be handshaking
-    /\ \A n \in GOOD_NODES : received_conn_msg[n] \subseteq handshaking[n]
-    \* good nodes do not blacklist other good nodes
-    /\ \A n \in GOOD_NODES : blacklist[n] \subseteq Bad_nodes
+NoSelfInteractions == \A n \in GOOD_NODES :
+    /\ n \notin blacklist[n]
+    /\ n \notin connections[n]
+    /\ n \notin handshaking[n]
+    /\ n \notin { msg.from : msg \in messages[n] }
+    /\ n \notin received_conn_msg[n]
 
-Liveness ==
-    \* good nodes always respond to requests with an ack or nack
-    /\ \A m, n \in GOOD_NODES : conn_msg(m) \in messages[n] =>
+GoodNodesDoNotExceedMaxConnections ==
+    \A n \in GOOD_NODES : Cardinality(connections[n]) <= MAX
+
+GoodNodesDoNotHandshakeTheirConnections ==
+    \A n \in GOOD_NODES : connections[n] \cap handshaking[n] = {}
+
+GoodNodesOnlyReceiveConnectionMessagesWhenHandshaking ==
+    \A n \in GOOD_NODES : received_conn_msg[n] \subseteq handshaking[n]
+
+GoodNodesDoNotExceedMaxConnectionAttempts ==
+    \A g \in GOOD_NODES : \A n \in NODES \ {g} : conn_attempts[g][n] \in 0..CONN_ATTEMPT
+
+GoodNodesDoNotExceedMaxTimeouts ==
+    \A g \in GOOD_NODES : \A n \in NODES \ {g} : timeout_count[g][n] \in 0..TIMEOUT
+
+(***********************)
+(* Properties/Liveness *)
+(***********************)
+
+GoodNodesAlwaysRespondToConnectionMessagesWithAckOrNack ==
+    \A m, n \in GOOD_NODES : conn_msg(m) \in messages[n] =>
         LET msg == conn_msg(m) IN
         []<><<ack(n, m, msg) \/ nack(n, m, msg)>>_vars
-    \* eventually it's always the case that all good nodes will have >= MIN connections
-    /\ <>[](\A n \in GOOD_NODES : Cardinality(connections[n]) >= MIN)
-    \* if good nodes are ever partially connected,
-    \* then eventually that partial connection will become bidirectional and stay that way or it will be closed
-    /\ \A m, n \in GOOD_NODES :
+
+IfPossibleGoodNodesWillEventuallyExceedMinConnections ==
+    <>[](\A g \in GOOD_NODES :
+        LET exhausted ==
+            { n \in NODES \ {g} :
+                \/ conn_attempts[g][n] = CONN_ATTEMPT
+                \/ conn_attempts[n][g] = CONN_ATTEMPT
+                \/ timeout_count[g][n] = TIMEOUT
+                \/ timeout_count[n][g] = TIMEOUT }
+        IN
+        Cardinality(NODES \ (exhausted \cup blacklist[g] \cup {g})) >= MIN => Cardinality(connections[g]) >= MIN)
+
+ConnectionsBetweenGoodNodesAreEventuallyBidirectionalOrClosed ==
+    \A m, n \in GOOD_NODES :
         \/ m \in connections[n]
         \/ n \in connections[m] ~> [](\/ m \in connections[n] /\ n \in connections[m]
                                       \/ m \notin connections[n] /\ n \notin connections[m])

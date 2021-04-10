@@ -10,4 +10,8 @@ Max == 2
 
 Min == 1
 
+Conn_attempt == 1
+
+Timeouts == 1
+
 ==========================
