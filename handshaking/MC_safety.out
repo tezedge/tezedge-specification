@@ -1,6 +1,6 @@
-$ tlc MC_safety.tla -workers 4096 -lncheck final -deadlock
+$ tlc MC_safety.tla -workers 4096 -deadlock
 TLC2 Version 2.15 of Day Month 20?? (rev: eb3ff99)
-Running breadth-first search Model-Checking with fp 60 and seed 3908439551183695899 with 4096 workers on 64 cores with 27305MB heap and 64MB offheap memory [pid: 36139] (Linux 5.3.0-64-generic amd64, Ubuntu 11.0.7 x86_64, MSBDiskFPSet, DiskStateQueue).
+Running breadth-first search Model-Checking with fp 115 and seed 7777242788228439592 with 4096 workers on 64 cores with 27305MB heap and 64MB offheap memory [pid: 1284] (Linux 5.3.0-64-generic amd64, Ubuntu 11.0.7 x86_64, MSBDiskFPSet, DiskStateQueue).
 Parsing file /home/tla/models/handshaking/max/MC_safety.tla
 Parsing file /home/tla/models/handshaking/max/Handshaking.tla
 Parsing file /tmp/TLC.tla
@@ -13,19 +13,16 @@ Semantic processing of module FiniteSets
 Semantic processing of module Handshaking
 Semantic processing of module TLC
 Semantic processing of module MC_safety
-Starting... (2021-04-08 02:15:10)
+Starting... (2021-04-12 00:31:59)
 Computing initial states...
-Finished computing initial states: 1 distinct state generated at 2021-04-08 02:15:10.
-Progress(14) at 2021-04-08 02:15:16: 8,133,512 states generated (8,133,512 s/min), 890,347 distinct states found (890,347 ds/min), 373,952 states left on queue.
-Progress(24) at 2021-04-08 02:16:16: 162,102,316 states generated (153,968,804 s/min), 11,124,629 distinct states found (10,234,282 ds/min), 1,488,693 states left on queue.
-Progress(30) at 2021-04-08 02:17:16: 324,079,383 states generated (161,977,067 s/min), 20,643,700 distinct states found (9,519,071 ds/min), 1,792,057 states left on queue.
-Progress(37) at 2021-04-08 02:18:16: 508,339,941 states generated (184,260,558 s/min), 29,781,206 distinct states found (9,137,506 ds/min), 909,204 states left on queue.
+Finished computing initial states: 1 distinct state generated at 2021-04-12 00:32:00.
+Progress(17) at 2021-04-12 00:32:07: 4,127,078 states generated (4,127,078 s/min), 517,141 distinct states found (517,141 ds/min), 194,096 states left on queue.
 Model checking completed. No error has been found.
   Estimates of the probability that TLC did not check all reachable states
   because two distinct states had the same fingerprint:
-  calculated (optimistic):  val = .0010
-  based on the actual fingerprints:  val = 6.9E-5
-602272769 states generated, 33711104 distinct states found, 0 states left on queue.
-The depth of the complete state graph search is 55.
+  calculated (optimistic):  val = 2.2E-6
+  based on the actual fingerprints:  val = 1.0E-7
+22155025 states generated, 1991532 distinct states found, 0 states left on queue.
+The depth of the complete state graph search is 31.
 The average outdegree of the complete state graph is 1 (minimum is 0, the maximum 14 and the 95th percentile is 3).
-Finished in 03min 39s at (2021-04-08 02:18:48)
+Finished in 21s at (2021-04-12 00:32:20)
