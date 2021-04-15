@@ -3,8 +3,8 @@
 EXTENDS FiniteSets, Naturals
 
 CONSTANTS
-    NODES,       \* set of nodes in the network
-    GOOD_NODES,  \* set of nodes which follow the protocol, bad nodes can act arbitrarily
+    BAD_NODES,   \* set of nodes which do not follow the protocol, bad nodes act arbitrarily
+    GOOD_NODES,  \* set of nodes which follow the protocol
     MIN,         \* minimum number of connections
     MAX          \* maximum number of connections
 
@@ -22,14 +22,15 @@ VARIABLES
 
 vars == <<blacklist, connections, messages, recv_ack, recv_conn, recv_meta, sent_ack, sent_conn, sent_meta, in_progress>>
 
-ASSUME NODES \subseteq Nat
-ASSUME GOOD_NODES \subseteq NODES
+ASSUME BAD_NODES \subseteq Nat
+ASSUME GOOD_NODES \subseteq Nat
+ASSUME BAD_NODES \cap GOOD_NODES = {}
 ASSUME MIN \in Nat /\ MIN > 0
-ASSUME MAX \in Nat /\ MIN <= MAX /\ MAX < Cardinality(NODES)
+ASSUME MAX \in Nat /\ MIN <= MAX /\ MAX < Cardinality(BAD_NODES \cup GOOD_NODES)
 \* For combinatorial reasons, we must also have:
 ASSUME Cardinality(GOOD_NODES) > MIN
 ASSUME
-    LET N == Cardinality(NODES) IN
+    LET N == Cardinality(BAD_NODES \cup GOOD_NODES) IN
     IF N = 3 THEN MAX /= 1 ELSE MAX /= 2 /\ MAX /= N - 2
 
 ----
@@ -46,11 +47,11 @@ ack_msg(from) == [ type |-> "ack", from |-> from ]
 
 nack_msg(from) == [ type |-> "nack", from |-> from ]
 
-Bad_nodes == NODES \ GOOD_NODES
+Nodes == BAD_NODES \cup GOOD_NODES
 
-Bad(n) == n \in Bad_nodes
+Bad(n) == n \in BAD_NODES
 
-Bad_messages == [ type : {"conn", "meta", "ack", "nack", "bad"}, from : Bad_nodes ]
+Bad_messages == [ type : {"conn", "meta", "ack", "nack", "bad"}, from : BAD_NODES ]
 
 Messages == [ type : {"conn", "meta", "ack", "nack"}, from : GOOD_NODES ] \cup Bad_messages
 
@@ -87,7 +88,7 @@ send_conn_msg(g, n) ==
     /\ in_progress' = [ in_progress EXCEPT ![g] = @ \cup {n} ]
     /\ UNCHANGED <<blacklist, connections, recv_ack, recv_conn, recv_meta, sent_ack, sent_meta>>
 
-InitiateConnection == \E g \in GOOD_NODES, n \in NODES :
+InitiateConnection == \E g \in GOOD_NODES, n \inNodes :
     /\ g /= n
     /\ Can_start_connection_attempt(g)
     /\ n \notin blacklist[g]
@@ -254,16 +255,16 @@ Timeout == \E g \in GOOD_NODES :
 (*****************)
 
 Init ==
-    /\ blacklist = [ n \in NODES |-> {} ]
-    /\ connections = [ n \in NODES |-> {} ]
-    /\ messages = [ n \in NODES |-> {} ]
-    /\ recv_conn = [ n \in NODES |-> {} ]
-    /\ sent_conn = [ n \in NODES |-> {} ]
-    /\ recv_meta = [ n \in NODES |-> {} ]
-    /\ sent_meta = [ n \in NODES |-> {} ]
-    /\ recv_ack = [ n \in NODES |-> {} ]
-    /\ sent_ack = [ n \in NODES |-> {} ]
-    /\ in_progress = [ n \in NODES |-> {} ]
+    /\ blacklist = [ n \inNodes |-> {} ]
+    /\ connections = [ n \inNodes |-> {} ]
+    /\ messages = [ n \inNodes |-> {} ]
+    /\ recv_conn = [ n \inNodes |-> {} ]
+    /\ sent_conn = [ n \inNodes |-> {} ]
+    /\ recv_meta = [ n \inNodes |-> {} ]
+    /\ sent_meta = [ n \inNodes |-> {} ]
+    /\ recv_ack = [ n \inNodes |-> {} ]
+    /\ sent_ack = [ n \inNodes |-> {} ]
+    /\ in_progress = [ n \inNodes |-> {} ]
 
 Next ==
     \/ InitiateConnection
@@ -293,16 +294,16 @@ Spec == Init /\ [][Next]_vars /\ Fairness
 (*********************)
 
 TypeOK ==
-    /\ \A g \in GOOD_NODES : blacklist[g] \subseteq NODES
-    /\ \A g \in GOOD_NODES : connections[g] \subseteq NODES
+    /\ \A g \in GOOD_NODES : blacklist[g] \subseteqNodes
+    /\ \A g \in GOOD_NODES : connections[g] \subseteqNodes
     /\ \A g \in GOOD_NODES : messages[g] \subseteq Messages
-    /\ \A g \in GOOD_NODES : recv_conn[g] \subseteq NODES
-    /\ \A g \in GOOD_NODES : sent_conn[g] \subseteq NODES
-    /\ \A g \in GOOD_NODES : recv_meta[g] \subseteq NODES
-    /\ \A g \in GOOD_NODES : sent_meta[g] \subseteq NODES
-    /\ \A g \in GOOD_NODES : recv_ack[g] \subseteq NODES
-    /\ \A g \in GOOD_NODES : sent_ack[g] \subseteq NODES
-    /\ \A g \in GOOD_NODES : in_progress[g] \subseteq NODES
+    /\ \A g \in GOOD_NODES : recv_conn[g] \subseteqNodes
+    /\ \A g \in GOOD_NODES : sent_conn[g] \subseteqNodes
+    /\ \A g \in GOOD_NODES : recv_meta[g] \subseteqNodes
+    /\ \A g \in GOOD_NODES : sent_meta[g] \subseteqNodes
+    /\ \A g \in GOOD_NODES : recv_ack[g] \subseteqNodes
+    /\ \A g \in GOOD_NODES : sent_ack[g] \subseteqNodes
+    /\ \A g \in GOOD_NODES : in_progress[g] \subseteqNodes
 
 NoSelfInteractions == \A g \in GOOD_NODES :
     /\ g \notin blacklist[g]
@@ -343,11 +344,11 @@ OnceConnectedAlwaysConnected ==
     \A g, h \in GOOD_NODES : Connected(g, h) ~> []Connected(g, h)
 
 OnceBlacklistedAlwaysBlacklisted ==
-    \A g \in GOOD_NODES, n \in NODES : Blacklisted(g, n) ~> []Blacklisted(g, n)
+    \A g \in GOOD_NODES, n \inNodes : Blacklisted(g, n) ~> []Blacklisted(g, n)
 
 GoodNodesEventuallyExceedMinConnections ==
     <>[](\A g \in GOOD_NODES :
-        Cardinality(GOOD_NODES \ (blacklist[g] \cup {g})) >= MIN => Num_connections(g) >= MIN)
+        Cardinality(Nodes \ (blacklist[g] \cup {g})) >= MIN => Num_connections(g) >= MIN)
 
 GoodNodesAlwaysRespondToAckMessagesOrBlacklist ==
     \A g, h \in GOOD_NODES :
@@ -357,8 +358,8 @@ GoodNodesAlwaysRespondToAckMessagesOrBlacklist ==
                 \/ Blacklisted(g, h)
         \/ /\ ack_msg(h) \in messages[g]
            /\ h \in sent_ack[g] ~>
-                \/ Connected(g, h)
-                \/ Blacklisted(g, h)
+                [](\/ Connected(g, h)
+                   \/ Blacklisted(g, h))
 
 GoodNodesAlwaysRespondToMetaMessagesOrBlacklist ==
     \A g, h \in GOOD_NODES :

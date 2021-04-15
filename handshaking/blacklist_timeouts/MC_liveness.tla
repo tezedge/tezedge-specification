@@ -2,7 +2,7 @@
 
 EXTENDS Handshaking, TLC
 
-Nodes == 0..2
+Bad_nodes == 0..0
 
 Good_nodes == 1..2
 
