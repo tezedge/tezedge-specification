@@ -22,8 +22,6 @@ VARIABLES
 
 vars == <<blacklist, connections, messages, recv_ack, recv_conn, recv_meta, sent_ack, sent_conn, sent_meta, in_progress>>
 
-ASSUME BAD_NODES \subseteq Nat
-ASSUME GOOD_NODES \subseteq Nat
 ASSUME BAD_NODES \cap GOOD_NODES = {}
 ASSUME MIN \in Nat /\ MIN > 0
 ASSUME MAX \in Nat /\ MIN <= MAX /\ MAX < Cardinality(BAD_NODES \cup GOOD_NODES)
@@ -353,40 +351,41 @@ GoodNodesEventuallyExceedMinConnections ==
 GoodNodesAlwaysRespondToAckMessagesOrBlacklist ==
     \A g, h \in GOOD_NODES :
         \/ /\ ack_msg(h) \in messages[g]
-           /\ h \notin sent_ack[g] ~>
-                \/ ack_msg(g) \in messages[h]
-                \/ Blacklisted(g, h)
+           /\ h \notin sent_ack[g]
+           ~> \/ ack_msg(g) \in messages[h]
+              \/ Blacklisted(g, h)
         \/ /\ ack_msg(h) \in messages[g]
-           /\ h \in sent_ack[g] ~>
-                [](\/ Connected(g, h)
-                   \/ Blacklisted(g, h))
+           /\ h \in sent_ack[g]
+           ~> \/ Connected(g, h)
+              \/ Blacklisted(g, h)
 
 GoodNodesAlwaysRespondToMetaMessagesOrBlacklist ==
     \A g, h \in GOOD_NODES :
         \/ /\ meta_msg(h) \in messages[g]
-           /\ h \notin sent_meta[g] ~>
-                \/ meta_msg(g) \in messages[h]
-                \/ Blacklisted(g, h)
+           /\ h \notin sent_meta[g]
+           ~> \/ meta_msg(g) \in messages[h]
+              \/ Blacklisted(g, h)
         \/ /\ meta_msg(h) \in messages[g]
-           /\ h \in sent_meta[g] ~>
-                \/ ack_msg(g) \in messages[h]
-                \/ Blacklisted(g, h)
+           /\ h \in sent_meta[g]
+           ~> \/ ack_msg(g) \in messages[h]
+              \/ Blacklisted(g, h)
 
 GoodNodesAlwaysRespondToConnectionMessagesOrBlacklist ==
     \A g, h \in GOOD_NODES :
         \/ /\ conn_msg(h) \in messages[g]
-           /\ h \notin sent_conn[g] ~>
-                \/ conn_msg(g) \in messages[h]
-                \/ Blacklisted(g, h)
+           /\ h \notin sent_conn[g]
+           ~> \/ conn_msg(g) \in messages[h]
+              \/ Blacklisted(g, h)
         \/ /\ conn_msg(h) \in messages[g]
-           /\ h \in sent_conn[g] ~>
-                \/ meta_msg(g) \in messages[h]
-                \/ Blacklisted(g, h)
+           /\ h \in sent_conn[g]
+           ~> \/ meta_msg(g) \in messages[h]
+              \/ Blacklisted(g, h)
 
 ConnectionsBetweenGoodNodesAreEventuallyBidirectionalOrClosed ==
     \A g, h \in GOOD_NODES :
         \/ g \in connections[h]
-        \/ h \in connections[g] ~> [](\/ Connected(g, h)
-                                      \/ g \notin connections[h] /\ h \notin connections[g])
+        \/ h \in connections[g]
+        ~> \/ Connected(g, h)
+           \/ [](g \notin connections[h] /\ h \notin connections[g])
 
 ========================================
