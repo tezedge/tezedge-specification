@@ -1,4 +1,4 @@
----- MODULE MC_safety_2good_3bad ----
+---- MODULE MC_safety_3good_2bad ----
 
 EXTENDS Handshaking, TLC
 

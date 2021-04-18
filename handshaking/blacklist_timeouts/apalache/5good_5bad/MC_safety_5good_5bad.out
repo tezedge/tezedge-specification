@@ -1,0 +1,244 @@
+\* Checking IndInv is an inductive invariant
+
+\* 1. Checking Init satisfies IndInv:
+
+$ apalache check --init=Init --inv=IndInv --length=0 MC_safety_5good_5bad.tla 
+Assuming you bind-mounted your local directory into /var/apalache...
+# Tool home: /opt/apalache
+# Package:   /opt/apalache/mod-distribution/target/apalache-pkg-0.15.3-SNAPSHOT-full.jar
+# JVM args: -Xmx4096m -DTLA-Library=/opt/apalache/src/tla
+#
+Picked up _JAVA_OPTIONS: -Djdk.net.URLClassPath.disableClassPathURLCheck=true
+# APALACHE version 0.15.3-SNAPSHOT build v0.15.1-33-g80cf914
+#
+# WARNING: This tool is in the experimental stage.
+#          Please report bugs at: [https://github.com/informalsystems/apalache/issues]
+# 
+# Usage statistics is OFF. We care about your privacy.
+# If you want to help our project, consider enabling statistics with config --enable-stats=true.
+
+Checker options: filename=MC_safety_5good_5bad.tla, init=Init, next=, inv=IndInv I@20:50:56.639
+Tuning:                                                           I@20:50:56.868
+PASS #0: SanyParser                                               I@20:50:56.869
+Parsing file /var/apalache/MC_safety_5good_5bad.tla
+Parsing file /var/apalache/Handshaking.tla
+Parsing file /tmp/TLC.tla
+Parsing file /tmp/FiniteSets.tla
+Parsing file /tmp/Naturals.tla
+Parsing file /tmp/Sequences.tla
+PASS #1: TypeCheckerSnowcat                                       I@20:50:57.466
+ > Running Snowcat .::.                                           I@20:50:57.466
+ > Your types are great!                                          I@20:50:58.062
+ > All expressions are typed                                      I@20:50:58.062
+PASS #2: ConfigurationPass                                        I@20:50:58.107
+  > MC_safety_5good_5bad.cfg: Loading TLC configuration           I@20:50:58.109
+  > MC_safety_5good_5bad.cfg: Using SPECIFICATION Spec            I@20:50:58.159
+  > MC_safety_5good_5bad.cfg: Init operator is set in TLC config but overridden via --init command line option; using Init W@20:50:58.160
+  > Using the next predicate Next from the TLC config             I@20:50:58.160
+  > MC_safety_5good_5bad.cfg: found INVARIANTS: TypeOK, NoSelfInteractions, GoodNodesDoNotExceedMaxConnections, GoodNodesNeverHaveMessagesFromBlacklistedPeers, GoodNodesHaveExlcusiveInProgressAndConnections, GoodNodesOnlyConnectToNodesWithWhomTheyHaveExchangedAllMessages, GoodNodesOnlyExchangeMetaMessagesAfterSendingAndReceivingConnectionMessages, GoodNodesOnlyExchangeAckMessagesAfterSendingAndReceivingConnectionAndMetaMessages I@20:50:58.160
+  > Overriding with command line arguments: --inv IndInv          W@20:50:58.160
+  > Set the initialization predicate to Init                      I@20:50:58.161
+  > Set the transition predicate to Next                          I@20:50:58.162
+  > Set an invariant to IndInv                                    I@20:50:58.162
+  > Replaced CONSTANT BAD_NODES with Bad_nodes()                  I@20:50:58.164
+  > Replaced CONSTANT MIN with Min()                              I@20:50:58.164
+  > Replaced CONSTANT MAX with Max()                              I@20:50:58.164
+  > Replaced CONSTANT GOOD_NODES with Good_nodes()                I@20:50:58.165
+PASS #3: DesugarerPass                                            I@20:50:58.219
+  > Desugaring...                                                 I@20:50:58.220
+PASS #4: UnrollPass                                               I@20:50:58.270
+  > Unroller                                                      I@20:50:58.327
+PASS #5: PrimingPass                                              I@20:50:58.381
+  > Introducing InitPrimed for Init'                              I@20:50:58.384
+PASS #6: CoverAnalysisPass                                        I@20:50:58.425
+PASS #7: InlinePass                                               I@20:50:58.426
+  > InlinerOfUserOper                                             I@20:50:58.426
+  > LetInExpander                                                 I@20:50:58.465
+  > InlinerOfUserOper                                             I@20:50:58.479
+Leaving only relevant operators: CInitPrimed, IndInv, Init, InitPrimed, Next I@20:50:58.483
+PASS #8: VCGen                                                    I@20:50:58.517
+  > Producing verification conditions from the invariant IndInv   I@20:50:58.517
+  > VCGen produced 26 verification condition(s)                   I@20:50:58.519
+PASS #9: PreprocessingPass                                        I@20:50:58.559
+  > Before preprocessing: unique renaming                         I@20:50:58.559
+ > Applying standard transformations:                             I@20:50:58.564
+  > PrimePropagation                                              I@20:50:58.564
+  > Desugarer                                                     I@20:50:58.613
+  > UniqueRenamer                                                 I@20:50:58.660
+  > Normalizer                                                    I@20:50:58.727
+  > Keramelizer                                                   I@20:50:58.801
+  > After preprocessing: UniqueRenamer                            I@20:50:58.874
+PASS #10: TransitionFinderPass                                    I@20:50:58.947
+  > Found 1 initializing transitions                              I@20:50:58.994
+  > Found 17 transitions                                          I@20:50:59.067
+  > No constant initializer                                       I@20:50:59.067
+  > Applying unique renaming                                      I@20:50:59.068
+PASS #11: OptimizationPass                                        I@20:50:59.125
+ > Applying optimizations:                                        I@20:50:59.128
+  > ConstSimplifier                                               I@20:50:59.129
+  > ExprOptimizer                                                 I@20:50:59.159
+(Please report an issue at: [https://github.com/informalsystems/apalache/issues],scala.MatchError: Cardinality(5 .. 9) ≥ 4 (of class at.forsyte.apalache.tla.lir.OperEx))
+Unhandled exception                                               E@20:50:59.162
+scala.MatchError: Cardinality(5 .. 9) ≥ 4 (of class at.forsyte.apalache.tla.lir.OperEx)
+        at scala.PartialFunction$$anon$1.apply(PartialFunction.scala:259)
+        at scala.PartialFunction$$anon$1.apply(PartialFunction.scala:257)
+        at at.forsyte.apalache.tla.pp.ExprOptimizer$$anonfun$at$forsyte$apalache$tla$pp$ExprOptimizer$$transformCard$1.applyOrElse(ExprOptimizer.scala:69)
+        at at.forsyte.apalache.tla.pp.ExprOptimizer$$anonfun$at$forsyte$apalache$tla$pp$ExprOptimizer$$transformCard$1.applyOrElse(ExprOptimizer.scala:69)
+        at scala.runtime.AbstractPartialFunction.apply(AbstractPartialFunction.scala:38)
+        at at.forsyte.apalache.tla.pp.ExprOptimizer$$anonfun$at$forsyte$apalache$tla$pp$ExprOptimizer$$transformCard$1.applyOrElse(ExprOptimizer.scala:130)
+        at at.forsyte.apalache.tla.pp.ExprOptimizer$$anonfun$at$forsyte$apalache$tla$pp$ExprOptimizer$$transformCard$1.applyOrElse(ExprOptimizer.scala:69)
+        at scala.PartialFunction$OrElse.apply(PartialFunction.scala:172)
+        at at.forsyte.apalache.tla.pp.ExprOptimizer$$anonfun$transformSets$1.applyOrElse(ExprOptimizer.scala:55)
+        at at.forsyte.apalache.tla.pp.ExprOptimizer$$anonfun$transformSets$1.applyOrElse(ExprOptimizer.scala:55)
+        at scala.PartialFunction$OrElse.apply(PartialFunction.scala:172)
+        at at.forsyte.apalache.tla.pp.ExprOptimizer$$anonfun$transformFuns$1.applyOrElse(ExprOptimizer.scala:38)
+        at at.forsyte.apalache.tla.pp.ExprOptimizer$$anonfun$transformFuns$1.applyOrElse(ExprOptimizer.scala:38)
+        at scala.PartialFunction$OrElse.apply(PartialFunction.scala:172)
+        at at.forsyte.apalache.tla.lir.transformations.impl.TrackerWithListeners.$anonfun$trackEx$1(TrackerWithListeners.scala:16)
+        at at.forsyte.apalache.tla.pp.AbstractTransformer.$anonfun$transform$1(AbstractTransformer.scala:36)
+        at at.forsyte.apalache.tla.lir.transformations.impl.TrackerWithListeners.$anonfun$trackEx$1(TrackerWithListeners.scala:16)
+        at at.forsyte.apalache.tla.pp.ExprOptimizer.apply(ExprOptimizer.scala:30)
+        at at.forsyte.apalache.tla.pp.ExprOptimizer.apply(ExprOptimizer.scala:20)
+        at at.forsyte.apalache.tla.lir.transformations.standard.ModuleByExTransformer.$anonfun$apply$1(ModuleByExTransformer.scala:25)
+        at at.forsyte.apalache.tla.lir.transformations.standard.ModuleByExTransformer.mapIfIncluded$1(ModuleByExTransformer.scala:37)
+        at at.forsyte.apalache.tla.lir.transformations.standard.ModuleByExTransformer.$anonfun$apply$2(ModuleByExTransformer.scala:43)
+        at scala.collection.immutable.List.map(List.scala:297)
+        at at.forsyte.apalache.tla.lir.transformations.standard.ModuleByExTransformer.apply(ModuleByExTransformer.scala:43)
+        at at.forsyte.apalache.tla.pp.passes.OptPassImpl.$anonfun$execute$1(OptPassImpl.scala:55)
+        at scala.collection.LinearSeqOptimized.foldLeft(LinearSeqOptimized.scala:126)
+        at scala.collection.LinearSeqOptimized.foldLeft$(LinearSeqOptimized.scala:122)
+        at scala.collection.immutable.List.foldLeft(List.scala:91)
+        at at.forsyte.apalache.tla.pp.passes.OptPassImpl.execute(OptPassImpl.scala:53)
+        at at.forsyte.apalache.infra.passes.PassChainExecutor.exec$1(PassChainExecutor.scala:22)
+        at at.forsyte.apalache.infra.passes.PassChainExecutor.run(PassChainExecutor.scala:37)
+        at at.forsyte.apalache.tla.Tool$.runCheck(Tool.scala:183)
+        at at.forsyte.apalache.tla.Tool$.$anonfun$run$3(Tool.scala:95)
+        at at.forsyte.apalache.tla.Tool$.handleExceptions(Tool.scala:309)
+        at at.forsyte.apalache.tla.Tool$.run(Tool.scala:95)
+        at at.forsyte.apalache.tla.Tool$.main(Tool.scala:45)
+        at at.forsyte.apalache.tla.Tool.main(Tool.scala)
+It took me 0 days  0 hours  0 min  2 sec                          I@20:50:59.164
+Total time: 2.525 sec                                             I@20:50:59.164
+EXITCODE: ERROR (99)
+
+
+\* 2. Checking that Next preserves IndInv:
+
+$ apalache check --init=IndInv --inv=IndInv --length=1 MC_safety_5good_5bad.tla 
+Assuming you bind-mounted your local directory into /var/apalache...
+# Tool home: /opt/apalache
+# Package:   /opt/apalache/mod-distribution/target/apalache-pkg-0.15.3-SNAPSHOT-full.jar
+# JVM args: -Xmx4096m -DTLA-Library=/opt/apalache/src/tla
+#
+Picked up _JAVA_OPTIONS: -Djdk.net.URLClassPath.disableClassPathURLCheck=true
+# APALACHE version 0.15.3-SNAPSHOT build v0.15.1-33-g80cf914
+#
+# WARNING: This tool is in the experimental stage.
+#          Please report bugs at: [https://github.com/informalsystems/apalache/issues]
+# 
+# Usage statistics is OFF. We care about your privacy.
+# If you want to help our project, consider enabling statistics with config --enable-stats=true.
+
+Checker options: filename=MC_safety_5good_5bad.tla, init=IndInv, next=, inv=IndInv I@01:02:04.334
+Tuning:                                                           I@01:02:04.561
+PASS #0: SanyParser                                               I@01:02:04.565
+Parsing file /var/apalache/MC_safety_5good_5bad.tla
+Parsing file /var/apalache/Handshaking.tla
+Parsing file /tmp/TLC.tla
+Parsing file /tmp/FiniteSets.tla
+Parsing file /tmp/Naturals.tla
+Parsing file /tmp/Sequences.tla
+PASS #1: TypeCheckerSnowcat                                       I@01:02:05.196
+ > Running Snowcat .::.                                           I@01:02:05.196
+ > Your types are great!                                          I@01:02:05.766
+ > All expressions are typed                                      I@01:02:05.766
+PASS #2: ConfigurationPass                                        I@01:02:05.810
+  > MC_safety_5good_5bad.cfg: Loading TLC configuration           I@01:02:05.812
+  > MC_safety_5good_5bad.cfg: Using SPECIFICATION Spec            I@01:02:05.856
+  > MC_safety_5good_5bad.cfg: Init operator is set in TLC config but overridden via --init command line option; using IndInv W@01:02:05.856
+  > Using the next predicate Next from the TLC config             I@01:02:05.856
+  > MC_safety_5good_5bad.cfg: found INVARIANTS: TypeOK, NoSelfInteractions, GoodNodesDoNotExceedMaxConnections, GoodNodesNeverHaveMessagesFromBlacklistedPeers, GoodNodesHaveExlcusiveInProgressAndConnections, GoodNodesOnlyConnectToNodesWithWhomTheyHaveExchangedAllMessages, GoodNodesOnlyExchangeMetaMessagesAfterSendingAndReceivingConnectionMessages, GoodNodesOnlyExchangeAckMessagesAfterSendingAndReceivingConnectionAndMetaMessages I@01:02:05.856
+  > Overriding with command line arguments: --inv IndInv          W@01:02:05.857
+  > Set the initialization predicate to IndInv                    I@01:02:05.858
+  > Set the transition predicate to Next                          I@01:02:05.859
+  > Set an invariant to IndInv                                    I@01:02:05.859
+  > Replaced CONSTANT BAD_NODES with Bad_nodes()                  I@01:02:05.861
+  > Replaced CONSTANT MIN with Min()                              I@01:02:05.862
+  > Replaced CONSTANT MAX with Max()                              I@01:02:05.862
+  > Replaced CONSTANT GOOD_NODES with Good_nodes()                I@01:02:05.862
+PASS #3: DesugarerPass                                            I@01:02:05.915
+  > Desugaring...                                                 I@01:02:05.916
+PASS #4: UnrollPass                                               I@01:02:05.960
+  > Unroller                                                      I@01:02:06.011
+PASS #5: PrimingPass                                              I@01:02:06.068
+  > Introducing IndInvPrimed for IndInv'                          I@01:02:06.070
+PASS #6: CoverAnalysisPass                                        I@01:02:06.113
+PASS #7: InlinePass                                               I@01:02:06.113
+  > InlinerOfUserOper                                             I@01:02:06.114
+  > LetInExpander                                                 I@01:02:06.154
+  > InlinerOfUserOper                                             I@01:02:06.166
+Leaving only relevant operators: CInitPrimed, IndInv, IndInvPrimed, Next I@01:02:06.170
+PASS #8: VCGen                                                    I@01:02:06.207
+  > Producing verification conditions from the invariant IndInv   I@01:02:06.208
+  > VCGen produced 26 verification condition(s)                   I@01:02:06.209
+PASS #9: PreprocessingPass                                        I@01:02:06.250
+  > Before preprocessing: unique renaming                         I@01:02:06.250
+ > Applying standard transformations:                             I@01:02:06.256
+  > PrimePropagation                                              I@01:02:06.257
+  > Desugarer                                                     I@01:02:06.307
+  > UniqueRenamer                                                 I@01:02:06.357
+  > Normalizer                                                    I@01:02:06.421
+  > Keramelizer                                                   I@01:02:06.483
+  > After preprocessing: UniqueRenamer                            I@01:02:06.555
+PASS #10: TransitionFinderPass                                    I@01:02:06.635
+  > Found 1 initializing transitions                              I@01:02:06.683
+  > Found 17 transitions                                          I@01:02:06.751
+  > No constant initializer                                       I@01:02:06.752
+  > Applying unique renaming                                      I@01:02:06.753
+PASS #11: OptimizationPass                                        I@01:02:06.817
+ > Applying optimizations:                                        I@01:02:06.820
+  > ConstSimplifier                                               I@01:02:06.821
+  > ExprOptimizer                                                 I@01:02:06.851
+(Please report an issue at: [https://github.com/informalsystems/apalache/issues],scala.MatchError: Cardinality(5 .. 9) ≥ 4 (of class at.forsyte.apalache.tla.lir.OperEx))
+Unhandled exception                                               E@01:02:06.855
+scala.MatchError: Cardinality(5 .. 9) ≥ 4 (of class at.forsyte.apalache.tla.lir.OperEx)
+        at scala.PartialFunction$$anon$1.apply(PartialFunction.scala:259)
+        at scala.PartialFunction$$anon$1.apply(PartialFunction.scala:257)
+        at at.forsyte.apalache.tla.pp.ExprOptimizer$$anonfun$at$forsyte$apalache$tla$pp$ExprOptimizer$$transformCard$1.applyOrElse(ExprOptimizer.scala:69)
+        at at.forsyte.apalache.tla.pp.ExprOptimizer$$anonfun$at$forsyte$apalache$tla$pp$ExprOptimizer$$transformCard$1.applyOrElse(ExprOptimizer.scala:69)
+        at scala.runtime.AbstractPartialFunction.apply(AbstractPartialFunction.scala:38)
+        at at.forsyte.apalache.tla.pp.ExprOptimizer$$anonfun$at$forsyte$apalache$tla$pp$ExprOptimizer$$transformCard$1.applyOrElse(ExprOptimizer.scala:130)
+        at at.forsyte.apalache.tla.pp.ExprOptimizer$$anonfun$at$forsyte$apalache$tla$pp$ExprOptimizer$$transformCard$1.applyOrElse(ExprOptimizer.scala:69)
+        at scala.PartialFunction$OrElse.apply(PartialFunction.scala:172)
+        at at.forsyte.apalache.tla.pp.ExprOptimizer$$anonfun$transformSets$1.applyOrElse(ExprOptimizer.scala:55)
+        at at.forsyte.apalache.tla.pp.ExprOptimizer$$anonfun$transformSets$1.applyOrElse(ExprOptimizer.scala:55)
+        at scala.PartialFunction$OrElse.apply(PartialFunction.scala:172)
+        at at.forsyte.apalache.tla.pp.ExprOptimizer$$anonfun$transformFuns$1.applyOrElse(ExprOptimizer.scala:38)
+        at at.forsyte.apalache.tla.pp.ExprOptimizer$$anonfun$transformFuns$1.applyOrElse(ExprOptimizer.scala:38)
+        at scala.PartialFunction$OrElse.apply(PartialFunction.scala:172)
+        at at.forsyte.apalache.tla.lir.transformations.impl.TrackerWithListeners.$anonfun$trackEx$1(TrackerWithListeners.scala:16)
+        at at.forsyte.apalache.tla.pp.AbstractTransformer.$anonfun$transform$1(AbstractTransformer.scala:36)
+        at at.forsyte.apalache.tla.lir.transformations.impl.TrackerWithListeners.$anonfun$trackEx$1(TrackerWithListeners.scala:16)
+        at at.forsyte.apalache.tla.pp.ExprOptimizer.apply(ExprOptimizer.scala:30)
+        at at.forsyte.apalache.tla.pp.ExprOptimizer.apply(ExprOptimizer.scala:20)
+        at at.forsyte.apalache.tla.lir.transformations.standard.ModuleByExTransformer.$anonfun$apply$1(ModuleByExTransformer.scala:25)
+        at at.forsyte.apalache.tla.lir.transformations.standard.ModuleByExTransformer.mapIfIncluded$1(ModuleByExTransformer.scala:37)
+        at at.forsyte.apalache.tla.lir.transformations.standard.ModuleByExTransformer.$anonfun$apply$2(ModuleByExTransformer.scala:43)
+        at scala.collection.immutable.List.map(List.scala:297)
+        at at.forsyte.apalache.tla.lir.transformations.standard.ModuleByExTransformer.apply(ModuleByExTransformer.scala:43)
+        at at.forsyte.apalache.tla.pp.passes.OptPassImpl.$anonfun$execute$1(OptPassImpl.scala:55)
+        at scala.collection.LinearSeqOptimized.foldLeft(LinearSeqOptimized.scala:126)
+        at scala.collection.LinearSeqOptimized.foldLeft$(LinearSeqOptimized.scala:122)
+        at scala.collection.immutable.List.foldLeft(List.scala:91)
+        at at.forsyte.apalache.tla.pp.passes.OptPassImpl.execute(OptPassImpl.scala:53)
+        at at.forsyte.apalache.infra.passes.PassChainExecutor.exec$1(PassChainExecutor.scala:22)
+        at at.forsyte.apalache.infra.passes.PassChainExecutor.run(PassChainExecutor.scala:37)
+        at at.forsyte.apalache.tla.Tool$.runCheck(Tool.scala:183)
+        at at.forsyte.apalache.tla.Tool$.$anonfun$run$3(Tool.scala:95)
+        at at.forsyte.apalache.tla.Tool$.handleExceptions(Tool.scala:309)
+        at at.forsyte.apalache.tla.Tool$.run(Tool.scala:95)
+        at at.forsyte.apalache.tla.Tool$.main(Tool.scala:45)
+        at at.forsyte.apalache.tla.Tool.main(Tool.scala)
+It took me 0 days  0 hours  0 min  2 sec                          I@01:02:06.858
+Total time: 2.524 sec                                             I@01:02:06.858
+EXITCODE: ERROR (99)

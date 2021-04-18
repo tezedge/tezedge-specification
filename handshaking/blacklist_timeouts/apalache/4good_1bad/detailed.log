@@ -1,0 +1,655 @@
+20:47:54.307 [main] INFO  a.f.a.t.Tool$ - Checker options: filename=MC_safety_4good_1bad.tla, init=Init, next=, inv=IndInv
+20:47:54.524 [main] INFO  a.f.a.t.Tool$ - Tuning: 
+20:47:54.525 [main] INFO  a.f.a.i.p.PassChainExecutor - PASS #0: SanyParser
+20:47:55.130 [main] DEBUG a.f.a.i.p.PassChainExecutor - PASS #0: SanyParser [OK]
+20:47:55.131 [main] INFO  a.f.a.i.p.PassChainExecutor - PASS #1: TypeCheckerSnowcat
+20:47:55.131 [main] INFO  a.f.a.t.t.p.EtcTypeCheckerPassImpl -  > Running Snowcat .::.
+20:47:55.173 [main] DEBUG a.f.a.t.t.p.EtcTypeCheckerPassImpl -  > JSON output: /var/apalache/x/20.47-18.04.2021-14431284121060117287/out-pre-TypeCheckerSnowcat.json
+20:47:55.695 [main] INFO  a.f.a.t.t.p.EtcTypeCheckerPassImpl -  > Your types are great!
+20:47:55.696 [main] INFO  a.f.a.t.t.p.EtcTypeCheckerPassImpl -  > All expressions are typed
+20:47:55.738 [main] DEBUG a.f.a.t.t.p.EtcTypeCheckerPassImpl -  > JSON output: /var/apalache/x/20.47-18.04.2021-14431284121060117287/out-post-TypeCheckerSnowcat.json
+20:47:55.738 [main] DEBUG a.f.a.i.p.PassChainExecutor - PASS #1: TypeCheckerSnowcat [OK]
+20:47:55.738 [main] INFO  a.f.a.i.p.PassChainExecutor - PASS #2: ConfigurationPass
+20:47:55.741 [main] INFO  a.f.a.t.p.p.ConfigurationPassImpl -   > MC_safety_4good_1bad.cfg: Loading TLC configuration
+20:47:55.782 [main] INFO  a.f.a.t.p.p.ConfigurationPassImpl -   > MC_safety_4good_1bad.cfg: Using SPECIFICATION Spec
+20:47:55.783 [main] WARN  a.f.a.t.p.p.ConfigurationPassImpl -   > MC_safety_4good_1bad.cfg: Init operator is set in TLC config but overridden via --init command line option; using Init
+20:47:55.783 [main] INFO  a.f.a.t.p.p.ConfigurationPassImpl -   > Using the next predicate Next from the TLC config
+20:47:55.783 [main] INFO  a.f.a.t.p.p.ConfigurationPassImpl -   > MC_safety_4good_1bad.cfg: found INVARIANTS: TypeOK, NoSelfInteractions, GoodNodesDoNotExceedMaxConnections, GoodNodesNeverHaveMessagesFromBlacklistedPeers, GoodNodesHaveExlcusiveInProgressAndConnections, GoodNodesOnlyConnectToNodesWithWhomTheyHaveExchangedAllMessages, GoodNodesOnlyExchangeMetaMessagesAfterSendingAndReceivingConnectionMessages, GoodNodesOnlyExchangeAckMessagesAfterSendingAndReceivingConnectionAndMetaMessages
+20:47:55.784 [main] WARN  a.f.a.t.p.p.ConfigurationPassImpl -   > Overriding with command line arguments: --inv IndInv
+20:47:55.785 [main] INFO  a.f.a.t.p.p.ConfigurationPassImpl -   > Set the initialization predicate to Init
+20:47:55.786 [main] INFO  a.f.a.t.p.p.ConfigurationPassImpl -   > Set the transition predicate to Next
+20:47:55.786 [main] INFO  a.f.a.t.p.p.ConfigurationPassImpl -   > Set an invariant to IndInv
+20:47:55.789 [main] INFO  a.f.a.t.p.ConstAndDefRewriter -   > Replaced CONSTANT BAD_NODES with Bad_nodes()
+20:47:55.789 [main] INFO  a.f.a.t.p.ConstAndDefRewriter -   > Replaced CONSTANT MIN with Min()
+20:47:55.789 [main] INFO  a.f.a.t.p.ConstAndDefRewriter -   > Replaced CONSTANT MAX with Max()
+20:47:55.790 [main] INFO  a.f.a.t.p.ConstAndDefRewriter -   > Replaced CONSTANT GOOD_NODES with Good_nodes()
+20:47:55.844 [main] DEBUG a.f.a.i.p.PassChainExecutor - PASS #2: ConfigurationPass [OK]
+20:47:55.845 [main] INFO  a.f.a.i.p.PassChainExecutor - PASS #3: DesugarerPass
+20:47:55.845 [main] INFO  a.f.a.t.p.p.DesugarerPassImpl -   > Desugaring...
+20:47:55.894 [main] DEBUG a.f.a.i.p.PassChainExecutor - PASS #3: DesugarerPass [OK]
+20:47:55.894 [main] INFO  a.f.a.i.p.PassChainExecutor - PASS #4: UnrollPass
+20:47:55.939 [main] INFO  a.f.a.t.p.p.UnrollPassImpl -   > Unroller
+20:47:55.988 [main] DEBUG a.f.a.i.p.PassChainExecutor - PASS #4: UnrollPass [OK]
+20:47:55.989 [main] INFO  a.f.a.i.p.PassChainExecutor - PASS #5: PrimingPass
+20:47:55.992 [main] INFO  a.f.a.t.a.p.PrimingPassImpl -   > Introducing InitPrimed for Init'
+20:47:56.023 [main] DEBUG a.f.a.i.p.PassChainExecutor - PASS #5: PrimingPass [OK]
+20:47:56.023 [main] INFO  a.f.a.i.p.PassChainExecutor - PASS #6: CoverAnalysisPass
+20:47:56.023 [main] DEBUG a.f.a.i.p.PassChainExecutor - PASS #6: CoverAnalysisPass [OK]
+20:47:56.023 [main] INFO  a.f.a.i.p.PassChainExecutor - PASS #7: InlinePass
+20:47:56.024 [main] INFO  a.f.a.t.p.p.InlinePassImpl -   > InlinerOfUserOper
+20:47:56.061 [main] INFO  a.f.a.t.p.p.InlinePassImpl -   > LetInExpander
+20:47:56.072 [main] INFO  a.f.a.t.p.p.InlinePassImpl -   > InlinerOfUserOper
+20:47:56.076 [main] INFO  a.f.a.t.p.p.InlinePassImpl - Leaving only relevant operators: CInitPrimed, IndInv, Init, InitPrimed, Next
+20:47:56.110 [main] DEBUG a.f.a.i.p.PassChainExecutor - PASS #7: InlinePass [OK]
+20:47:56.111 [main] INFO  a.f.a.i.p.PassChainExecutor - PASS #8: VCGen
+20:47:56.111 [main] INFO  a.f.a.t.b.p.VCGenPassImpl -   > Producing verification conditions from the invariant IndInv
+20:47:56.113 [main] INFO  a.f.a.t.b.VCGenerator -   > VCGen produced 26 verification condition(s)
+20:47:56.150 [main] DEBUG a.f.a.i.p.PassChainExecutor - PASS #8: VCGen [OK]
+20:47:56.150 [main] INFO  a.f.a.i.p.PassChainExecutor - PASS #9: PreprocessingPass
+20:47:56.150 [main] INFO  a.f.a.t.p.p.PreproPassImpl -   > Before preprocessing: unique renaming
+20:47:56.156 [main] INFO  a.f.a.t.p.p.PreproPassImpl -  > Applying standard transformations:
+20:47:56.157 [main] INFO  a.f.a.t.p.p.PreproPassImpl -   > PrimePropagation
+20:47:56.199 [main] INFO  a.f.a.t.p.p.PreproPassImpl -   > Desugarer
+20:47:56.243 [main] INFO  a.f.a.t.p.p.PreproPassImpl -   > UniqueRenamer
+20:47:56.302 [main] INFO  a.f.a.t.p.p.PreproPassImpl -   > Normalizer
+20:47:56.355 [main] INFO  a.f.a.t.p.p.PreproPassImpl -   > Keramelizer
+20:47:56.422 [main] INFO  a.f.a.t.p.p.PreproPassImpl -   > After preprocessing: UniqueRenamer
+20:47:56.487 [main] DEBUG a.f.a.i.p.PassChainExecutor - PASS #9: PreprocessingPass [OK]
+20:47:56.488 [main] INFO  a.f.a.i.p.PassChainExecutor - PASS #10: TransitionFinderPass
+20:47:56.536 [main] INFO  a.f.a.t.a.p.TransitionPassImpl -   > Found 1 initializing transitions
+20:47:56.608 [main] INFO  a.f.a.t.a.p.TransitionPassImpl -   > Found 17 transitions
+20:47:56.608 [main] INFO  a.f.a.t.a.p.TransitionPassImpl -   > No constant initializer
+20:47:56.608 [main] INFO  a.f.a.t.a.p.TransitionPassImpl -   > Applying unique renaming
+20:47:56.664 [main] DEBUG a.f.a.i.p.PassChainExecutor - PASS #10: TransitionFinderPass [OK]
+20:47:56.665 [main] INFO  a.f.a.i.p.PassChainExecutor - PASS #11: OptimizationPass
+20:47:56.668 [main] INFO  a.f.a.t.p.p.OptPassImpl -  > Applying optimizations:
+20:47:56.669 [main] INFO  a.f.a.t.p.p.OptPassImpl -   > ConstSimplifier
+20:47:56.703 [main] INFO  a.f.a.t.p.p.OptPassImpl -   > ExprOptimizer
+20:47:56.721 [main] INFO  a.f.a.t.p.p.OptPassImpl -   > ConstSimplifier
+20:47:56.780 [main] DEBUG a.f.a.i.p.PassChainExecutor - PASS #11: OptimizationPass [OK]
+20:47:56.780 [main] INFO  a.f.a.i.p.PassChainExecutor - PASS #12: AnalysisPass
+20:47:56.782 [main] INFO  a.f.a.t.b.p.AnalysisPassImpl -  > Marking skolemizable existentials and sets to be expanded...
+20:47:56.783 [main] INFO  a.f.a.t.b.p.AnalysisPassImpl -   > SkolemizationMarker
+20:47:56.787 [main] INFO  a.f.a.t.b.p.AnalysisPassImpl -   > ExpansionMarker
+20:47:56.808 [main] INFO  a.f.a.t.b.p.AnalysisPassImpl -  > Running analyzers...
+20:47:56.857 [main] INFO  a.f.a.t.b.p.AnalysisPassImpl -   > Introduced expression grades
+20:47:56.857 [main] INFO  a.f.a.t.b.p.AnalysisPassImpl -   > Introduced 4 formula hints
+20:47:56.857 [main] DEBUG a.f.a.i.p.PassChainExecutor - PASS #12: AnalysisPass [OK]
+20:47:56.858 [main] INFO  a.f.a.i.p.PassChainExecutor - PASS #13: PostTypeCheckerSnowcat
+20:47:56.858 [main] INFO  a.f.a.t.b.p.PostTypeCheckerPassImpl -  > Running Snowcat .::.
+20:47:56.884 [main] DEBUG a.f.a.t.b.p.PostTypeCheckerPassImpl -  > JSON output: /var/apalache/x/20.47-18.04.2021-14431284121060117287/out-pre-PostTypeCheckerSnowcat.json
+20:47:59.179 [main] INFO  a.f.a.t.b.p.PostTypeCheckerPassImpl -  > Your types are great!
+20:47:59.179 [main] INFO  a.f.a.t.b.p.PostTypeCheckerPassImpl -  > All expressions are typed
+20:47:59.199 [main] DEBUG a.f.a.t.b.p.PostTypeCheckerPassImpl -  > JSON output: /var/apalache/x/20.47-18.04.2021-14431284121060117287/out-post-PostTypeCheckerSnowcat.json
+20:47:59.199 [main] DEBUG a.f.a.i.p.PassChainExecutor - PASS #13: PostTypeCheckerSnowcat [OK]
+20:47:59.199 [main] INFO  a.f.a.i.p.PassChainExecutor - PASS #14: BoundedChecker
+20:47:59.390 [main] DEBUG a.f.a.t.b.t.TransitionExecutorImpl - Step #0, transition #0
+20:47:59.391 [main] DEBUG a.f.a.t.b.t.TransitionExecutorImpl - Translating to SMT...
+20:47:59.469 [main] DEBUG a.f.a.t.b.SeqModelChecker - Step 0: Transition #0. Is it enabled?
+20:47:59.471 [main] DEBUG a.f.a.t.b.SeqModelChecker - Step 0: Transition #0 is enabled
+20:47:59.473 [main] INFO  a.f.a.t.b.SeqModelChecker - State 0: Checking 26 invariants
+20:47:59.474 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 0: Checking invariant 0
+20:47:59.489 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 0: Checking invariant 1
+20:47:59.497 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 0: Checking invariant 2
+20:47:59.546 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 0: Checking invariant 3
+20:47:59.551 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 0: Checking invariant 4
+20:47:59.555 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 0: Checking invariant 5
+20:47:59.560 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 0: Checking invariant 6
+20:47:59.564 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 0: Checking invariant 7
+20:47:59.568 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 0: Checking invariant 8
+20:47:59.572 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 0: Checking invariant 9
+20:47:59.576 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 0: Checking invariant 10
+20:47:59.584 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 0: Checking invariant 11
+20:47:59.588 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 0: Checking invariant 12
+20:47:59.592 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 0: Checking invariant 13
+20:47:59.595 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 0: Checking invariant 14
+20:47:59.598 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 0: Checking invariant 15
+20:47:59.600 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 0: Checking invariant 16
+20:47:59.603 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 0: Checking invariant 17
+20:47:59.606 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 0: Checking invariant 18
+20:47:59.608 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 0: Checking invariant 19
+20:47:59.611 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 0: Checking invariant 20
+20:47:59.616 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 0: Checking invariant 21
+20:47:59.621 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 0: Checking invariant 22
+20:47:59.624 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 0: Checking invariant 23
+20:47:59.628 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 0: Checking invariant 24
+20:47:59.632 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 0: Checking invariant 25
+20:47:59.637 [main] INFO  a.f.a.t.b.t.TransitionExecutorImpl - Step 0: picking a transition out of 1 transition(s)
+20:47:59.640 [main] INFO  a.f.a.t.b.p.BoundedCheckerPassImpl - The outcome is: NoError
+20:47:59.640 [main] DEBUG a.f.a.i.p.PassChainExecutor - PASS #14: BoundedChecker [OK]
+20:47:59.641 [main] INFO  a.f.a.i.p.PassChainExecutor - PASS #15: Terminal
+20:47:59.641 [main] DEBUG a.f.a.i.p.PassChainExecutor - PASS #15: Terminal [OK]
+20:47:59.641 [main] INFO  a.f.a.t.Tool$ - Checker reports no error up to computation length 0
+20:47:59.641 [main] INFO  a.f.a.t.Tool$ - It took me 0 days  0 hours  0 min  5 sec
+20:47:59.641 [main] INFO  a.f.a.t.Tool$ - Total time: 5.335 sec
+20:48:48.869 [main] INFO  a.f.a.t.Tool$ - Checker options: filename=MC_safety_4good_1bad.tla, init=IndInv, next=, inv=IndInv
+20:48:49.082 [main] INFO  a.f.a.t.Tool$ - Tuning: 
+20:48:49.082 [main] INFO  a.f.a.i.p.PassChainExecutor - PASS #0: SanyParser
+20:48:49.725 [main] DEBUG a.f.a.i.p.PassChainExecutor - PASS #0: SanyParser [OK]
+20:48:49.725 [main] INFO  a.f.a.i.p.PassChainExecutor - PASS #1: TypeCheckerSnowcat
+20:48:49.725 [main] INFO  a.f.a.t.t.p.EtcTypeCheckerPassImpl -  > Running Snowcat .::.
+20:48:49.765 [main] DEBUG a.f.a.t.t.p.EtcTypeCheckerPassImpl -  > JSON output: /var/apalache/x/20.48-18.04.2021-6108278785249180699/out-pre-TypeCheckerSnowcat.json
+20:48:50.293 [main] INFO  a.f.a.t.t.p.EtcTypeCheckerPassImpl -  > Your types are great!
+20:48:50.293 [main] INFO  a.f.a.t.t.p.EtcTypeCheckerPassImpl -  > All expressions are typed
+20:48:50.335 [main] DEBUG a.f.a.t.t.p.EtcTypeCheckerPassImpl -  > JSON output: /var/apalache/x/20.48-18.04.2021-6108278785249180699/out-post-TypeCheckerSnowcat.json
+20:48:50.335 [main] DEBUG a.f.a.i.p.PassChainExecutor - PASS #1: TypeCheckerSnowcat [OK]
+20:48:50.336 [main] INFO  a.f.a.i.p.PassChainExecutor - PASS #2: ConfigurationPass
+20:48:50.339 [main] INFO  a.f.a.t.p.p.ConfigurationPassImpl -   > MC_safety_4good_1bad.cfg: Loading TLC configuration
+20:48:50.379 [main] INFO  a.f.a.t.p.p.ConfigurationPassImpl -   > MC_safety_4good_1bad.cfg: Using SPECIFICATION Spec
+20:48:50.379 [main] WARN  a.f.a.t.p.p.ConfigurationPassImpl -   > MC_safety_4good_1bad.cfg: Init operator is set in TLC config but overridden via --init command line option; using IndInv
+20:48:50.380 [main] INFO  a.f.a.t.p.p.ConfigurationPassImpl -   > Using the next predicate Next from the TLC config
+20:48:50.380 [main] INFO  a.f.a.t.p.p.ConfigurationPassImpl -   > MC_safety_4good_1bad.cfg: found INVARIANTS: TypeOK, NoSelfInteractions, GoodNodesDoNotExceedMaxConnections, GoodNodesNeverHaveMessagesFromBlacklistedPeers, GoodNodesHaveExlcusiveInProgressAndConnections, GoodNodesOnlyConnectToNodesWithWhomTheyHaveExchangedAllMessages, GoodNodesOnlyExchangeMetaMessagesAfterSendingAndReceivingConnectionMessages, GoodNodesOnlyExchangeAckMessagesAfterSendingAndReceivingConnectionAndMetaMessages
+20:48:50.380 [main] WARN  a.f.a.t.p.p.ConfigurationPassImpl -   > Overriding with command line arguments: --inv IndInv
+20:48:50.382 [main] INFO  a.f.a.t.p.p.ConfigurationPassImpl -   > Set the initialization predicate to IndInv
+20:48:50.382 [main] INFO  a.f.a.t.p.p.ConfigurationPassImpl -   > Set the transition predicate to Next
+20:48:50.382 [main] INFO  a.f.a.t.p.p.ConfigurationPassImpl -   > Set an invariant to IndInv
+20:48:50.384 [main] INFO  a.f.a.t.p.ConstAndDefRewriter -   > Replaced CONSTANT BAD_NODES with Bad_nodes()
+20:48:50.385 [main] INFO  a.f.a.t.p.ConstAndDefRewriter -   > Replaced CONSTANT MIN with Min()
+20:48:50.385 [main] INFO  a.f.a.t.p.ConstAndDefRewriter -   > Replaced CONSTANT MAX with Max()
+20:48:50.385 [main] INFO  a.f.a.t.p.ConstAndDefRewriter -   > Replaced CONSTANT GOOD_NODES with Good_nodes()
+20:48:50.446 [main] DEBUG a.f.a.i.p.PassChainExecutor - PASS #2: ConfigurationPass [OK]
+20:48:50.446 [main] INFO  a.f.a.i.p.PassChainExecutor - PASS #3: DesugarerPass
+20:48:50.447 [main] INFO  a.f.a.t.p.p.DesugarerPassImpl -   > Desugaring...
+20:48:50.493 [main] DEBUG a.f.a.i.p.PassChainExecutor - PASS #3: DesugarerPass [OK]
+20:48:50.494 [main] INFO  a.f.a.i.p.PassChainExecutor - PASS #4: UnrollPass
+20:48:50.549 [main] INFO  a.f.a.t.p.p.UnrollPassImpl -   > Unroller
+20:48:50.607 [main] DEBUG a.f.a.i.p.PassChainExecutor - PASS #4: UnrollPass [OK]
+20:48:50.608 [main] INFO  a.f.a.i.p.PassChainExecutor - PASS #5: PrimingPass
+20:48:50.611 [main] INFO  a.f.a.t.a.p.PrimingPassImpl -   > Introducing IndInvPrimed for IndInv'
+20:48:50.656 [main] DEBUG a.f.a.i.p.PassChainExecutor - PASS #5: PrimingPass [OK]
+20:48:50.657 [main] INFO  a.f.a.i.p.PassChainExecutor - PASS #6: CoverAnalysisPass
+20:48:50.657 [main] DEBUG a.f.a.i.p.PassChainExecutor - PASS #6: CoverAnalysisPass [OK]
+20:48:50.657 [main] INFO  a.f.a.i.p.PassChainExecutor - PASS #7: InlinePass
+20:48:50.658 [main] INFO  a.f.a.t.p.p.InlinePassImpl -   > InlinerOfUserOper
+20:48:50.693 [main] INFO  a.f.a.t.p.p.InlinePassImpl -   > LetInExpander
+20:48:50.707 [main] INFO  a.f.a.t.p.p.InlinePassImpl -   > InlinerOfUserOper
+20:48:50.712 [main] INFO  a.f.a.t.p.p.InlinePassImpl - Leaving only relevant operators: CInitPrimed, IndInv, IndInvPrimed, Next
+20:48:50.747 [main] DEBUG a.f.a.i.p.PassChainExecutor - PASS #7: InlinePass [OK]
+20:48:50.748 [main] INFO  a.f.a.i.p.PassChainExecutor - PASS #8: VCGen
+20:48:50.748 [main] INFO  a.f.a.t.b.p.VCGenPassImpl -   > Producing verification conditions from the invariant IndInv
+20:48:50.750 [main] INFO  a.f.a.t.b.VCGenerator -   > VCGen produced 26 verification condition(s)
+20:48:50.790 [main] DEBUG a.f.a.i.p.PassChainExecutor - PASS #8: VCGen [OK]
+20:48:50.790 [main] INFO  a.f.a.i.p.PassChainExecutor - PASS #9: PreprocessingPass
+20:48:50.790 [main] INFO  a.f.a.t.p.p.PreproPassImpl -   > Before preprocessing: unique renaming
+20:48:50.794 [main] INFO  a.f.a.t.p.p.PreproPassImpl -  > Applying standard transformations:
+20:48:50.795 [main] INFO  a.f.a.t.p.p.PreproPassImpl -   > PrimePropagation
+20:48:50.840 [main] INFO  a.f.a.t.p.p.PreproPassImpl -   > Desugarer
+20:48:50.884 [main] INFO  a.f.a.t.p.p.PreproPassImpl -   > UniqueRenamer
+20:48:50.944 [main] INFO  a.f.a.t.p.p.PreproPassImpl -   > Normalizer
+20:48:51.002 [main] INFO  a.f.a.t.p.p.PreproPassImpl -   > Keramelizer
+20:48:51.087 [main] INFO  a.f.a.t.p.p.PreproPassImpl -   > After preprocessing: UniqueRenamer
+20:48:51.162 [main] DEBUG a.f.a.i.p.PassChainExecutor - PASS #9: PreprocessingPass [OK]
+20:48:51.163 [main] INFO  a.f.a.i.p.PassChainExecutor - PASS #10: TransitionFinderPass
+20:48:51.211 [main] INFO  a.f.a.t.a.p.TransitionPassImpl -   > Found 1 initializing transitions
+20:48:51.277 [main] INFO  a.f.a.t.a.p.TransitionPassImpl -   > Found 17 transitions
+20:48:51.277 [main] INFO  a.f.a.t.a.p.TransitionPassImpl -   > No constant initializer
+20:48:51.278 [main] INFO  a.f.a.t.a.p.TransitionPassImpl -   > Applying unique renaming
+20:48:51.343 [main] DEBUG a.f.a.i.p.PassChainExecutor - PASS #10: TransitionFinderPass [OK]
+20:48:51.344 [main] INFO  a.f.a.i.p.PassChainExecutor - PASS #11: OptimizationPass
+20:48:51.347 [main] INFO  a.f.a.t.p.p.OptPassImpl -  > Applying optimizations:
+20:48:51.347 [main] INFO  a.f.a.t.p.p.OptPassImpl -   > ConstSimplifier
+20:48:51.376 [main] INFO  a.f.a.t.p.p.OptPassImpl -   > ExprOptimizer
+20:48:51.397 [main] INFO  a.f.a.t.p.p.OptPassImpl -   > ConstSimplifier
+20:48:51.463 [main] DEBUG a.f.a.i.p.PassChainExecutor - PASS #11: OptimizationPass [OK]
+20:48:51.463 [main] INFO  a.f.a.i.p.PassChainExecutor - PASS #12: AnalysisPass
+20:48:51.464 [main] INFO  a.f.a.t.b.p.AnalysisPassImpl -  > Marking skolemizable existentials and sets to be expanded...
+20:48:51.465 [main] INFO  a.f.a.t.b.p.AnalysisPassImpl -   > SkolemizationMarker
+20:48:51.468 [main] INFO  a.f.a.t.b.p.AnalysisPassImpl -   > ExpansionMarker
+20:48:51.489 [main] INFO  a.f.a.t.b.p.AnalysisPassImpl -  > Running analyzers...
+20:48:51.542 [main] INFO  a.f.a.t.b.p.AnalysisPassImpl -   > Introduced expression grades
+20:48:51.542 [main] INFO  a.f.a.t.b.p.AnalysisPassImpl -   > Introduced 7 formula hints
+20:48:51.542 [main] DEBUG a.f.a.i.p.PassChainExecutor - PASS #12: AnalysisPass [OK]
+20:48:51.542 [main] INFO  a.f.a.i.p.PassChainExecutor - PASS #13: PostTypeCheckerSnowcat
+20:48:51.542 [main] INFO  a.f.a.t.b.p.PostTypeCheckerPassImpl -  > Running Snowcat .::.
+20:48:51.571 [main] DEBUG a.f.a.t.b.p.PostTypeCheckerPassImpl -  > JSON output: /var/apalache/x/20.48-18.04.2021-6108278785249180699/out-pre-PostTypeCheckerSnowcat.json
+20:48:55.174 [main] INFO  a.f.a.t.b.p.PostTypeCheckerPassImpl -  > Your types are great!
+20:48:55.174 [main] INFO  a.f.a.t.b.p.PostTypeCheckerPassImpl -  > All expressions are typed
+20:48:55.196 [main] DEBUG a.f.a.t.b.p.PostTypeCheckerPassImpl -  > JSON output: /var/apalache/x/20.48-18.04.2021-6108278785249180699/out-post-PostTypeCheckerSnowcat.json
+20:48:55.196 [main] DEBUG a.f.a.i.p.PassChainExecutor - PASS #13: PostTypeCheckerSnowcat [OK]
+20:48:55.196 [main] INFO  a.f.a.i.p.PassChainExecutor - PASS #14: BoundedChecker
+20:48:55.388 [main] DEBUG a.f.a.t.b.t.TransitionExecutorImpl - Step #0, transition #0
+20:48:55.388 [main] DEBUG a.f.a.t.b.t.TransitionExecutorImpl - Translating to SMT...
+20:48:56.196 [main] DEBUG a.f.a.t.b.SeqModelChecker - Step 0: Transition #0. Is it enabled?
+20:48:56.200 [main] DEBUG a.f.a.t.b.SeqModelChecker - Step 0: Transition #0 is enabled
+20:48:56.203 [main] INFO  a.f.a.t.b.SeqModelChecker - State 0: Checking 26 invariants
+20:48:56.203 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 0: Checking invariant 0
+20:48:56.221 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 0: Checking invariant 1
+20:48:56.231 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 0: Checking invariant 2
+20:48:56.398 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 0: Checking invariant 3
+20:48:56.405 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 0: Checking invariant 4
+20:48:56.413 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 0: Checking invariant 5
+20:48:56.421 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 0: Checking invariant 6
+20:48:56.429 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 0: Checking invariant 7
+20:48:56.436 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 0: Checking invariant 8
+20:48:56.445 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 0: Checking invariant 9
+20:48:56.452 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 0: Checking invariant 10
+20:48:56.457 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 0: Checking invariant 11
+20:48:56.460 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 0: Checking invariant 12
+20:48:56.471 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 0: Checking invariant 13
+20:48:56.475 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 0: Checking invariant 14
+20:48:56.479 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 0: Checking invariant 15
+20:48:56.482 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 0: Checking invariant 16
+20:48:56.486 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 0: Checking invariant 17
+20:48:56.489 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 0: Checking invariant 18
+20:48:56.492 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 0: Checking invariant 19
+20:48:56.495 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 0: Checking invariant 20
+20:48:56.518 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 0: Checking invariant 21
+20:48:56.581 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 0: Checking invariant 22
+20:48:56.598 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 0: Checking invariant 23
+20:48:56.666 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 0: Checking invariant 24
+20:48:56.690 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 0: Checking invariant 25
+20:48:56.746 [main] INFO  a.f.a.t.b.t.TransitionExecutorImpl - Step 0: picking a transition out of 1 transition(s)
+20:48:56.747 [main] DEBUG a.f.a.t.b.t.TransitionExecutorImpl - Step #1, transition #0
+20:48:56.747 [main] DEBUG a.f.a.t.b.t.TransitionExecutorImpl - Translating to SMT...
+20:48:56.901 [main] DEBUG a.f.a.t.b.SeqModelChecker - Step 1: Transition #0. Is it enabled?
+20:48:56.903 [main] DEBUG a.f.a.t.b.SeqModelChecker - Step 1: Transition #0 is enabled
+20:48:56.905 [main] INFO  a.f.a.t.b.SeqModelChecker - State 1: Checking 12 invariants
+20:48:56.905 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 2
+20:48:57.077 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 4
+20:48:57.089 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 9
+20:48:57.099 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 12
+20:48:57.130 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 14
+20:48:57.145 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 19
+20:48:57.154 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 20
+20:48:57.197 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 21
+20:48:57.278 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 22
+20:48:57.305 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 23
+20:48:57.397 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 24
+20:48:57.439 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 25
+20:48:57.500 [main] DEBUG a.f.a.t.b.t.TransitionExecutorImpl - Step #1, transition #1
+20:48:57.500 [main] DEBUG a.f.a.t.b.t.TransitionExecutorImpl - Translating to SMT...
+20:48:57.631 [main] DEBUG a.f.a.t.b.SeqModelChecker - Step 1: Transition #1. Is it enabled?
+20:48:57.656 [main] DEBUG a.f.a.t.b.SeqModelChecker - Step 1: Transition #1 is enabled
+20:48:57.657 [main] INFO  a.f.a.t.b.SeqModelChecker - State 1: Checking 26 invariants
+20:48:57.657 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 0
+20:48:57.669 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 1
+20:48:57.677 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 2
+20:48:57.813 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 3
+20:48:57.821 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 4
+20:48:57.829 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 5
+20:48:57.837 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 6
+20:48:57.844 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 7
+20:48:57.852 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 8
+20:48:57.860 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 9
+20:48:57.868 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 10
+20:48:57.876 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 11
+20:48:57.883 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 12
+20:48:57.896 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 13
+20:48:57.902 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 14
+20:48:57.907 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 15
+20:48:57.914 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 16
+20:48:57.921 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 17
+20:48:57.926 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 18
+20:48:57.933 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 19
+20:48:57.939 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 20
+20:48:57.961 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 21
+20:48:58.066 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 22
+20:48:58.086 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 23
+20:48:58.155 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 24
+20:48:58.184 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 25
+20:48:58.243 [main] DEBUG a.f.a.t.b.t.TransitionExecutorImpl - Step #1, transition #2
+20:48:58.243 [main] DEBUG a.f.a.t.b.t.TransitionExecutorImpl - Translating to SMT...
+20:48:58.371 [main] DEBUG a.f.a.t.b.SeqModelChecker - Step 1: Transition #2. Is it enabled?
+20:48:58.406 [main] DEBUG a.f.a.t.b.SeqModelChecker - Step 1: Transition #2 is enabled
+20:48:58.407 [main] INFO  a.f.a.t.b.SeqModelChecker - State 1: Checking 10 invariants
+20:48:58.407 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 2
+20:48:58.749 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 3
+20:48:58.759 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 6
+20:48:58.768 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 12
+20:48:58.808 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 13
+20:48:58.826 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 16
+20:48:58.842 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 21
+20:48:58.956 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 23
+20:48:59.064 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 24
+20:48:59.103 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 25
+20:48:59.182 [main] DEBUG a.f.a.t.b.t.TransitionExecutorImpl - Step #1, transition #3
+20:48:59.182 [main] DEBUG a.f.a.t.b.t.TransitionExecutorImpl - Translating to SMT...
+20:48:59.416 [main] DEBUG a.f.a.t.b.SeqModelChecker - Step 1: Transition #3. Is it enabled?
+20:48:59.453 [main] DEBUG a.f.a.t.b.SeqModelChecker - Step 1: Transition #3 is enabled
+20:48:59.454 [main] INFO  a.f.a.t.b.SeqModelChecker - State 1: Checking 14 invariants
+20:48:59.454 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 2
+20:48:59.891 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 3
+20:48:59.904 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 4
+20:48:59.914 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 9
+20:48:59.925 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 12
+20:48:59.981 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 13
+20:49:00.015 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 14
+20:49:00.076 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 19
+20:49:00.115 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 20
+20:49:00.170 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 21
+20:49:00.296 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 22
+20:49:00.347 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 23
+20:49:00.453 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 24
+20:49:00.508 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 25
+20:49:00.595 [main] DEBUG a.f.a.t.b.t.TransitionExecutorImpl - Step #1, transition #4
+20:49:00.595 [main] DEBUG a.f.a.t.b.t.TransitionExecutorImpl - Translating to SMT...
+20:49:00.721 [main] DEBUG a.f.a.t.b.SeqModelChecker - Step 1: Transition #4. Is it enabled?
+20:49:00.754 [main] DEBUG a.f.a.t.b.SeqModelChecker - Step 1: Transition #4 is enabled
+20:49:00.755 [main] INFO  a.f.a.t.b.SeqModelChecker - State 1: Checking 10 invariants
+20:49:00.755 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 2
+20:49:01.078 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 5
+20:49:01.090 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 6
+20:49:01.101 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 12
+20:49:01.198 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 15
+20:49:01.239 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 16
+20:49:01.278 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 21
+20:49:01.433 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 23
+20:49:01.543 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 24
+20:49:01.602 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 25
+20:49:01.688 [main] DEBUG a.f.a.t.b.t.TransitionExecutorImpl - Step #1, transition #5
+20:49:01.688 [main] DEBUG a.f.a.t.b.t.TransitionExecutorImpl - Translating to SMT...
+20:49:01.816 [main] DEBUG a.f.a.t.b.SeqModelChecker - Step 1: Transition #5. Is it enabled?
+20:49:01.873 [main] DEBUG a.f.a.t.b.SeqModelChecker - Step 1: Transition #5 is enabled
+20:49:01.874 [main] INFO  a.f.a.t.b.SeqModelChecker - State 1: Checking 10 invariants
+20:49:01.874 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 2
+20:49:02.229 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 5
+20:49:02.243 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 8
+20:49:02.255 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 12
+20:49:02.318 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 15
+20:49:02.416 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 18
+20:49:02.443 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 21
+20:49:02.577 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 23
+20:49:02.686 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 24
+20:49:02.732 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 25
+20:49:02.842 [main] DEBUG a.f.a.t.b.t.TransitionExecutorImpl - Step #1, transition #6
+20:49:02.842 [main] DEBUG a.f.a.t.b.t.TransitionExecutorImpl - Translating to SMT...
+20:49:02.977 [main] DEBUG a.f.a.t.b.SeqModelChecker - Step 1: Transition #6. Is it enabled?
+20:49:03.038 [main] DEBUG a.f.a.t.b.SeqModelChecker - Step 1: Transition #6 is enabled
+20:49:03.039 [main] INFO  a.f.a.t.b.SeqModelChecker - State 1: Checking 15 invariants
+20:49:03.039 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 1
+20:49:03.056 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 2
+20:49:03.452 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 7
+20:49:03.465 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 8
+20:49:03.475 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 9
+20:49:03.483 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 11
+20:49:03.527 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 12
+20:49:03.596 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 17
+20:49:03.670 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 18
+20:49:03.708 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 19
+20:49:03.728 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 20
+20:49:03.794 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 21
+20:49:03.913 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 22
+20:49:03.960 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 23
+20:49:04.087 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 25
+20:49:04.176 [main] DEBUG a.f.a.t.b.t.TransitionExecutorImpl - Step #1, transition #7
+20:49:04.176 [main] DEBUG a.f.a.t.b.t.TransitionExecutorImpl - Translating to SMT...
+20:49:04.252 [main] DEBUG a.f.a.t.b.SeqModelChecker - Step 1: Transition #7. Is it enabled?
+20:49:04.361 [main] DEBUG a.f.a.t.b.SeqModelChecker - Step 1: Transition #7 is enabled
+20:49:04.362 [main] INFO  a.f.a.t.b.SeqModelChecker - State 1: Checking 13 invariants
+20:49:04.362 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 1
+20:49:04.383 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 2
+20:49:04.512 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 7
+20:49:04.523 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 9
+20:49:04.531 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 11
+20:49:04.560 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 12
+20:49:04.581 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 17
+20:49:04.598 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 19
+20:49:04.613 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 20
+20:49:04.664 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 21
+20:49:04.750 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 22
+20:49:04.801 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 23
+20:49:04.893 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 25
+20:49:04.956 [main] DEBUG a.f.a.t.b.t.TransitionExecutorImpl - Step #1, transition #8
+20:49:04.956 [main] DEBUG a.f.a.t.b.t.TransitionExecutorImpl - Translating to SMT...
+20:49:05.119 [main] DEBUG a.f.a.t.b.SeqModelChecker - Step 1: Transition #8. Is it enabled?
+20:49:05.162 [main] DEBUG a.f.a.t.b.SeqModelChecker - Step 1: Transition #8 is enabled
+20:49:05.163 [main] INFO  a.f.a.t.b.SeqModelChecker - State 1: Checking 26 invariants
+20:49:05.163 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 0
+20:49:05.180 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 1
+20:49:05.189 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 2
+20:49:05.554 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 3
+20:49:05.565 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 4
+20:49:05.574 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 5
+20:49:05.583 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 6
+20:49:05.617 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 7
+20:49:05.651 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 8
+20:49:05.660 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 9
+20:49:05.669 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 10
+20:49:05.716 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 11
+20:49:05.761 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 12
+20:49:05.863 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 13
+20:49:05.899 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 14
+20:49:06.003 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 15
+20:49:06.036 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 16
+20:49:06.059 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 17
+20:49:06.078 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 18
+20:49:06.096 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 19
+20:49:06.125 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 20
+20:49:06.196 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 21
+20:49:06.431 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 22
+20:49:06.473 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 23
+20:49:06.571 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 24
+20:49:06.620 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 25
+20:49:06.699 [main] DEBUG a.f.a.t.b.t.TransitionExecutorImpl - Step #1, transition #9
+20:49:06.699 [main] DEBUG a.f.a.t.b.t.TransitionExecutorImpl - Translating to SMT...
+20:49:06.802 [main] DEBUG a.f.a.t.b.SeqModelChecker - Step 1: Transition #9. Is it enabled?
+20:49:06.904 [main] DEBUG a.f.a.t.b.SeqModelChecker - Step 1: Transition #9 is enabled
+20:49:06.905 [main] INFO  a.f.a.t.b.SeqModelChecker - State 1: Checking 26 invariants
+20:49:06.905 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 0
+20:49:06.921 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 1
+20:49:06.931 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 2
+20:49:07.059 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 3
+20:49:07.068 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 4
+20:49:07.076 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 5
+20:49:07.084 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 6
+20:49:07.093 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 7
+20:49:07.102 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 8
+20:49:07.110 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 9
+20:49:07.119 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 10
+20:49:07.163 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 11
+20:49:07.181 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 12
+20:49:07.211 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 13
+20:49:07.229 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 14
+20:49:07.248 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 15
+20:49:07.266 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 16
+20:49:07.284 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 17
+20:49:07.302 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 18
+20:49:07.321 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 19
+20:49:07.339 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 20
+20:49:07.388 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 21
+20:49:07.541 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 22
+20:49:07.585 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 23
+20:49:07.677 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 24
+20:49:07.755 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 25
+20:49:07.840 [main] DEBUG a.f.a.t.b.t.TransitionExecutorImpl - Step #1, transition #10
+20:49:07.840 [main] DEBUG a.f.a.t.b.t.TransitionExecutorImpl - Translating to SMT...
+20:49:07.937 [main] DEBUG a.f.a.t.b.SeqModelChecker - Step 1: Transition #10. Is it enabled?
+20:49:08.161 [main] DEBUG a.f.a.t.b.SeqModelChecker - Step 1: Transition #10 is enabled
+20:49:08.161 [main] INFO  a.f.a.t.b.SeqModelChecker - State 1: Checking 26 invariants
+20:49:08.161 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 0
+20:49:08.178 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 1
+20:49:08.188 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 2
+20:49:08.317 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 3
+20:49:08.325 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 4
+20:49:08.334 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 5
+20:49:08.343 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 6
+20:49:08.351 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 7
+20:49:08.360 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 8
+20:49:08.369 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 9
+20:49:08.377 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 10
+20:49:08.414 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 11
+20:49:08.486 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 12
+20:49:08.514 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 13
+20:49:08.571 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 14
+20:49:08.601 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 15
+20:49:08.669 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 16
+20:49:08.690 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 17
+20:49:08.711 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 18
+20:49:08.732 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 19
+20:49:08.753 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 20
+20:49:08.835 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 21
+20:49:08.988 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 22
+20:49:09.033 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 23
+20:49:09.142 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 24
+20:49:09.238 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 25
+20:49:09.331 [main] DEBUG a.f.a.t.b.t.TransitionExecutorImpl - Step #1, transition #11
+20:49:09.331 [main] DEBUG a.f.a.t.b.t.TransitionExecutorImpl - Translating to SMT...
+20:49:09.436 [main] DEBUG a.f.a.t.b.SeqModelChecker - Step 1: Transition #11. Is it enabled?
+20:49:09.522 [main] DEBUG a.f.a.t.b.SeqModelChecker - Step 1: Transition #11 is enabled
+20:49:09.522 [main] INFO  a.f.a.t.b.SeqModelChecker - State 1: Checking 26 invariants
+20:49:09.522 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 0
+20:49:09.538 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 1
+20:49:09.548 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 2
+20:49:09.677 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 3
+20:49:09.686 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 4
+20:49:09.695 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 5
+20:49:09.704 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 6
+20:49:09.712 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 7
+20:49:09.721 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 8
+20:49:09.730 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 9
+20:49:09.739 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 10
+20:49:09.775 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 11
+20:49:09.795 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 12
+20:49:09.820 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 13
+20:49:09.840 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 14
+20:49:09.860 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 15
+20:49:09.880 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 16
+20:49:09.900 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 17
+20:49:09.923 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 18
+20:49:09.943 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 19
+20:49:09.963 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 20
+20:49:10.065 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 21
+20:49:10.212 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 22
+20:49:10.254 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 23
+20:49:10.369 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 24
+20:49:10.422 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 25
+20:49:10.495 [main] DEBUG a.f.a.t.b.t.TransitionExecutorImpl - Step #1, transition #12
+20:49:10.496 [main] DEBUG a.f.a.t.b.t.TransitionExecutorImpl - Translating to SMT...
+20:49:10.601 [main] DEBUG a.f.a.t.b.SeqModelChecker - Step 1: Transition #12. Is it enabled?
+20:49:10.827 [main] DEBUG a.f.a.t.b.SeqModelChecker - Step 1: Transition #12 is enabled
+20:49:10.828 [main] INFO  a.f.a.t.b.SeqModelChecker - State 1: Checking 26 invariants
+20:49:10.828 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 0
+20:49:10.846 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 1
+20:49:10.856 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 2
+20:49:10.984 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 3
+20:49:10.992 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 4
+20:49:11.001 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 5
+20:49:11.011 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 6
+20:49:11.019 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 7
+20:49:11.028 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 8
+20:49:11.037 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 9
+20:49:11.046 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 10
+20:49:11.091 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 11
+20:49:11.112 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 12
+20:49:11.139 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 13
+20:49:11.160 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 14
+20:49:11.181 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 15
+20:49:11.202 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 16
+20:49:11.226 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 17
+20:49:11.247 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 18
+20:49:11.269 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 19
+20:49:11.292 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 20
+20:49:11.393 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 21
+20:49:11.540 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 22
+20:49:11.580 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 23
+20:49:11.681 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 24
+20:49:11.748 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 25
+20:49:11.916 [main] DEBUG a.f.a.t.b.t.TransitionExecutorImpl - Step #1, transition #13
+20:49:11.916 [main] DEBUG a.f.a.t.b.t.TransitionExecutorImpl - Translating to SMT...
+20:49:12.012 [main] DEBUG a.f.a.t.b.SeqModelChecker - Step 1: Transition #13. Is it enabled?
+20:49:12.155 [main] DEBUG a.f.a.t.b.SeqModelChecker - Step 1: Transition #13 is enabled
+20:49:12.155 [main] INFO  a.f.a.t.b.SeqModelChecker - State 1: Checking 26 invariants
+20:49:12.155 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 0
+20:49:12.172 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 1
+20:49:12.182 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 2
+20:49:12.364 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 3
+20:49:12.373 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 4
+20:49:12.382 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 5
+20:49:12.390 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 6
+20:49:12.399 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 7
+20:49:12.408 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 8
+20:49:12.416 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 9
+20:49:12.425 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 10
+20:49:12.467 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 11
+20:49:12.490 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 12
+20:49:12.517 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 13
+20:49:12.539 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 14
+20:49:12.560 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 15
+20:49:12.582 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 16
+20:49:12.604 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 17
+20:49:12.625 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 18
+20:49:12.646 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 19
+20:49:12.667 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 20
+20:49:12.733 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 21
+20:49:12.902 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 22
+20:49:12.974 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 23
+20:49:13.073 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 24
+20:49:13.131 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 25
+20:49:13.309 [main] DEBUG a.f.a.t.b.t.TransitionExecutorImpl - Step #1, transition #14
+20:49:13.309 [main] DEBUG a.f.a.t.b.t.TransitionExecutorImpl - Translating to SMT...
+20:49:13.355 [main] DEBUG a.f.a.t.b.SeqModelChecker - Step 1: Transition #14. Is it enabled?
+20:49:13.544 [main] DEBUG a.f.a.t.b.SeqModelChecker - Step 1: Transition #14 is enabled
+20:49:13.545 [main] INFO  a.f.a.t.b.SeqModelChecker - State 1: Checking 3 invariants
+20:49:13.545 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 2
+20:49:13.896 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 12
+20:49:13.945 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 21
+20:49:14.056 [main] DEBUG a.f.a.t.b.t.TransitionExecutorImpl - Step #1, transition #15
+20:49:14.056 [main] DEBUG a.f.a.t.b.t.TransitionExecutorImpl - Translating to SMT...
+20:49:14.145 [main] DEBUG a.f.a.t.b.SeqModelChecker - Step 1: Transition #15. Is it enabled?
+20:49:14.334 [main] DEBUG a.f.a.t.b.SeqModelChecker - Step 1: Transition #15 is enabled
+20:49:14.335 [main] INFO  a.f.a.t.b.SeqModelChecker - State 1: Checking 26 invariants
+20:49:14.335 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 0
+20:49:14.353 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 1
+20:49:14.363 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 2
+20:49:14.492 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 3
+20:49:14.501 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 4
+20:49:14.510 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 5
+20:49:14.520 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 6
+20:49:14.529 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 7
+20:49:14.539 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 8
+20:49:14.548 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 9
+20:49:14.558 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 10
+20:49:14.684 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 11
+20:49:14.723 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 12
+20:49:14.763 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 13
+20:49:14.799 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 14
+20:49:14.832 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 15
+20:49:14.860 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 16
+20:49:14.887 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 17
+20:49:14.919 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 18
+20:49:14.963 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 19
+20:49:14.991 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 20
+20:49:15.062 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 21
+20:49:15.204 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 22
+20:49:15.250 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 23
+20:49:15.393 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 24
+20:49:15.459 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 25
+20:49:15.589 [main] DEBUG a.f.a.t.b.t.TransitionExecutorImpl - Step #1, transition #16
+20:49:15.589 [main] DEBUG a.f.a.t.b.t.TransitionExecutorImpl - Translating to SMT...
+20:49:15.678 [main] DEBUG a.f.a.t.b.SeqModelChecker - Step 1: Transition #16. Is it enabled?
+20:49:15.711 [main] DEBUG a.f.a.t.b.SeqModelChecker - Step 1: Transition #16 is enabled
+20:49:15.711 [main] INFO  a.f.a.t.b.SeqModelChecker - State 1: Checking 26 invariants
+20:49:15.711 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 0
+20:49:15.754 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 1
+20:49:15.764 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 2
+20:49:15.951 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 3
+20:49:15.960 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 4
+20:49:15.969 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 5
+20:49:15.978 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 6
+20:49:15.987 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 7
+20:49:15.996 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 8
+20:49:16.005 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 9
+20:49:16.014 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 10
+20:49:16.060 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 11
+20:49:16.089 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 12
+20:49:16.119 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 13
+20:49:16.143 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 14
+20:49:16.168 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 15
+20:49:16.193 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 16
+20:49:16.217 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 17
+20:49:16.242 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 18
+20:49:16.266 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 19
+20:49:16.291 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 20
+20:49:16.357 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 21
+20:49:16.520 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 22
+20:49:16.579 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 23
+20:49:16.677 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 24
+20:49:16.754 [main] DEBUG a.f.a.t.b.SeqModelChecker - State 1: Checking invariant 25
+20:49:16.857 [main] INFO  a.f.a.t.b.t.TransitionExecutorImpl - Step 1: picking a transition out of 17 transition(s)
+20:49:17.444 [main] INFO  a.f.a.t.b.p.BoundedCheckerPassImpl - The outcome is: NoError
+20:49:17.444 [main] DEBUG a.f.a.i.p.PassChainExecutor - PASS #14: BoundedChecker [OK]
+20:49:17.444 [main] INFO  a.f.a.i.p.PassChainExecutor - PASS #15: Terminal
+20:49:17.444 [main] DEBUG a.f.a.i.p.PassChainExecutor - PASS #15: Terminal [OK]
+20:49:17.444 [main] INFO  a.f.a.t.Tool$ - Checker reports no error up to computation length 1
+20:49:17.444 [main] INFO  a.f.a.t.Tool$ - It took me 0 days  0 hours  0 min 28 sec
+20:49:17.444 [main] INFO  a.f.a.t.Tool$ - Total time: 28.576 sec

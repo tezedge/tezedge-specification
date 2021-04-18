@@ -1,0 +1,216 @@
+20:50:56.639 [main] INFO  a.f.a.t.Tool$ - Checker options: filename=MC_safety_5good_5bad.tla, init=Init, next=, inv=IndInv
+20:50:56.868 [main] INFO  a.f.a.t.Tool$ - Tuning: 
+20:50:56.869 [main] INFO  a.f.a.i.p.PassChainExecutor - PASS #0: SanyParser
+20:50:57.465 [main] DEBUG a.f.a.i.p.PassChainExecutor - PASS #0: SanyParser [OK]
+20:50:57.466 [main] INFO  a.f.a.i.p.PassChainExecutor - PASS #1: TypeCheckerSnowcat
+20:50:57.466 [main] INFO  a.f.a.t.t.p.EtcTypeCheckerPassImpl -  > Running Snowcat .::.
+20:50:57.507 [main] DEBUG a.f.a.t.t.p.EtcTypeCheckerPassImpl -  > JSON output: /var/apalache/x/20.50-18.04.2021-17512548313769369941/out-pre-TypeCheckerSnowcat.json
+20:50:58.062 [main] INFO  a.f.a.t.t.p.EtcTypeCheckerPassImpl -  > Your types are great!
+20:50:58.062 [main] INFO  a.f.a.t.t.p.EtcTypeCheckerPassImpl -  > All expressions are typed
+20:50:58.106 [main] DEBUG a.f.a.t.t.p.EtcTypeCheckerPassImpl -  > JSON output: /var/apalache/x/20.50-18.04.2021-17512548313769369941/out-post-TypeCheckerSnowcat.json
+20:50:58.106 [main] DEBUG a.f.a.i.p.PassChainExecutor - PASS #1: TypeCheckerSnowcat [OK]
+20:50:58.107 [main] INFO  a.f.a.i.p.PassChainExecutor - PASS #2: ConfigurationPass
+20:50:58.109 [main] INFO  a.f.a.t.p.p.ConfigurationPassImpl -   > MC_safety_5good_5bad.cfg: Loading TLC configuration
+20:50:58.159 [main] INFO  a.f.a.t.p.p.ConfigurationPassImpl -   > MC_safety_5good_5bad.cfg: Using SPECIFICATION Spec
+20:50:58.160 [main] WARN  a.f.a.t.p.p.ConfigurationPassImpl -   > MC_safety_5good_5bad.cfg: Init operator is set in TLC config but overridden via --init command line option; using Init
+20:50:58.160 [main] INFO  a.f.a.t.p.p.ConfigurationPassImpl -   > Using the next predicate Next from the TLC config
+20:50:58.160 [main] INFO  a.f.a.t.p.p.ConfigurationPassImpl -   > MC_safety_5good_5bad.cfg: found INVARIANTS: TypeOK, NoSelfInteractions, GoodNodesDoNotExceedMaxConnections, GoodNodesNeverHaveMessagesFromBlacklistedPeers, GoodNodesHaveExlcusiveInProgressAndConnections, GoodNodesOnlyConnectToNodesWithWhomTheyHaveExchangedAllMessages, GoodNodesOnlyExchangeMetaMessagesAfterSendingAndReceivingConnectionMessages, GoodNodesOnlyExchangeAckMessagesAfterSendingAndReceivingConnectionAndMetaMessages
+20:50:58.160 [main] WARN  a.f.a.t.p.p.ConfigurationPassImpl -   > Overriding with command line arguments: --inv IndInv
+20:50:58.161 [main] INFO  a.f.a.t.p.p.ConfigurationPassImpl -   > Set the initialization predicate to Init
+20:50:58.162 [main] INFO  a.f.a.t.p.p.ConfigurationPassImpl -   > Set the transition predicate to Next
+20:50:58.162 [main] INFO  a.f.a.t.p.p.ConfigurationPassImpl -   > Set an invariant to IndInv
+20:50:58.164 [main] INFO  a.f.a.t.p.ConstAndDefRewriter -   > Replaced CONSTANT BAD_NODES with Bad_nodes()
+20:50:58.164 [main] INFO  a.f.a.t.p.ConstAndDefRewriter -   > Replaced CONSTANT MIN with Min()
+20:50:58.164 [main] INFO  a.f.a.t.p.ConstAndDefRewriter -   > Replaced CONSTANT MAX with Max()
+20:50:58.165 [main] INFO  a.f.a.t.p.ConstAndDefRewriter -   > Replaced CONSTANT GOOD_NODES with Good_nodes()
+20:50:58.218 [main] DEBUG a.f.a.i.p.PassChainExecutor - PASS #2: ConfigurationPass [OK]
+20:50:58.219 [main] INFO  a.f.a.i.p.PassChainExecutor - PASS #3: DesugarerPass
+20:50:58.220 [main] INFO  a.f.a.t.p.p.DesugarerPassImpl -   > Desugaring...
+20:50:58.269 [main] DEBUG a.f.a.i.p.PassChainExecutor - PASS #3: DesugarerPass [OK]
+20:50:58.270 [main] INFO  a.f.a.i.p.PassChainExecutor - PASS #4: UnrollPass
+20:50:58.327 [main] INFO  a.f.a.t.p.p.UnrollPassImpl -   > Unroller
+20:50:58.381 [main] DEBUG a.f.a.i.p.PassChainExecutor - PASS #4: UnrollPass [OK]
+20:50:58.381 [main] INFO  a.f.a.i.p.PassChainExecutor - PASS #5: PrimingPass
+20:50:58.384 [main] INFO  a.f.a.t.a.p.PrimingPassImpl -   > Introducing InitPrimed for Init'
+20:50:58.424 [main] DEBUG a.f.a.i.p.PassChainExecutor - PASS #5: PrimingPass [OK]
+20:50:58.425 [main] INFO  a.f.a.i.p.PassChainExecutor - PASS #6: CoverAnalysisPass
+20:50:58.425 [main] DEBUG a.f.a.i.p.PassChainExecutor - PASS #6: CoverAnalysisPass [OK]
+20:50:58.426 [main] INFO  a.f.a.i.p.PassChainExecutor - PASS #7: InlinePass
+20:50:58.426 [main] INFO  a.f.a.t.p.p.InlinePassImpl -   > InlinerOfUserOper
+20:50:58.465 [main] INFO  a.f.a.t.p.p.InlinePassImpl -   > LetInExpander
+20:50:58.479 [main] INFO  a.f.a.t.p.p.InlinePassImpl -   > InlinerOfUserOper
+20:50:58.483 [main] INFO  a.f.a.t.p.p.InlinePassImpl - Leaving only relevant operators: CInitPrimed, IndInv, Init, InitPrimed, Next
+20:50:58.516 [main] DEBUG a.f.a.i.p.PassChainExecutor - PASS #7: InlinePass [OK]
+20:50:58.517 [main] INFO  a.f.a.i.p.PassChainExecutor - PASS #8: VCGen
+20:50:58.517 [main] INFO  a.f.a.t.b.p.VCGenPassImpl -   > Producing verification conditions from the invariant IndInv
+20:50:58.519 [main] INFO  a.f.a.t.b.VCGenerator -   > VCGen produced 26 verification condition(s)
+20:50:58.559 [main] DEBUG a.f.a.i.p.PassChainExecutor - PASS #8: VCGen [OK]
+20:50:58.559 [main] INFO  a.f.a.i.p.PassChainExecutor - PASS #9: PreprocessingPass
+20:50:58.559 [main] INFO  a.f.a.t.p.p.PreproPassImpl -   > Before preprocessing: unique renaming
+20:50:58.564 [main] INFO  a.f.a.t.p.p.PreproPassImpl -  > Applying standard transformations:
+20:50:58.564 [main] INFO  a.f.a.t.p.p.PreproPassImpl -   > PrimePropagation
+20:50:58.613 [main] INFO  a.f.a.t.p.p.PreproPassImpl -   > Desugarer
+20:50:58.660 [main] INFO  a.f.a.t.p.p.PreproPassImpl -   > UniqueRenamer
+20:50:58.727 [main] INFO  a.f.a.t.p.p.PreproPassImpl -   > Normalizer
+20:50:58.801 [main] INFO  a.f.a.t.p.p.PreproPassImpl -   > Keramelizer
+20:50:58.874 [main] INFO  a.f.a.t.p.p.PreproPassImpl -   > After preprocessing: UniqueRenamer
+20:50:58.946 [main] DEBUG a.f.a.i.p.PassChainExecutor - PASS #9: PreprocessingPass [OK]
+20:50:58.947 [main] INFO  a.f.a.i.p.PassChainExecutor - PASS #10: TransitionFinderPass
+20:50:58.994 [main] INFO  a.f.a.t.a.p.TransitionPassImpl -   > Found 1 initializing transitions
+20:50:59.067 [main] INFO  a.f.a.t.a.p.TransitionPassImpl -   > Found 17 transitions
+20:50:59.067 [main] INFO  a.f.a.t.a.p.TransitionPassImpl -   > No constant initializer
+20:50:59.068 [main] INFO  a.f.a.t.a.p.TransitionPassImpl -   > Applying unique renaming
+20:50:59.125 [main] DEBUG a.f.a.i.p.PassChainExecutor - PASS #10: TransitionFinderPass [OK]
+20:50:59.125 [main] INFO  a.f.a.i.p.PassChainExecutor - PASS #11: OptimizationPass
+20:50:59.128 [main] INFO  a.f.a.t.p.p.OptPassImpl -  > Applying optimizations:
+20:50:59.129 [main] INFO  a.f.a.t.p.p.OptPassImpl -   > ConstSimplifier
+20:50:59.159 [main] INFO  a.f.a.t.p.p.OptPassImpl -   > ExprOptimizer
+20:50:59.162 [main] ERROR a.f.a.t.Tool$ - Unhandled exception
+scala.MatchError: Cardinality(5 .. 9) ≥ 4 (of class at.forsyte.apalache.tla.lir.OperEx)
+	at scala.PartialFunction$$anon$1.apply(PartialFunction.scala:259)
+	at scala.PartialFunction$$anon$1.apply(PartialFunction.scala:257)
+	at at.forsyte.apalache.tla.pp.ExprOptimizer$$anonfun$at$forsyte$apalache$tla$pp$ExprOptimizer$$transformCard$1.applyOrElse(ExprOptimizer.scala:69)
+	at at.forsyte.apalache.tla.pp.ExprOptimizer$$anonfun$at$forsyte$apalache$tla$pp$ExprOptimizer$$transformCard$1.applyOrElse(ExprOptimizer.scala:69)
+	at scala.runtime.AbstractPartialFunction.apply(AbstractPartialFunction.scala:38)
+	at at.forsyte.apalache.tla.pp.ExprOptimizer$$anonfun$at$forsyte$apalache$tla$pp$ExprOptimizer$$transformCard$1.applyOrElse(ExprOptimizer.scala:130)
+	at at.forsyte.apalache.tla.pp.ExprOptimizer$$anonfun$at$forsyte$apalache$tla$pp$ExprOptimizer$$transformCard$1.applyOrElse(ExprOptimizer.scala:69)
+	at scala.PartialFunction$OrElse.apply(PartialFunction.scala:172)
+	at at.forsyte.apalache.tla.pp.ExprOptimizer$$anonfun$transformSets$1.applyOrElse(ExprOptimizer.scala:55)
+	at at.forsyte.apalache.tla.pp.ExprOptimizer$$anonfun$transformSets$1.applyOrElse(ExprOptimizer.scala:55)
+	at scala.PartialFunction$OrElse.apply(PartialFunction.scala:172)
+	at at.forsyte.apalache.tla.pp.ExprOptimizer$$anonfun$transformFuns$1.applyOrElse(ExprOptimizer.scala:38)
+	at at.forsyte.apalache.tla.pp.ExprOptimizer$$anonfun$transformFuns$1.applyOrElse(ExprOptimizer.scala:38)
+	at scala.PartialFunction$OrElse.apply(PartialFunction.scala:172)
+	at at.forsyte.apalache.tla.lir.transformations.impl.TrackerWithListeners.$anonfun$trackEx$1(TrackerWithListeners.scala:16)
+	at at.forsyte.apalache.tla.pp.AbstractTransformer.$anonfun$transform$1(AbstractTransformer.scala:36)
+	at at.forsyte.apalache.tla.lir.transformations.impl.TrackerWithListeners.$anonfun$trackEx$1(TrackerWithListeners.scala:16)
+	at at.forsyte.apalache.tla.pp.ExprOptimizer.apply(ExprOptimizer.scala:30)
+	at at.forsyte.apalache.tla.pp.ExprOptimizer.apply(ExprOptimizer.scala:20)
+	at at.forsyte.apalache.tla.lir.transformations.standard.ModuleByExTransformer.$anonfun$apply$1(ModuleByExTransformer.scala:25)
+	at at.forsyte.apalache.tla.lir.transformations.standard.ModuleByExTransformer.mapIfIncluded$1(ModuleByExTransformer.scala:37)
+	at at.forsyte.apalache.tla.lir.transformations.standard.ModuleByExTransformer.$anonfun$apply$2(ModuleByExTransformer.scala:43)
+	at scala.collection.immutable.List.map(List.scala:297)
+	at at.forsyte.apalache.tla.lir.transformations.standard.ModuleByExTransformer.apply(ModuleByExTransformer.scala:43)
+	at at.forsyte.apalache.tla.pp.passes.OptPassImpl.$anonfun$execute$1(OptPassImpl.scala:55)
+	at scala.collection.LinearSeqOptimized.foldLeft(LinearSeqOptimized.scala:126)
+	at scala.collection.LinearSeqOptimized.foldLeft$(LinearSeqOptimized.scala:122)
+	at scala.collection.immutable.List.foldLeft(List.scala:91)
+	at at.forsyte.apalache.tla.pp.passes.OptPassImpl.execute(OptPassImpl.scala:53)
+	at at.forsyte.apalache.infra.passes.PassChainExecutor.exec$1(PassChainExecutor.scala:22)
+	at at.forsyte.apalache.infra.passes.PassChainExecutor.run(PassChainExecutor.scala:37)
+	at at.forsyte.apalache.tla.Tool$.runCheck(Tool.scala:183)
+	at at.forsyte.apalache.tla.Tool$.$anonfun$run$3(Tool.scala:95)
+	at at.forsyte.apalache.tla.Tool$.handleExceptions(Tool.scala:309)
+	at at.forsyte.apalache.tla.Tool$.run(Tool.scala:95)
+	at at.forsyte.apalache.tla.Tool$.main(Tool.scala:45)
+	at at.forsyte.apalache.tla.Tool.main(Tool.scala)
+20:50:59.164 [main] INFO  a.f.a.t.Tool$ - It took me 0 days  0 hours  0 min  2 sec
+20:50:59.164 [main] INFO  a.f.a.t.Tool$ - Total time: 2.525 sec
+01:02:04.334 [main] INFO  a.f.a.t.Tool$ - Checker options: filename=MC_safety_5good_5bad.tla, init=IndInv, next=, inv=IndInv
+01:02:04.561 [main] INFO  a.f.a.t.Tool$ - Tuning: 
+01:02:04.565 [main] INFO  a.f.a.i.p.PassChainExecutor - PASS #0: SanyParser
+01:02:05.195 [main] DEBUG a.f.a.i.p.PassChainExecutor - PASS #0: SanyParser [OK]
+01:02:05.196 [main] INFO  a.f.a.i.p.PassChainExecutor - PASS #1: TypeCheckerSnowcat
+01:02:05.196 [main] INFO  a.f.a.t.t.p.EtcTypeCheckerPassImpl -  > Running Snowcat .::.
+01:02:05.239 [main] DEBUG a.f.a.t.t.p.EtcTypeCheckerPassImpl -  > JSON output: /var/apalache/x/01.02-19.04.2021-17133336658482908707/out-pre-TypeCheckerSnowcat.json
+01:02:05.766 [main] INFO  a.f.a.t.t.p.EtcTypeCheckerPassImpl -  > Your types are great!
+01:02:05.766 [main] INFO  a.f.a.t.t.p.EtcTypeCheckerPassImpl -  > All expressions are typed
+01:02:05.809 [main] DEBUG a.f.a.t.t.p.EtcTypeCheckerPassImpl -  > JSON output: /var/apalache/x/01.02-19.04.2021-17133336658482908707/out-post-TypeCheckerSnowcat.json
+01:02:05.809 [main] DEBUG a.f.a.i.p.PassChainExecutor - PASS #1: TypeCheckerSnowcat [OK]
+01:02:05.810 [main] INFO  a.f.a.i.p.PassChainExecutor - PASS #2: ConfigurationPass
+01:02:05.812 [main] INFO  a.f.a.t.p.p.ConfigurationPassImpl -   > MC_safety_5good_5bad.cfg: Loading TLC configuration
+01:02:05.856 [main] INFO  a.f.a.t.p.p.ConfigurationPassImpl -   > MC_safety_5good_5bad.cfg: Using SPECIFICATION Spec
+01:02:05.856 [main] WARN  a.f.a.t.p.p.ConfigurationPassImpl -   > MC_safety_5good_5bad.cfg: Init operator is set in TLC config but overridden via --init command line option; using IndInv
+01:02:05.856 [main] INFO  a.f.a.t.p.p.ConfigurationPassImpl -   > Using the next predicate Next from the TLC config
+01:02:05.856 [main] INFO  a.f.a.t.p.p.ConfigurationPassImpl -   > MC_safety_5good_5bad.cfg: found INVARIANTS: TypeOK, NoSelfInteractions, GoodNodesDoNotExceedMaxConnections, GoodNodesNeverHaveMessagesFromBlacklistedPeers, GoodNodesHaveExlcusiveInProgressAndConnections, GoodNodesOnlyConnectToNodesWithWhomTheyHaveExchangedAllMessages, GoodNodesOnlyExchangeMetaMessagesAfterSendingAndReceivingConnectionMessages, GoodNodesOnlyExchangeAckMessagesAfterSendingAndReceivingConnectionAndMetaMessages
+01:02:05.857 [main] WARN  a.f.a.t.p.p.ConfigurationPassImpl -   > Overriding with command line arguments: --inv IndInv
+01:02:05.858 [main] INFO  a.f.a.t.p.p.ConfigurationPassImpl -   > Set the initialization predicate to IndInv
+01:02:05.859 [main] INFO  a.f.a.t.p.p.ConfigurationPassImpl -   > Set the transition predicate to Next
+01:02:05.859 [main] INFO  a.f.a.t.p.p.ConfigurationPassImpl -   > Set an invariant to IndInv
+01:02:05.861 [main] INFO  a.f.a.t.p.ConstAndDefRewriter -   > Replaced CONSTANT BAD_NODES with Bad_nodes()
+01:02:05.862 [main] INFO  a.f.a.t.p.ConstAndDefRewriter -   > Replaced CONSTANT MIN with Min()
+01:02:05.862 [main] INFO  a.f.a.t.p.ConstAndDefRewriter -   > Replaced CONSTANT MAX with Max()
+01:02:05.862 [main] INFO  a.f.a.t.p.ConstAndDefRewriter -   > Replaced CONSTANT GOOD_NODES with Good_nodes()
+01:02:05.915 [main] DEBUG a.f.a.i.p.PassChainExecutor - PASS #2: ConfigurationPass [OK]
+01:02:05.915 [main] INFO  a.f.a.i.p.PassChainExecutor - PASS #3: DesugarerPass
+01:02:05.916 [main] INFO  a.f.a.t.p.p.DesugarerPassImpl -   > Desugaring...
+01:02:05.959 [main] DEBUG a.f.a.i.p.PassChainExecutor - PASS #3: DesugarerPass [OK]
+01:02:05.960 [main] INFO  a.f.a.i.p.PassChainExecutor - PASS #4: UnrollPass
+01:02:06.011 [main] INFO  a.f.a.t.p.p.UnrollPassImpl -   > Unroller
+01:02:06.067 [main] DEBUG a.f.a.i.p.PassChainExecutor - PASS #4: UnrollPass [OK]
+01:02:06.068 [main] INFO  a.f.a.i.p.PassChainExecutor - PASS #5: PrimingPass
+01:02:06.070 [main] INFO  a.f.a.t.a.p.PrimingPassImpl -   > Introducing IndInvPrimed for IndInv'
+01:02:06.112 [main] DEBUG a.f.a.i.p.PassChainExecutor - PASS #5: PrimingPass [OK]
+01:02:06.113 [main] INFO  a.f.a.i.p.PassChainExecutor - PASS #6: CoverAnalysisPass
+01:02:06.113 [main] DEBUG a.f.a.i.p.PassChainExecutor - PASS #6: CoverAnalysisPass [OK]
+01:02:06.113 [main] INFO  a.f.a.i.p.PassChainExecutor - PASS #7: InlinePass
+01:02:06.114 [main] INFO  a.f.a.t.p.p.InlinePassImpl -   > InlinerOfUserOper
+01:02:06.154 [main] INFO  a.f.a.t.p.p.InlinePassImpl -   > LetInExpander
+01:02:06.166 [main] INFO  a.f.a.t.p.p.InlinePassImpl -   > InlinerOfUserOper
+01:02:06.170 [main] INFO  a.f.a.t.p.p.InlinePassImpl - Leaving only relevant operators: CInitPrimed, IndInv, IndInvPrimed, Next
+01:02:06.206 [main] DEBUG a.f.a.i.p.PassChainExecutor - PASS #7: InlinePass [OK]
+01:02:06.207 [main] INFO  a.f.a.i.p.PassChainExecutor - PASS #8: VCGen
+01:02:06.208 [main] INFO  a.f.a.t.b.p.VCGenPassImpl -   > Producing verification conditions from the invariant IndInv
+01:02:06.209 [main] INFO  a.f.a.t.b.VCGenerator -   > VCGen produced 26 verification condition(s)
+01:02:06.250 [main] DEBUG a.f.a.i.p.PassChainExecutor - PASS #8: VCGen [OK]
+01:02:06.250 [main] INFO  a.f.a.i.p.PassChainExecutor - PASS #9: PreprocessingPass
+01:02:06.250 [main] INFO  a.f.a.t.p.p.PreproPassImpl -   > Before preprocessing: unique renaming
+01:02:06.256 [main] INFO  a.f.a.t.p.p.PreproPassImpl -  > Applying standard transformations:
+01:02:06.257 [main] INFO  a.f.a.t.p.p.PreproPassImpl -   > PrimePropagation
+01:02:06.307 [main] INFO  a.f.a.t.p.p.PreproPassImpl -   > Desugarer
+01:02:06.357 [main] INFO  a.f.a.t.p.p.PreproPassImpl -   > UniqueRenamer
+01:02:06.421 [main] INFO  a.f.a.t.p.p.PreproPassImpl -   > Normalizer
+01:02:06.483 [main] INFO  a.f.a.t.p.p.PreproPassImpl -   > Keramelizer
+01:02:06.555 [main] INFO  a.f.a.t.p.p.PreproPassImpl -   > After preprocessing: UniqueRenamer
+01:02:06.635 [main] DEBUG a.f.a.i.p.PassChainExecutor - PASS #9: PreprocessingPass [OK]
+01:02:06.635 [main] INFO  a.f.a.i.p.PassChainExecutor - PASS #10: TransitionFinderPass
+01:02:06.683 [main] INFO  a.f.a.t.a.p.TransitionPassImpl -   > Found 1 initializing transitions
+01:02:06.751 [main] INFO  a.f.a.t.a.p.TransitionPassImpl -   > Found 17 transitions
+01:02:06.752 [main] INFO  a.f.a.t.a.p.TransitionPassImpl -   > No constant initializer
+01:02:06.753 [main] INFO  a.f.a.t.a.p.TransitionPassImpl -   > Applying unique renaming
+01:02:06.816 [main] DEBUG a.f.a.i.p.PassChainExecutor - PASS #10: TransitionFinderPass [OK]
+01:02:06.817 [main] INFO  a.f.a.i.p.PassChainExecutor - PASS #11: OptimizationPass
+01:02:06.820 [main] INFO  a.f.a.t.p.p.OptPassImpl -  > Applying optimizations:
+01:02:06.821 [main] INFO  a.f.a.t.p.p.OptPassImpl -   > ConstSimplifier
+01:02:06.851 [main] INFO  a.f.a.t.p.p.OptPassImpl -   > ExprOptimizer
+01:02:06.855 [main] ERROR a.f.a.t.Tool$ - Unhandled exception
+scala.MatchError: Cardinality(5 .. 9) ≥ 4 (of class at.forsyte.apalache.tla.lir.OperEx)
+	at scala.PartialFunction$$anon$1.apply(PartialFunction.scala:259)
+	at scala.PartialFunction$$anon$1.apply(PartialFunction.scala:257)
+	at at.forsyte.apalache.tla.pp.ExprOptimizer$$anonfun$at$forsyte$apalache$tla$pp$ExprOptimizer$$transformCard$1.applyOrElse(ExprOptimizer.scala:69)
+	at at.forsyte.apalache.tla.pp.ExprOptimizer$$anonfun$at$forsyte$apalache$tla$pp$ExprOptimizer$$transformCard$1.applyOrElse(ExprOptimizer.scala:69)
+	at scala.runtime.AbstractPartialFunction.apply(AbstractPartialFunction.scala:38)
+	at at.forsyte.apalache.tla.pp.ExprOptimizer$$anonfun$at$forsyte$apalache$tla$pp$ExprOptimizer$$transformCard$1.applyOrElse(ExprOptimizer.scala:130)
+	at at.forsyte.apalache.tla.pp.ExprOptimizer$$anonfun$at$forsyte$apalache$tla$pp$ExprOptimizer$$transformCard$1.applyOrElse(ExprOptimizer.scala:69)
+	at scala.PartialFunction$OrElse.apply(PartialFunction.scala:172)
+	at at.forsyte.apalache.tla.pp.ExprOptimizer$$anonfun$transformSets$1.applyOrElse(ExprOptimizer.scala:55)
+	at at.forsyte.apalache.tla.pp.ExprOptimizer$$anonfun$transformSets$1.applyOrElse(ExprOptimizer.scala:55)
+	at scala.PartialFunction$OrElse.apply(PartialFunction.scala:172)
+	at at.forsyte.apalache.tla.pp.ExprOptimizer$$anonfun$transformFuns$1.applyOrElse(ExprOptimizer.scala:38)
+	at at.forsyte.apalache.tla.pp.ExprOptimizer$$anonfun$transformFuns$1.applyOrElse(ExprOptimizer.scala:38)
+	at scala.PartialFunction$OrElse.apply(PartialFunction.scala:172)
+	at at.forsyte.apalache.tla.lir.transformations.impl.TrackerWithListeners.$anonfun$trackEx$1(TrackerWithListeners.scala:16)
+	at at.forsyte.apalache.tla.pp.AbstractTransformer.$anonfun$transform$1(AbstractTransformer.scala:36)
+	at at.forsyte.apalache.tla.lir.transformations.impl.TrackerWithListeners.$anonfun$trackEx$1(TrackerWithListeners.scala:16)
+	at at.forsyte.apalache.tla.pp.ExprOptimizer.apply(ExprOptimizer.scala:30)
+	at at.forsyte.apalache.tla.pp.ExprOptimizer.apply(ExprOptimizer.scala:20)
+	at at.forsyte.apalache.tla.lir.transformations.standard.ModuleByExTransformer.$anonfun$apply$1(ModuleByExTransformer.scala:25)
+	at at.forsyte.apalache.tla.lir.transformations.standard.ModuleByExTransformer.mapIfIncluded$1(ModuleByExTransformer.scala:37)
+	at at.forsyte.apalache.tla.lir.transformations.standard.ModuleByExTransformer.$anonfun$apply$2(ModuleByExTransformer.scala:43)
+	at scala.collection.immutable.List.map(List.scala:297)
+	at at.forsyte.apalache.tla.lir.transformations.standard.ModuleByExTransformer.apply(ModuleByExTransformer.scala:43)
+	at at.forsyte.apalache.tla.pp.passes.OptPassImpl.$anonfun$execute$1(OptPassImpl.scala:55)
+	at scala.collection.LinearSeqOptimized.foldLeft(LinearSeqOptimized.scala:126)
+	at scala.collection.LinearSeqOptimized.foldLeft$(LinearSeqOptimized.scala:122)
+	at scala.collection.immutable.List.foldLeft(List.scala:91)
+	at at.forsyte.apalache.tla.pp.passes.OptPassImpl.execute(OptPassImpl.scala:53)
+	at at.forsyte.apalache.infra.passes.PassChainExecutor.exec$1(PassChainExecutor.scala:22)
+	at at.forsyte.apalache.infra.passes.PassChainExecutor.run(PassChainExecutor.scala:37)
+	at at.forsyte.apalache.tla.Tool$.runCheck(Tool.scala:183)
+	at at.forsyte.apalache.tla.Tool$.$anonfun$run$3(Tool.scala:95)
+	at at.forsyte.apalache.tla.Tool$.handleExceptions(Tool.scala:309)
+	at at.forsyte.apalache.tla.Tool$.run(Tool.scala:95)
+	at at.forsyte.apalache.tla.Tool$.main(Tool.scala:45)
+	at at.forsyte.apalache.tla.Tool.main(Tool.scala)
+01:02:06.858 [main] INFO  a.f.a.t.Tool$ - It took me 0 days  0 hours  0 min  2 sec
+01:02:06.858 [main] INFO  a.f.a.t.Tool$ - Total time: 2.524 sec
