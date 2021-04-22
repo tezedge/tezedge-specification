@@ -1,0 +1,102 @@
+
+\* 1
+
+$ apalache check --init=Init --inv=IndInv --length=0 MC_safety_4good_1bad.tla 
+Assuming you bind-mounted your local directory into /var/apalache...
+# Tool home: /opt/apalache
+# Package:   /opt/apalache/mod-distribution/target/apalache-pkg-0.15.4-SNAPSHOT-full.jar
+# JVM args: -Xmx4096m -DTLA-Library=/opt/apalache/src/tla
+#
+Picked up _JAVA_OPTIONS: -Djdk.net.URLClassPath.disableClassPathURLCheck=true
+# APALACHE version 0.15.4-SNAPSHOT build v0.15.3-15-g8c71e2c
+#
+# WARNING: This tool is in the experimental stage.
+#          Please report bugs at: [https://github.com/informalsystems/apalache/issues]
+# 
+# Usage statistics is OFF. We care about your privacy.
+# If you want to help our project, consider enabling statistics with config --enable-stats=true.
+
+Checker options: filename=MC_safety_4good_1bad.tla, init=Init, next=, inv=IndInv I@21:52:16.498
+Tuning:                                                           I@21:52:16.717
+PASS #0: SanyParser                                               I@21:52:16.717
+Parsing file /var/apalache/MC_safety_4good_1bad.tla
+Parsing file /var/apalache/Handshaking_nack_peers.tla
+Parsing file /tmp/TLC.tla
+Parsing file /tmp/FiniteSets.tla
+Parsing file /tmp/Naturals.tla
+Parsing file /tmp/Sequences.tla
+PASS #1: TypeCheckerSnowcat                                       I@21:52:17.448
+ > Running Snowcat .::.                                           I@21:52:17.449
+ > Your types are great!                                          I@21:52:18.257
+ > All expressions are typed                                      I@21:52:18.257
+PASS #2: ConfigurationPass                                        I@21:52:18.363
+  > MC_safety_4good_1bad.cfg: Loading TLC configuration           I@21:52:18.365
+  > MC_safety_4good_1bad.cfg: Using SPECIFICATION Spec            I@21:52:18.405
+  > MC_safety_4good_1bad.cfg: Init operator is set in TLC config but overridden via --init command line option; using Init W@21:52:18.405
+  > Using the next predicate Next from the TLC config             I@21:52:18.405
+  > MC_safety_4good_1bad.cfg: found INVARIANTS: TypeOK, NoSelfInteractions, GoodNodesOnlyConnectWithPeers, GoodNodesDoNotExceedMaxConnections, GoodNodesOnlyExchangeMessagesWithPeers, GoodNodesNeverHaveMessagesFromBlacklistedPeers, GoodNodesHaveExlcusiveInProgressAndConnections, GoodNodesOnlyConnectToNodesWithWhomTheyHaveExchangedAllMessages, GoodNodesOnlyExchangeMetaMessagesAfterSendingAndReceivingConnectionMessages, GoodNodesOnlyExchangeAckMessagesAfterSendingAndReceivingConnectionAndMetaMessages I@21:52:18.405
+  > Overriding with command line arguments: --inv IndInv          W@21:52:18.405
+  > Set the initialization predicate to Init                      I@21:52:18.406
+  > Set the transition predicate to Next                          I@21:52:18.407
+  > Set an invariant to IndInv                                    I@21:52:18.407
+  > Replaced CONSTANT BAD_NODES with Bad_nodes()                  I@21:52:18.409
+  > Replaced CONSTANT MIN with Min()                              I@21:52:18.409
+  > Replaced CONSTANT MAX with Max()                              I@21:52:18.409
+  > Replaced CONSTANT MIN_PEERS with Min_peers()                  I@21:52:18.409
+  > Replaced CONSTANT GOOD_NODES with Good_nodes()                I@21:52:18.410
+PASS #3: DesugarerPass                                            I@21:52:18.472
+  > Desugaring...                                                 I@21:52:18.472
+PASS #4: UnrollPass                                               I@21:52:18.531
+  > Unroller                                                      I@21:52:18.574
+PASS #5: PrimingPass                                              I@21:52:18.624
+  > Introducing InitPrimed for Init'                              I@21:52:18.627
+PASS #6: CoverAnalysisPass                                        I@21:52:18.666
+PASS #7: InlinePass                                               I@21:52:18.667
+  > InlinerOfUserOper                                             I@21:52:18.667
+  > LetInExpander                                                 I@21:52:18.720
+  > InlinerOfUserOper                                             I@21:52:18.733
+Leaving only relevant operators: CInitPrimed, IndInv, Init, InitPrimed, Next I@21:52:18.739
+PASS #8: VCGen                                                    I@21:52:18.779
+  > Producing verification conditions from the invariant IndInv   I@21:52:18.780
+  > VCGen produced 30 verification condition(s)                   I@21:52:18.781
+PASS #9: PreprocessingPass                                        I@21:52:18.852
+  > Before preprocessing: unique renaming                         I@21:52:18.853
+ > Applying standard transformations:                             I@21:52:18.857
+  > PrimePropagation                                              I@21:52:18.858
+  > Desugarer                                                     I@21:52:18.910
+  > UniqueRenamer                                                 I@21:52:18.960
+  > Normalizer                                                    I@21:52:19.031
+  > Keramelizer                                                   I@21:52:19.096
+  > After preprocessing: UniqueRenamer                            I@21:52:19.173
+PASS #10: TransitionFinderPass                                    I@21:52:19.266
+  > Found 1 initializing transitions                              I@21:52:19.307
+  > Found 20 transitions                                          I@21:52:19.375
+  > No constant initializer                                       I@21:52:19.375
+  > Applying unique renaming                                      I@21:52:19.376
+PASS #11: OptimizationPass                                        I@21:52:19.451
+ > Applying optimizations:                                        I@21:52:19.455
+  > ConstSimplifier                                               I@21:52:19.455
+  > ExprOptimizer                                                 I@21:52:19.490
+  > ConstSimplifier                                               I@21:52:19.529
+PASS #12: AnalysisPass                                            I@21:52:19.607
+ > Marking skolemizable existentials and sets to be expanded...   I@21:52:19.608
+  > SkolemizationMarker                                           I@21:52:19.609
+  > ExpansionMarker                                               I@21:52:19.612
+The set SUBSET ((0 .. 0) ∪ (1 .. 4)) will be expanded. This will blow up the solver. W@21:52:19.631
+The set SUBSET ((0 .. 0) ∪ (1 .. 4)) will be expanded. This will blow up the solver. W@21:52:19.632
+ > Running analyzers...                                           I@21:52:19.634
+  > Introduced expression grades                                  I@21:52:19.693
+  > Introduced 5 formula hints                                    I@21:52:19.693
+PASS #13: PostTypeCheckerSnowcat                                  I@21:52:19.693
+ > Running Snowcat .::.                                           I@21:52:19.694
+[unknown location]: Expected a concrete type of operator ps$3, found polymorphic type: (() => a178) E@21:52:21.584
+ > Snowcat asks you to fix the types. Meow.                       I@21:52:21.584
+Checker has found an error                                        I@21:52:21.585
+It took me 0 days  0 hours  0 min  5 sec                          I@21:52:21.585
+Total time: 5.88 sec                                              I@21:52:21.585
+EXITCODE: OK
+
+
+\* 2
+
+
