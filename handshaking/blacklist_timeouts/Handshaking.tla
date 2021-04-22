@@ -3,22 +3,22 @@
 EXTENDS FiniteSets, Naturals
 
 CONSTANTS
-    BAD_NODES,   \* set of nodes which do not follow the protocol, bad nodes act arbitrarily
-    GOOD_NODES,  \* set of nodes which follow the protocol
-    MIN,         \* minimum number of connections
-    MAX          \* maximum number of connections
+    BAD_NODES,
+    GOOD_NODES,
+    MIN,
+    MAX
 
 VARIABLES
-    blacklist,   \* tuple of each node's blacklisted peers
-    connections, \* tuple of each node's accepted connections
-    messages,    \* tuple of each node's incoming messages
-    recv_ack,    \* tuple of each node's peers from whom they have received an ack msg
-    recv_conn,   \* tuple of each node's peers from whom they have received a conn_msg
-    recv_meta,   \* tuple of each node's peers from whom they have received a meta msg
-    sent_ack,    \* tuple of each node's peers to whom they have sent an ack msg
-    sent_conn,   \* tuple of each node's peers to whom they have sent a conn_msg
-    sent_meta,   \* tuple of each node's peers to whom they have sent a meta msg
-    in_progress  \* tuple of each node's in progress connection attempts
+    blacklist,
+    connections,
+    messages,
+    recv_ack,
+    recv_conn,
+    recv_meta,
+    sent_ack,
+    sent_conn,
+    sent_meta,
+    in_progress
 
 vars == <<blacklist, connections, messages, recv_ack, recv_conn, recv_meta, sent_ack, sent_conn, sent_meta, in_progress>>
 
@@ -80,6 +80,7 @@ exit_handshaking(g, n) ==
     /\ in_progress' = [ in_progress EXCEPT ![g] = @ \ {n} ]
 
 \* connection messages
+
 send_conn_msg(g, n) ==
     /\ messages' = [ messages EXCEPT ![n] = IF Bad(n) \/ Blacklisted(n, g) THEN @ ELSE @ \cup {conn_msg(g)} ]
     /\ sent_conn' = [ sent_conn EXCEPT ![g] = @ \cup {n} ]
@@ -123,6 +124,7 @@ RespondToConnectionMessage == \E g \in GOOD_NODES :
              [] OTHER -> exit_handshaking(g, n)
 
 \* meta messages
+
 exchange_meta(g, n, msg) ==
     LET type == msg.type IN
     IF n \in sent_meta[g]
@@ -151,6 +153,7 @@ ExchangeMeta == \E g \in GOOD_NODES :
         /\ exchange_meta(g, n, msg)
 
 \* ack/nack messages
+
 exchange_ack(g, n, msg) ==
     LET type == msg.type IN
     IF n \in sent_ack[g]
@@ -278,8 +281,9 @@ Next ==
 Fairness ==
     /\ WF_vars(InitiateConnection)
     /\ WF_vars(RespondToConnectionMessage)
-    /\ WF_vars(ExchangeMeta)
     /\ WF_vars(ExchangeAck)
+    /\ WF_vars(ExchangeMeta)
+    /\ WF_vars(Nack)
     /\ WF_vars(HandleNack)
     /\ WF_vars(HandleBad)
     /\ WF_vars(BadNodeSendsGoodNodeMessage)
@@ -292,16 +296,16 @@ Spec == Init /\ [][Next]_vars /\ Fairness
 (*********************)
 
 TypeOK ==
-    /\ \A g \in GOOD_NODES : blacklist[g] \subseteq Nodes
-    /\ \A g \in GOOD_NODES : connections[g] \subseteq Nodes
-    /\ \A g \in GOOD_NODES : messages[g] \subseteq Messages
-    /\ \A g \in GOOD_NODES : recv_conn[g] \subseteq Nodes
-    /\ \A g \in GOOD_NODES : sent_conn[g] \subseteq Nodes
-    /\ \A g \in GOOD_NODES : recv_meta[g] \subseteq Nodes
-    /\ \A g \in GOOD_NODES : sent_meta[g] \subseteq Nodes
-    /\ \A g \in GOOD_NODES : recv_ack[g] \subseteq Nodes
-    /\ \A g \in GOOD_NODES : sent_ack[g] \subseteq Nodes
-    /\ \A g \in GOOD_NODES : in_progress[g] \subseteq Nodes
+    /\ blacklist \in [ Nodes -> SUBSET Nodes ]
+    /\ connections \in [ Nodes -> SUBSET Nodes ]
+    /\ messages \in [ Nodes -> SUBSET Messages ]
+    /\ recv_conn \in [ Nodes -> SUBSET Nodes ]
+    /\ sent_conn \in [ Nodes -> SUBSET Nodes ]
+    /\ recv_meta \in [ Nodes -> SUBSET Nodes ]
+    /\ sent_meta \in [ Nodes -> SUBSET Nodes ]
+    /\ recv_ack \in [ Nodes -> SUBSET Nodes ]
+    /\ sent_ack \in [ Nodes -> SUBSET Nodes ]
+    /\ in_progress \in [ Nodes -> SUBSET Nodes ]
 
 NoSelfInteractions == \A g \in GOOD_NODES :
     /\ g \notin blacklist[g]
@@ -334,58 +338,73 @@ GoodNodesOnlyExchangeMetaMessagesAfterSendingAndReceivingConnectionMessages ==
 GoodNodesOnlyExchangeAckMessagesAfterSendingAndReceivingConnectionAndMetaMessages ==
     \A g \in GOOD_NODES : recv_ack[g] \cup sent_ack[g] \subseteq recv_conn[g] \cap sent_conn[g] \cap recv_meta[g] \cap sent_meta[g]
 
+Safety ==
+    /\ NoSelfInteractions
+    /\ GoodNodesDoNotExceedMaxConnections
+    /\ GoodNodesNeverHaveMessagesFromBlacklistedPeers
+    /\ GoodNodesHaveExlcusiveInProgressAndConnections
+    /\ GoodNodesOnlyConnectToNodesWithWhomTheyHaveExchangedAllMessages
+    /\ GoodNodesOnlyExchangeMetaMessagesAfterSendingAndReceivingConnectionMessages
+    /\ GoodNodesOnlyExchangeAckMessagesAfterSendingAndReceivingConnectionAndMetaMessages
+
+\* inductive invariant
+IndInv == TypeOK /\ Safety
+
 (***********************)
 (* Properties/Liveness *)
 (***********************)
 
-OnceConnectedAlwaysConnected ==
-    \A g, h \in GOOD_NODES : Connected(g, h) ~> []Connected(g, h)
+OnceConnectedAlwaysConnected == \A g, h \in GOOD_NODES : Connected(g, h) ~> []Connected(g, h)
 
-OnceBlacklistedAlwaysBlacklisted ==
-    \A g \in GOOD_NODES, n \inNodes : Blacklisted(g, n) ~> []Blacklisted(g, n)
+OnceBlacklistedAlwaysBlacklisted == \A g \in GOOD_NODES, n \inNodes : Blacklisted(g, n) ~> []Blacklisted(g, n)
 
 GoodNodesEventuallyExceedMinConnections ==
     <>[](\A g \in GOOD_NODES :
         Cardinality(Nodes \ (blacklist[g] \cup {g})) >= MIN => Num_connections(g) >= MIN)
 
-GoodNodesAlwaysRespondToAckMessagesOrBlacklist ==
-    \A g, h \in GOOD_NODES :
-        \/ /\ ack_msg(h) \in messages[g]
-           /\ h \notin sent_ack[g]
-           ~> \/ ack_msg(g) \in messages[h]
-              \/ Blacklisted(g, h)
-        \/ /\ ack_msg(h) \in messages[g]
-           /\ h \in sent_ack[g]
-           ~> \/ Connected(g, h)
-              \/ Blacklisted(g, h)
+GoodNodesAlwaysRespondToAckMessagesOrBlacklist == \A g, h \in GOOD_NODES :
+    \/ /\ ack_msg(h) \in messages[g]
+       /\ h \notin sent_ack[g]
+       ~> \/ ack_msg(g) \in messages[h]
+          \/ Blacklisted(g, h)
+    \/ /\ ack_msg(h) \in messages[g]
+       /\ h \in sent_ack[g]
+       ~> \/ Connected(g, h)
+          \/ Blacklisted(g, h)
 
-GoodNodesAlwaysRespondToMetaMessagesOrBlacklist ==
-    \A g, h \in GOOD_NODES :
-        \/ /\ meta_msg(h) \in messages[g]
-           /\ h \notin sent_meta[g]
-           ~> \/ meta_msg(g) \in messages[h]
-              \/ Blacklisted(g, h)
-        \/ /\ meta_msg(h) \in messages[g]
-           /\ h \in sent_meta[g]
-           ~> \/ ack_msg(g) \in messages[h]
-              \/ Blacklisted(g, h)
+GoodNodesAlwaysRespondToMetaMessagesOrBlacklist == \A g, h \in GOOD_NODES :
+    \/ /\ meta_msg(h) \in messages[g]
+       /\ h \notin sent_meta[g]
+       ~> \/ meta_msg(g) \in messages[h]
+          \/ Blacklisted(g, h)
+    \/ /\ meta_msg(h) \in messages[g]
+       /\ h \in sent_meta[g]
+       ~> \/ ack_msg(g) \in messages[h]
+          \/ Blacklisted(g, h)
 
-GoodNodesAlwaysRespondToConnectionMessagesOrBlacklist ==
-    \A g, h \in GOOD_NODES :
-        \/ /\ conn_msg(h) \in messages[g]
-           /\ h \notin sent_conn[g]
-           ~> \/ conn_msg(g) \in messages[h]
-              \/ Blacklisted(g, h)
-        \/ /\ conn_msg(h) \in messages[g]
-           /\ h \in sent_conn[g]
-           ~> \/ meta_msg(g) \in messages[h]
-              \/ Blacklisted(g, h)
+GoodNodesAlwaysRespondToConnectionMessagesOrBlacklist == \A g, h \in GOOD_NODES :
+    \/ /\ conn_msg(h) \in messages[g]
+       /\ h \notin sent_conn[g]
+       ~> \/ conn_msg(g) \in messages[h]
+          \/ Blacklisted(g, h)
+    \/ /\ conn_msg(h) \in messages[g]
+       /\ h \in sent_conn[g]
+       ~> \/ meta_msg(g) \in messages[h]
+          \/ Blacklisted(g, h)
 
-ConnectionsBetweenGoodNodesAreEventuallyBidirectionalOrClosed ==
-    \A g, h \in GOOD_NODES :
-        \/ g \in connections[h]
-        \/ h \in connections[g]
-        ~> \/ Connected(g, h)
-           \/ [](g \notin connections[h] /\ h \notin connections[g])
+ConnectionsBetweenGoodNodesAreEventuallyBidirectionalOrClosed == \A g, h \in GOOD_NODES :
+    \/ g \in connections[h]
+    \/ h \in connections[g]
+    ~> \/ Connected(g, h)
+        \/ [](g \notin connections[h] /\ h \notin connections[g])
+
+Liveness ==
+    /\ OnceConnectedAlwaysConnected
+    /\ OnceBlacklistedAlwaysBlacklisted
+    /\ GoodNodesEventuallyExceedMinConnections
+    /\ GoodNodesAlwaysRespondToAckMessagesOrBlacklist
+    /\ GoodNodesAlwaysRespondToMetaMessagesOrBlacklist
+    /\ GoodNodesAlwaysRespondToConnectionMessagesOrBlacklist
+    /\ ConnectionsBetweenGoodNodesAreEventuallyBidirectionalOrClosed
 
 ========================================
