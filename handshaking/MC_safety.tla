@@ -1,4 +1,4 @@
----- MODULE MC ----
+---- MODULE MC_safety ----
 
 EXTENDS Handshaking, TLC
 
@@ -14,4 +14,4 @@ Conn_attempt == 1
 
 Timeouts == 1
 
-===================
+==========================

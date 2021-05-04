@@ -1,0 +1,205 @@
+05:29:24.598 [main] INFO  a.f.a.t.Tool$ - Checker options: filename=MC_safety_4good_1bad.tla, init=Init, next=, inv=IndInv
+05:29:25.079 [main] INFO  a.f.a.t.Tool$ - Tuning: 
+05:29:25.098 [main] INFO  a.f.a.i.p.PassChainExecutor - PASS #0: SanyParser
+05:29:25.853 [main] DEBUG a.f.a.i.p.PassChainExecutor - PASS #0: SanyParser [OK]
+05:29:25.853 [main] INFO  a.f.a.i.p.PassChainExecutor - PASS #1: TypeCheckerSnowcat
+05:29:25.853 [main] INFO  a.f.a.t.t.p.EtcTypeCheckerPassImpl -  > Running Snowcat .::.
+05:29:26.007 [main] DEBUG a.f.a.t.t.p.EtcTypeCheckerPassImpl -  > JSON output: /var/apalache/x/05.29-26.04.2021-4874246649962085085/out-pre-TypeCheckerSnowcat.json
+05:29:26.742 [main] INFO  a.f.a.t.t.p.EtcTypeCheckerPassImpl -  > Your types are great!
+05:29:26.743 [main] INFO  a.f.a.t.t.p.EtcTypeCheckerPassImpl -  > All expressions are typed
+05:29:26.833 [main] DEBUG a.f.a.t.t.p.EtcTypeCheckerPassImpl -  > JSON output: /var/apalache/x/05.29-26.04.2021-4874246649962085085/out-post-TypeCheckerSnowcat.json
+05:29:26.833 [main] DEBUG a.f.a.i.p.PassChainExecutor - PASS #1: TypeCheckerSnowcat [OK]
+05:29:26.834 [main] INFO  a.f.a.i.p.PassChainExecutor - PASS #2: ConfigurationPass
+05:29:26.836 [main] INFO  a.f.a.t.p.p.ConfigurationPassImpl -   > MC_safety_4good_1bad.cfg: Loading TLC configuration
+05:29:26.885 [main] INFO  a.f.a.t.p.p.ConfigurationPassImpl -   > MC_safety_4good_1bad.cfg: Using SPECIFICATION Spec
+05:29:26.885 [main] WARN  a.f.a.t.p.p.ConfigurationPassImpl -   > MC_safety_4good_1bad.cfg: Init operator is set in TLC config but overridden via --init command line option; using Init
+05:29:26.885 [main] INFO  a.f.a.t.p.p.ConfigurationPassImpl -   > Using the next predicate Next from the TLC config
+05:29:26.885 [main] INFO  a.f.a.t.p.p.ConfigurationPassImpl -   > MC_safety_4good_1bad.cfg: found INVARIANTS: TypeOK, NoSelfInteractions, GoodNodesOnlyConnectWithPeers, GoodNodesDoNotExceedMaxConnections, GoodNodesOnlyExchangeMessagesWithPeers, GoodNodesNeverHaveMessagesFromBlacklistedPeers, GoodNodesHaveExlcusiveInProgressAndConnections, GoodNodesOnlyConnectToNodesWithWhomTheyHaveExchangedAllMessages, GoodNodesOnlyExchangeMetaMessagesAfterSendingAndReceivingConnectionMessages, GoodNodesOnlyExchangeAckMessagesAfterSendingAndReceivingConnectionAndMetaMessages
+05:29:26.886 [main] WARN  a.f.a.t.p.p.ConfigurationPassImpl -   > Overriding with command line arguments: --inv IndInv
+05:29:26.887 [main] INFO  a.f.a.t.p.p.ConfigurationPassImpl -   > Set the initialization predicate to Init
+05:29:26.888 [main] INFO  a.f.a.t.p.p.ConfigurationPassImpl -   > Set the transition predicate to Next
+05:29:26.888 [main] INFO  a.f.a.t.p.p.ConfigurationPassImpl -   > Set an invariant to IndInv
+05:29:26.890 [main] INFO  a.f.a.t.p.ConstAndDefRewriter -   > Replaced CONSTANT BAD_NODES with Bad_nodes()
+05:29:26.890 [main] INFO  a.f.a.t.p.ConstAndDefRewriter -   > Replaced CONSTANT MIN with Min()
+05:29:26.890 [main] INFO  a.f.a.t.p.ConstAndDefRewriter -   > Replaced CONSTANT MAX with Max()
+05:29:26.890 [main] INFO  a.f.a.t.p.ConstAndDefRewriter -   > Replaced CONSTANT MIN_PEERS with Min_peers()
+05:29:26.890 [main] INFO  a.f.a.t.p.ConstAndDefRewriter -   > Replaced CONSTANT GOOD_NODES with Good_nodes()
+05:29:26.953 [main] DEBUG a.f.a.i.p.PassChainExecutor - PASS #2: ConfigurationPass [OK]
+05:29:26.954 [main] INFO  a.f.a.i.p.PassChainExecutor - PASS #3: DesugarerPass
+05:29:26.954 [main] INFO  a.f.a.t.p.p.DesugarerPassImpl -   > Desugaring...
+05:29:27.019 [main] DEBUG a.f.a.i.p.PassChainExecutor - PASS #3: DesugarerPass [OK]
+05:29:27.019 [main] INFO  a.f.a.i.p.PassChainExecutor - PASS #4: UnrollPass
+05:29:27.061 [main] INFO  a.f.a.t.p.p.UnrollPassImpl -   > Unroller
+05:29:27.117 [main] DEBUG a.f.a.i.p.PassChainExecutor - PASS #4: UnrollPass [OK]
+05:29:27.117 [main] INFO  a.f.a.i.p.PassChainExecutor - PASS #5: PrimingPass
+05:29:27.121 [main] INFO  a.f.a.t.a.p.PrimingPassImpl -   > Introducing InitPrimed for Init'
+05:29:27.161 [main] DEBUG a.f.a.i.p.PassChainExecutor - PASS #5: PrimingPass [OK]
+05:29:27.162 [main] INFO  a.f.a.i.p.PassChainExecutor - PASS #6: CoverAnalysisPass
+05:29:27.162 [main] DEBUG a.f.a.i.p.PassChainExecutor - PASS #6: CoverAnalysisPass [OK]
+05:29:27.162 [main] INFO  a.f.a.i.p.PassChainExecutor - PASS #7: InlinePass
+05:29:27.163 [main] INFO  a.f.a.t.p.p.InlinePassImpl -   > InlinerOfUserOper
+05:29:27.214 [main] INFO  a.f.a.t.p.p.InlinePassImpl -   > LetInExpander
+05:29:27.227 [main] INFO  a.f.a.t.p.p.InlinePassImpl -   > InlinerOfUserOper
+05:29:27.232 [main] INFO  a.f.a.t.p.p.InlinePassImpl - Leaving only relevant operators: CInitPrimed, IndInv, Init, InitPrimed, Next
+05:29:27.276 [main] DEBUG a.f.a.i.p.PassChainExecutor - PASS #7: InlinePass [OK]
+05:29:27.277 [main] INFO  a.f.a.i.p.PassChainExecutor - PASS #8: VCGen
+05:29:27.278 [main] INFO  a.f.a.t.b.p.VCGenPassImpl -   > Producing verification conditions from the invariant IndInv
+05:29:27.279 [main] INFO  a.f.a.t.b.VCGenerator -   > VCGen produced 30 verification condition(s)
+05:29:27.346 [main] DEBUG a.f.a.i.p.PassChainExecutor - PASS #8: VCGen [OK]
+05:29:27.347 [main] INFO  a.f.a.i.p.PassChainExecutor - PASS #9: PreprocessingPass
+05:29:27.347 [main] INFO  a.f.a.t.p.p.PreproPassImpl -   > Before preprocessing: unique renaming
+05:29:27.352 [main] INFO  a.f.a.t.p.p.PreproPassImpl -  > Applying standard transformations:
+05:29:27.353 [main] INFO  a.f.a.t.p.p.PreproPassImpl -   > PrimePropagation
+05:29:27.411 [main] INFO  a.f.a.t.p.p.PreproPassImpl -   > Desugarer
+05:29:27.465 [main] INFO  a.f.a.t.p.p.PreproPassImpl -   > UniqueRenamer
+05:29:27.538 [main] INFO  a.f.a.t.p.p.PreproPassImpl -   > Normalizer
+05:29:27.610 [main] INFO  a.f.a.t.p.p.PreproPassImpl -   > Keramelizer
+05:29:27.693 [main] INFO  a.f.a.t.p.p.PreproPassImpl -   > After preprocessing: UniqueRenamer
+05:29:27.789 [main] DEBUG a.f.a.i.p.PassChainExecutor - PASS #9: PreprocessingPass [OK]
+05:29:27.790 [main] INFO  a.f.a.i.p.PassChainExecutor - PASS #10: TransitionFinderPass
+05:29:27.833 [main] INFO  a.f.a.t.a.p.TransitionPassImpl -   > Found 1 initializing transitions
+05:29:27.906 [main] INFO  a.f.a.t.a.p.TransitionPassImpl -   > Found 20 transitions
+05:29:27.906 [main] INFO  a.f.a.t.a.p.TransitionPassImpl -   > No constant initializer
+05:29:27.906 [main] INFO  a.f.a.t.a.p.TransitionPassImpl -   > Applying unique renaming
+05:29:28.008 [main] DEBUG a.f.a.i.p.PassChainExecutor - PASS #10: TransitionFinderPass [OK]
+05:29:28.008 [main] INFO  a.f.a.i.p.PassChainExecutor - PASS #11: OptimizationPass
+05:29:28.012 [main] INFO  a.f.a.t.p.p.OptPassImpl -  > Applying optimizations:
+05:29:28.013 [main] INFO  a.f.a.t.p.p.OptPassImpl -   > ConstSimplifier
+05:29:28.050 [main] INFO  a.f.a.t.p.p.OptPassImpl -   > ExprOptimizer
+05:29:28.089 [main] INFO  a.f.a.t.p.p.OptPassImpl -   > ConstSimplifier
+05:29:28.175 [main] DEBUG a.f.a.i.p.PassChainExecutor - PASS #11: OptimizationPass [OK]
+05:29:28.176 [main] INFO  a.f.a.i.p.PassChainExecutor - PASS #12: AnalysisPass
+05:29:28.177 [main] INFO  a.f.a.t.b.p.AnalysisPassImpl -  > Marking skolemizable existentials and sets to be expanded...
+05:29:28.178 [main] INFO  a.f.a.t.b.p.AnalysisPassImpl -   > SkolemizationMarker
+05:29:28.181 [main] INFO  a.f.a.t.b.p.AnalysisPassImpl -   > ExpansionMarker
+05:29:28.203 [main] WARN  a.f.a.t.b.a.ExpansionMarker - The set SUBSET ((0 .. 0) ∪ (1 .. 4)) will be expanded. This will blow up the solver.
+05:29:28.204 [main] WARN  a.f.a.t.b.a.ExpansionMarker - The set SUBSET ((0 .. 0) ∪ (1 .. 4)) will be expanded. This will blow up the solver.
+05:29:28.207 [main] INFO  a.f.a.t.b.p.AnalysisPassImpl -  > Running analyzers...
+05:29:28.280 [main] INFO  a.f.a.t.b.p.AnalysisPassImpl -   > Introduced expression grades
+05:29:28.281 [main] INFO  a.f.a.t.b.p.AnalysisPassImpl -   > Introduced 5 formula hints
+05:29:28.281 [main] DEBUG a.f.a.i.p.PassChainExecutor - PASS #12: AnalysisPass [OK]
+05:29:28.281 [main] INFO  a.f.a.i.p.PassChainExecutor - PASS #13: PostTypeCheckerSnowcat
+05:29:28.281 [main] INFO  a.f.a.t.b.p.PostTypeCheckerPassImpl -  > Running Snowcat .::.
+05:29:28.387 [main] DEBUG a.f.a.t.b.p.PostTypeCheckerPassImpl -  > JSON output: /var/apalache/x/05.29-26.04.2021-4874246649962085085/out-pre-PostTypeCheckerSnowcat.json
+05:29:30.257 [main] ERROR a.f.a.t.t.p.LoggingTypeCheckerListener - [unknown location]: Expected a concrete type of operator ps$3, found polymorphic type: (() => a178)
+05:29:30.257 [main] INFO  a.f.a.t.b.p.PostTypeCheckerPassImpl -  > Snowcat asks you to fix the types. Meow.
+05:29:30.262 [main] DEBUG a.f.a.i.p.PassChainExecutor - PASS #13: PostTypeCheckerSnowcat [FAIL]
+05:29:30.263 [main] INFO  a.f.a.t.Tool$ - Checker has found an error
+05:29:30.263 [main] INFO  a.f.a.t.Tool$ - It took me 0 days  0 hours  0 min  5 sec
+05:29:30.263 [main] INFO  a.f.a.t.Tool$ - Total time: 5.666 sec
+05:30:44.381 [main] INFO  a.f.a.t.Tool$ - Checker options: filename=MC_safety_4good_1bad.tla, init=IndInv, next=, inv=IndInv
+05:30:44.600 [main] INFO  a.f.a.t.Tool$ - Tuning: 
+05:30:44.600 [main] INFO  a.f.a.i.p.PassChainExecutor - PASS #0: SanyParser
+05:30:45.246 [main] DEBUG a.f.a.i.p.PassChainExecutor - PASS #0: SanyParser [OK]
+05:30:45.246 [main] INFO  a.f.a.i.p.PassChainExecutor - PASS #1: TypeCheckerSnowcat
+05:30:45.247 [main] INFO  a.f.a.t.t.p.EtcTypeCheckerPassImpl -  > Running Snowcat .::.
+05:30:45.378 [main] DEBUG a.f.a.t.t.p.EtcTypeCheckerPassImpl -  > JSON output: /var/apalache/x/05.30-26.04.2021-2877694745510305513/out-pre-TypeCheckerSnowcat.json
+05:30:46.081 [main] INFO  a.f.a.t.t.p.EtcTypeCheckerPassImpl -  > Your types are great!
+05:30:46.082 [main] INFO  a.f.a.t.t.p.EtcTypeCheckerPassImpl -  > All expressions are typed
+05:30:46.177 [main] DEBUG a.f.a.t.t.p.EtcTypeCheckerPassImpl -  > JSON output: /var/apalache/x/05.30-26.04.2021-2877694745510305513/out-post-TypeCheckerSnowcat.json
+05:30:46.178 [main] DEBUG a.f.a.i.p.PassChainExecutor - PASS #1: TypeCheckerSnowcat [OK]
+05:30:46.178 [main] INFO  a.f.a.i.p.PassChainExecutor - PASS #2: ConfigurationPass
+05:30:46.181 [main] INFO  a.f.a.t.p.p.ConfigurationPassImpl -   > MC_safety_4good_1bad.cfg: Loading TLC configuration
+05:30:46.225 [main] INFO  a.f.a.t.p.p.ConfigurationPassImpl -   > MC_safety_4good_1bad.cfg: Using SPECIFICATION Spec
+05:30:46.225 [main] WARN  a.f.a.t.p.p.ConfigurationPassImpl -   > MC_safety_4good_1bad.cfg: Init operator is set in TLC config but overridden via --init command line option; using IndInv
+05:30:46.225 [main] INFO  a.f.a.t.p.p.ConfigurationPassImpl -   > Using the next predicate Next from the TLC config
+05:30:46.225 [main] INFO  a.f.a.t.p.p.ConfigurationPassImpl -   > MC_safety_4good_1bad.cfg: found INVARIANTS: TypeOK, NoSelfInteractions, GoodNodesOnlyConnectWithPeers, GoodNodesDoNotExceedMaxConnections, GoodNodesOnlyExchangeMessagesWithPeers, GoodNodesNeverHaveMessagesFromBlacklistedPeers, GoodNodesHaveExlcusiveInProgressAndConnections, GoodNodesOnlyConnectToNodesWithWhomTheyHaveExchangedAllMessages, GoodNodesOnlyExchangeMetaMessagesAfterSendingAndReceivingConnectionMessages, GoodNodesOnlyExchangeAckMessagesAfterSendingAndReceivingConnectionAndMetaMessages
+05:30:46.226 [main] WARN  a.f.a.t.p.p.ConfigurationPassImpl -   > Overriding with command line arguments: --inv IndInv
+05:30:46.227 [main] INFO  a.f.a.t.p.p.ConfigurationPassImpl -   > Set the initialization predicate to IndInv
+05:30:46.227 [main] INFO  a.f.a.t.p.p.ConfigurationPassImpl -   > Set the transition predicate to Next
+05:30:46.228 [main] INFO  a.f.a.t.p.p.ConfigurationPassImpl -   > Set an invariant to IndInv
+05:30:46.230 [main] INFO  a.f.a.t.p.ConstAndDefRewriter -   > Replaced CONSTANT BAD_NODES with Bad_nodes()
+05:30:46.231 [main] INFO  a.f.a.t.p.ConstAndDefRewriter -   > Replaced CONSTANT MIN with Min()
+05:30:46.231 [main] INFO  a.f.a.t.p.ConstAndDefRewriter -   > Replaced CONSTANT MAX with Max()
+05:30:46.231 [main] INFO  a.f.a.t.p.ConstAndDefRewriter -   > Replaced CONSTANT MIN_PEERS with Min_peers()
+05:30:46.231 [main] INFO  a.f.a.t.p.ConstAndDefRewriter -   > Replaced CONSTANT GOOD_NODES with Good_nodes()
+05:30:46.299 [main] DEBUG a.f.a.i.p.PassChainExecutor - PASS #2: ConfigurationPass [OK]
+05:30:46.299 [main] INFO  a.f.a.i.p.PassChainExecutor - PASS #3: DesugarerPass
+05:30:46.300 [main] INFO  a.f.a.t.p.p.DesugarerPassImpl -   > Desugaring...
+05:30:46.357 [main] DEBUG a.f.a.i.p.PassChainExecutor - PASS #3: DesugarerPass [OK]
+05:30:46.357 [main] INFO  a.f.a.i.p.PassChainExecutor - PASS #4: UnrollPass
+05:30:46.406 [main] INFO  a.f.a.t.p.p.UnrollPassImpl -   > Unroller
+05:30:46.467 [main] DEBUG a.f.a.i.p.PassChainExecutor - PASS #4: UnrollPass [OK]
+05:30:46.468 [main] INFO  a.f.a.i.p.PassChainExecutor - PASS #5: PrimingPass
+05:30:46.471 [main] INFO  a.f.a.t.a.p.PrimingPassImpl -   > Introducing IndInvPrimed for IndInv'
+05:30:46.523 [main] DEBUG a.f.a.i.p.PassChainExecutor - PASS #5: PrimingPass [OK]
+05:30:46.523 [main] INFO  a.f.a.i.p.PassChainExecutor - PASS #6: CoverAnalysisPass
+05:30:46.523 [main] DEBUG a.f.a.i.p.PassChainExecutor - PASS #6: CoverAnalysisPass [OK]
+05:30:46.524 [main] INFO  a.f.a.i.p.PassChainExecutor - PASS #7: InlinePass
+05:30:46.524 [main] INFO  a.f.a.t.p.p.InlinePassImpl -   > InlinerOfUserOper
+05:30:46.573 [main] INFO  a.f.a.t.p.p.InlinePassImpl -   > LetInExpander
+05:30:46.585 [main] INFO  a.f.a.t.p.p.InlinePassImpl -   > InlinerOfUserOper
+05:30:46.592 [main] INFO  a.f.a.t.p.p.InlinePassImpl - Leaving only relevant operators: CInitPrimed, IndInv, IndInvPrimed, Next
+05:30:46.636 [main] DEBUG a.f.a.i.p.PassChainExecutor - PASS #7: InlinePass [OK]
+05:30:46.636 [main] INFO  a.f.a.i.p.PassChainExecutor - PASS #8: VCGen
+05:30:46.637 [main] INFO  a.f.a.t.b.p.VCGenPassImpl -   > Producing verification conditions from the invariant IndInv
+05:30:46.638 [main] INFO  a.f.a.t.b.VCGenerator -   > VCGen produced 30 verification condition(s)
+05:30:46.695 [main] DEBUG a.f.a.i.p.PassChainExecutor - PASS #8: VCGen [OK]
+05:30:46.695 [main] INFO  a.f.a.i.p.PassChainExecutor - PASS #9: PreprocessingPass
+05:30:46.695 [main] INFO  a.f.a.t.p.p.PreproPassImpl -   > Before preprocessing: unique renaming
+05:30:46.700 [main] INFO  a.f.a.t.p.p.PreproPassImpl -  > Applying standard transformations:
+05:30:46.701 [main] INFO  a.f.a.t.p.p.PreproPassImpl -   > PrimePropagation
+05:30:46.758 [main] INFO  a.f.a.t.p.p.PreproPassImpl -   > Desugarer
+05:30:46.811 [main] INFO  a.f.a.t.p.p.PreproPassImpl -   > UniqueRenamer
+05:30:46.887 [main] INFO  a.f.a.t.p.p.PreproPassImpl -   > Normalizer
+05:30:46.957 [main] INFO  a.f.a.t.p.p.PreproPassImpl -   > Keramelizer
+05:30:47.042 [main] INFO  a.f.a.t.p.p.PreproPassImpl -   > After preprocessing: UniqueRenamer
+05:30:47.135 [main] DEBUG a.f.a.i.p.PassChainExecutor - PASS #9: PreprocessingPass [OK]
+05:30:47.135 [main] INFO  a.f.a.i.p.PassChainExecutor - PASS #10: TransitionFinderPass
+05:30:47.179 [main] INFO  a.f.a.t.a.p.TransitionPassImpl -   > Found 1 initializing transitions
+05:30:47.250 [main] INFO  a.f.a.t.a.p.TransitionPassImpl -   > Found 20 transitions
+05:30:47.250 [main] INFO  a.f.a.t.a.p.TransitionPassImpl -   > No constant initializer
+05:30:47.251 [main] INFO  a.f.a.t.a.p.TransitionPassImpl -   > Applying unique renaming
+05:30:47.337 [main] DEBUG a.f.a.i.p.PassChainExecutor - PASS #10: TransitionFinderPass [OK]
+05:30:47.337 [main] INFO  a.f.a.i.p.PassChainExecutor - PASS #11: OptimizationPass
+05:30:47.341 [main] INFO  a.f.a.t.p.p.OptPassImpl -  > Applying optimizations:
+05:30:47.342 [main] INFO  a.f.a.t.p.p.OptPassImpl -   > ConstSimplifier
+05:30:47.378 [main] INFO  a.f.a.t.p.p.OptPassImpl -   > ExprOptimizer
+05:30:47.419 [main] INFO  a.f.a.t.p.p.OptPassImpl -   > ConstSimplifier
+05:30:47.505 [main] DEBUG a.f.a.i.p.PassChainExecutor - PASS #11: OptimizationPass [OK]
+05:30:47.506 [main] INFO  a.f.a.i.p.PassChainExecutor - PASS #12: AnalysisPass
+05:30:47.507 [main] INFO  a.f.a.t.b.p.AnalysisPassImpl -  > Marking skolemizable existentials and sets to be expanded...
+05:30:47.508 [main] INFO  a.f.a.t.b.p.AnalysisPassImpl -   > SkolemizationMarker
+05:30:47.511 [main] INFO  a.f.a.t.b.p.AnalysisPassImpl -   > ExpansionMarker
+05:30:47.516 [main] WARN  a.f.a.t.b.a.ExpansionMarker - The set SUBSET ((0 .. 0) ∪ (1 .. 4)) will be expanded. This will blow up the solver.
+05:30:47.535 [main] WARN  a.f.a.t.b.a.ExpansionMarker - The set SUBSET ((0 .. 0) ∪ (1 .. 4)) will be expanded. This will blow up the solver.
+05:30:47.536 [main] WARN  a.f.a.t.b.a.ExpansionMarker - The set SUBSET ((0 .. 0) ∪ (1 .. 4)) will be expanded. This will blow up the solver.
+05:30:47.539 [main] INFO  a.f.a.t.b.p.AnalysisPassImpl -  > Running analyzers...
+05:30:47.607 [main] INFO  a.f.a.t.b.p.AnalysisPassImpl -   > Introduced expression grades
+05:30:47.608 [main] INFO  a.f.a.t.b.p.AnalysisPassImpl -   > Introduced 8 formula hints
+05:30:47.608 [main] DEBUG a.f.a.i.p.PassChainExecutor - PASS #12: AnalysisPass [OK]
+05:30:47.608 [main] INFO  a.f.a.i.p.PassChainExecutor - PASS #13: PostTypeCheckerSnowcat
+05:30:47.608 [main] INFO  a.f.a.t.b.p.PostTypeCheckerPassImpl -  > Running Snowcat .::.
+05:30:47.728 [main] DEBUG a.f.a.t.b.p.PostTypeCheckerPassImpl -  > JSON output: /var/apalache/x/05.30-26.04.2021-2877694745510305513/out-pre-PostTypeCheckerSnowcat.json
+05:30:51.327 [main] ERROR a.f.a.t.t.p.LoggingTypeCheckerListener - [unknown location]: Expected a concrete type of operator ps$3, found polymorphic type: (() => a178)
+05:30:51.328 [main] INFO  a.f.a.t.b.p.PostTypeCheckerPassImpl -  > Snowcat asks you to fix the types. Meow.
+05:30:51.328 [main] DEBUG a.f.a.i.p.PassChainExecutor - PASS #13: PostTypeCheckerSnowcat [FAIL]
+05:30:51.328 [main] INFO  a.f.a.t.Tool$ - Checker has found an error
+05:30:51.328 [main] INFO  a.f.a.t.Tool$ - It took me 0 days  0 hours  0 min  6 sec
+05:30:51.328 [main] INFO  a.f.a.t.Tool$ - Total time: 6.948 sec
+00:08:11.606 [main] INFO  a.f.a.t.Tool$ - Type checking Handshaking_nack_peers.tla
+00:08:11.787 [main] INFO  a.f.a.i.p.PassChainExecutor - PASS #0: SanyParser
+00:08:12.580 [main] DEBUG a.f.a.i.p.PassChainExecutor - PASS #0: SanyParser [OK]
+00:08:12.581 [main] INFO  a.f.a.i.p.PassChainExecutor - PASS #1: TypeCheckerSnowcat
+00:08:12.581 [main] INFO  a.f.a.t.t.p.EtcTypeCheckerPassImpl -  > Running Snowcat .::.
+00:08:12.645 [main] DEBUG a.f.a.t.t.p.EtcTypeCheckerPassImpl -  > JSON output: /var/apalache/x/00.08-04.05.2021-933726812608427139/out-pre-TypeCheckerSnowcat.json
+00:08:12.791 [main] ERROR a.f.a.t.t.p.LoggingTypeCheckerListener - [Handshaking_nack_peers.tla:61:1-61:66]: Expected ((Int) => MSG) in conn_msg. Found: ((Int) => [from: Int, peers: Set(a1434), type: Str])
+00:08:12.809 [main] ERROR a.f.a.t.t.p.LoggingTypeCheckerListener - [Handshaking_nack_peers.tla:61:1-61:66]: Error when computing the type of conn_msg
+00:08:12.809 [main] INFO  a.f.a.t.t.p.EtcTypeCheckerPassImpl -  > Snowcat asks you to fix the types. Meow.
+00:08:12.810 [main] DEBUG a.f.a.i.p.PassChainExecutor - PASS #1: TypeCheckerSnowcat [FAIL]
+00:08:12.810 [main] INFO  a.f.a.t.Tool$ - Type checker [FAILED]
+00:08:12.810 [main] INFO  a.f.a.t.Tool$ - It took me 0 days  0 hours  0 min  1 sec
+00:08:12.810 [main] INFO  a.f.a.t.Tool$ - Total time: 1.205 sec
+00:10:27.651 [main] INFO  a.f.a.t.Tool$ - Type checking Handshaking_nack_peers.tla
+00:10:27.826 [main] INFO  a.f.a.i.p.PassChainExecutor - PASS #0: SanyParser
+00:10:28.595 [main] DEBUG a.f.a.i.p.PassChainExecutor - PASS #0: SanyParser [OK]
+00:10:28.595 [main] INFO  a.f.a.i.p.PassChainExecutor - PASS #1: TypeCheckerSnowcat
+00:10:28.595 [main] INFO  a.f.a.t.t.p.EtcTypeCheckerPassImpl -  > Running Snowcat .::.
+00:10:28.664 [main] DEBUG a.f.a.t.t.p.EtcTypeCheckerPassImpl -  > JSON output: /var/apalache/x/00.10-04.05.2021-12822226651335083807/out-pre-TypeCheckerSnowcat.json
+00:10:28.812 [main] ERROR a.f.a.t.t.p.LoggingTypeCheckerListener - [Handshaking_nack_peers.tla:61:1-61:66]: Expected ((Int) => MSG) in conn_msg. Found: ((Int) => [from: Int, peers: Set(a1434), type: Str])
+00:10:28.828 [main] ERROR a.f.a.t.t.p.LoggingTypeCheckerListener - [Handshaking_nack_peers.tla:61:1-61:66]: Error when computing the type of conn_msg
+00:10:28.828 [main] INFO  a.f.a.t.t.p.EtcTypeCheckerPassImpl -  > Snowcat asks you to fix the types. Meow.
+00:10:28.828 [main] DEBUG a.f.a.i.p.PassChainExecutor - PASS #1: TypeCheckerSnowcat [FAIL]
+00:10:28.828 [main] INFO  a.f.a.t.Tool$ - Type checker [FAILED]
+00:10:28.829 [main] INFO  a.f.a.t.Tool$ - It took me 0 days  0 hours  0 min  1 sec
+00:10:28.829 [main] INFO  a.f.a.t.Tool$ - Total time: 1.178 sec
