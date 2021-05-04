@@ -19,8 +19,8 @@ VARIABLES
     blacklist,
     \* @type: Int -> Set(Int);
     connections,
-    (* @typeDef MSG = [from: Int, peers: Set(Int), type: Str]
-       @type: Int -> Set(MSG); *)
+    \* @typeAlias: MSG = [from: Int, peers: Set(Int), type: Str]
+    \* @type: Int -> Set(MSG);
     messages,
     \* @type: Int -> Set(Int);
     peers,
@@ -82,9 +82,11 @@ Bad(n) == n \in BAD_NODES
 Bad_messages == [ type : {"conn", "meta", "ack", "nack", "bad"}, peers : {{}}, from : BAD_NODES ]
 
 \* @type: Set(MSG);
-Messages == Bad_messages \cup
-    [ type : {"conn", "meta", "ack"}, peers : {{}}, from : GOOD_NODES ] \cup
+Good_messages == [ type : {"conn", "meta", "ack"}, peers : {{}}, from : GOOD_NODES ] \cup
     [ type : {"nack"}, peers : SUBSET Nodes, from : GOOD_NODES ]
+
+\* @type: Set(MSG);
+Messages == Bad_messages \cup Good_messages
 
 \* @type: (Int) => Int;
 Num_connections(g) == Cardinality(connections[g])
@@ -99,6 +101,9 @@ Blacklisted(g, n) == n \in blacklist[g]
 Connected(g, h) == g \in connections[h] /\ h \in connections[g]
 
 PeerSaturated == \A n \in Nodes : Cardinality(peers[n]) + Cardinality(blacklist[n]) >= MIN_PEERS
+
+\* @type: (Int) => Set(Int);
+PeerSets(n) == { ns \in SUBSET (Nodes \ {n}) : Cardinality(ns) >= MIN_PEERS }
 
 (***********)
 (* Actions *)
@@ -354,16 +359,14 @@ Timeout == \E g \in GOOD_NODES :
     /\ \/ \E n \in in_progress[g] : exit_handshaking(g, n)
        \/ \E n \in connections[g] : g \notin connections[n] /\ exit_handshaking(g, n)
 
-\* @type: (Int, Set(Int)) => Bool;
-init_peers(n, ps) ==
+\* @type: (Int) => Bool;
+init_peers(n) == \E ps \in PeerSets(n) :
     /\ peers' = [ peers EXCEPT ![n] = ps ]
     /\ UNCHANGED <<blacklist, connections, messages, recv_ack, recv_conn, recv_meta, sent_ack, sent_conn, sent_meta, in_progress>>
 
 InitPeers == \E n \in Nodes :
-    \E ps \in SUBSET (Nodes \ {n}) :
-        /\ peers[n] = {}
-        /\ Cardinality(ps) >= MIN_PEERS
-        /\ init_peers(n, ps)
+    /\ peers[n] = {}
+    /\ init_peers(n)
 
 (*****************)
 (* Specification *)

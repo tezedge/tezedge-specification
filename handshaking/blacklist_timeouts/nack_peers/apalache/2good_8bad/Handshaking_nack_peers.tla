@@ -104,6 +104,9 @@ Connected(g, h) == g \in connections[h] /\ h \in connections[g]
 
 PeerSaturated == \A n \in Nodes : Cardinality(peers[n]) + Cardinality(blacklist[n]) >= MIN_PEERS
 
+\* @type: (Int) => Set(Int);
+PeerSets(n) == { ns \in SUBSET (Nodes \ {n}) : Cardinality(ns) >= MIN_PEERS }
+
 (***********)
 (* Actions *)
 (***********)
@@ -358,16 +361,14 @@ Timeout == \E g \in GOOD_NODES :
     /\ \/ \E n \in in_progress[g] : exit_handshaking(g, n)
        \/ \E n \in connections[g] : g \notin connections[n] /\ exit_handshaking(g, n)
 
-\* @type: (Int, Set(Int)) => Bool;
-init_peers(n, ps) ==
+\* @type: (Int) => Bool;
+init_peers(n) == \E ps \in PeerSets(n) :
     /\ peers' = [ peers EXCEPT ![n] = ps ]
     /\ UNCHANGED <<blacklist, connections, messages, recv_ack, recv_conn, recv_meta, sent_ack, sent_conn, sent_meta, in_progress>>
 
 InitPeers == \E n \in Nodes :
-    \E ps \in SUBSET (Nodes \ {n}) :
-        /\ peers[n] = {}
-        /\ Cardinality(ps) >= MIN_PEERS
-        /\ init_peers(n, ps)
+    /\ peers[n] = {}
+    /\ init_peers(n)
 
 (*****************)
 (* Specification *)

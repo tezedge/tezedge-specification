@@ -3,11 +3,11 @@
 EXTENDS FiniteSets, Naturals
 
 CONSTANTS
-    BAD_NODES,   \* set of byzantine nodes
-    GOOD_NODES,  \* set of nodes who follow the protocol
-    MIN,         \* minimum number of connections
-    MAX,         \* maximum number of connections
-    MIN_PEERS    \* minimum number of initial peers for each node
+    BAD_NODES,  \* byzantine nodes
+    GOOD_NODES, \* nodes who follow the protocol
+    MIN,        \* minimum desired connections
+    MAX,        \* maximum desired connections
+    MIN_PEERS   \* minimum number of peers obtained from DNS
 
 VARIABLES
     blacklist,   \* each node's set of blacklisted peers
@@ -20,7 +20,7 @@ VARIABLES
     sent_ack,    \* each node's set of peers to whom they have sent an ack message
     sent_conn,   \* each node's set of peers to whom they have sent a connection message
     sent_meta,   \* each node's set of peers to whom they have sent a metadata message
-    in_progress  \* each node's set of peers with whom they are exchanging messages
+    in_progress  \* each node's set of peers with whom they are actively establishing a connection
 
 vars == <<blacklist, connections, messages, peers, recv_ack, recv_conn, recv_meta, sent_ack, sent_conn, sent_meta, in_progress>>
 
@@ -40,8 +40,6 @@ ASSUME MIN_PEERS \in Nat /\ MIN <= MIN_PEERS
 (* Helpers *)
 (***********)
 
-\* TODO remove peers from non-peer-passing messages
-
 conn_msg(from) == [ type |-> "conn", from |-> from ]
 
 meta_msg(from) == [ type |-> "meta", from |-> from ]
@@ -58,8 +56,8 @@ Bad(n) == n \in BAD_NODES
 
 Bad_messages == [ type : {"conn", "meta", "ack", "nack", "bad"}, from : BAD_NODES ]
 
-Good_messages == [ type : {"nack"}, peers : SUBSET Nodes, from : GOOD_NODES ] \cup
-    [ type : {"conn", "meta", "ack", "nack"}, from : GOOD_NODES ]
+Good_messages == [ type : {"conn", "meta", "ack", "nack"}, from : GOOD_NODES ] \cup
+    [ type : {"conn", "meta", "ack", "nack"}, peers : SUBSET Nodes, from : GOOD_NODES ]
 
 Messages == Bad_messages \cup Good_messages
 
@@ -72,6 +70,8 @@ Blacklisted(g, n) == n \in blacklist[g]
 Connected(g, h) == g \in connections[h] /\ h \in connections[g]
 
 PeerSaturated == \A n \in Nodes : Cardinality(peers[n]) + Cardinality(blacklist[n]) >= MIN_PEERS
+
+PeerSets(n) == { ns \in SUBSET (Nodes \ {n}) : Cardinality(ns) >= MIN_PEERS }
 
 (***********)
 (* Actions *)
@@ -320,15 +320,13 @@ Timeout == \E g \in GOOD_NODES :
     /\ \/ \E n \in in_progress[g] : exit_handshaking(g, n)
        \/ \E n \in connections[g] : g \notin connections[n] /\ exit_handshaking(g, n)
 
-init_peers(n, ps) ==
+init_peers(n) == \E ps \in PeerSets(n) :
     /\ peers' = [ peers EXCEPT ![n] = ps ]
     /\ UNCHANGED <<blacklist, connections, messages, recv_ack, recv_conn, recv_meta, sent_ack, sent_conn, sent_meta, in_progress>>
 
 InitPeers == \E n \in Nodes :
-    \E ps \in SUBSET (Nodes \ {n}) :
-        /\ peers[n] = {}
-        /\ Cardinality(ps) >= MIN_PEERS
-        /\ init_peers(n, ps)
+    /\ peers[n] = {}
+    /\ init_peers(n)
 
 (*****************)
 (* Specification *)
