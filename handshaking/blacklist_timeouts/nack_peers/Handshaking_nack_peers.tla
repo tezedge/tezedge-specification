@@ -3,24 +3,24 @@
 EXTENDS FiniteSets, Naturals
 
 CONSTANTS
-    BAD_NODES,
-    GOOD_NODES,
-    MIN,
-    MAX,
-    MIN_PEERS
+    BAD_NODES,   \* set of byzantine nodes
+    GOOD_NODES,  \* set of nodes who follow the protocol
+    MIN,         \* minimum number of connections
+    MAX,         \* maximum number of connections
+    MIN_PEERS    \* minimum number of initial peers for each node
 
 VARIABLES
-    blacklist,
-    connections,
-    messages,
-    peers,
-    recv_ack,
-    recv_conn,
-    recv_meta,
-    sent_ack,
-    sent_conn,
-    sent_meta,
-    in_progress
+    blacklist,   \* each node's set of blacklisted peers
+    connections, \* each node's set of connections
+    messages,    \* each node's set of messages
+    peers,       \* each node's set of peers
+    recv_ack,    \* each node's set of peers from whom they have received an ack message
+    recv_conn,   \* each node's set of peers from whom they have received a connection message
+    recv_meta,   \* each node's set of peers from whom they have received a metadata message
+    sent_ack,    \* each node's set of peers to whom they have sent an ack message
+    sent_conn,   \* each node's set of peers to whom they have sent a connection message
+    sent_meta,   \* each node's set of peers to whom they have sent a metadata message
+    in_progress  \* each node's set of peers with whom they are exchanging messages
 
 vars == <<blacklist, connections, messages, peers, recv_ack, recv_conn, recv_meta, sent_ack, sent_conn, sent_meta, in_progress>>
 
@@ -40,13 +40,15 @@ ASSUME MIN_PEERS \in Nat /\ MIN <= MIN_PEERS
 (* Helpers *)
 (***********)
 
-conn_msg(from) == [ type |-> "conn", peers |-> {}, from |-> from ]
+\* TODO remove peers from non-peer-passing messages
 
-meta_msg(from) == [ type |-> "meta", peers |-> {}, from |-> from ]
+conn_msg(from) == [ type |-> "conn", from |-> from ]
 
-ack_msg(from) == [ type |-> "ack", peers |-> {}, from |-> from ]
+meta_msg(from) == [ type |-> "meta", from |-> from ]
 
-nack_msg(from) == [ type |-> "nack", peers |-> {}, from |-> from ]
+ack_msg(from) == [ type |-> "ack", from |-> from ]
+
+nack_msg(from) == [ type |-> "nack", from |-> from ]
 
 nack_peers_msg(from, ps) == [ type |-> "nack", from |-> from, peers |-> ps ]
 
@@ -54,10 +56,12 @@ Nodes == BAD_NODES \cup GOOD_NODES
 
 Bad(n) == n \in BAD_NODES
 
-Bad_messages == [ type : {"conn", "meta", "ack", "nack", "bad"}, peers : {{}}, from : BAD_NODES ]
+Bad_messages == [ type : {"conn", "meta", "ack", "nack", "bad"}, from : BAD_NODES ]
 
-Messages == Bad_messages \cup
-    [ type : {"conn", "meta", "ack", "nack"}, peers : SUBSET Nodes, from : GOOD_NODES ]
+Good_messages == [ type : {"nack"}, peers : SUBSET Nodes, from : GOOD_NODES ] \cup
+    [ type : {"conn", "meta", "ack", "nack"}, from : GOOD_NODES ]
+
+Messages == Bad_messages \cup Good_messages
 
 Num_connections(g) == Cardinality(connections[g])
 

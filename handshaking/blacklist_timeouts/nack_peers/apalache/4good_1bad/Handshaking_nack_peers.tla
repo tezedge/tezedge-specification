@@ -19,7 +19,8 @@ VARIABLES
     blacklist,
     \* @type: Int -> Set(Int);
     connections,
-    \* @type: Int -> Set([from: Int, peers: Set(Int), type: Str]);
+    (* @typeDef MSG = [from: Int, peers: Set(Int), type: Str]
+       @type: Int -> Set(MSG); *)
     messages,
     \* @type: Int -> Set(Int);
     peers,
@@ -56,19 +57,19 @@ ASSUME MIN_PEERS \in Nat /\ MIN <= MIN_PEERS
 (* Helpers *)
 (***********)
 
-\* @type: (Int) => [from: Int, peers: Set(Int), type: Str];
+\* @type: (Int) => MSG;
 conn_msg(from) == [ type |-> "conn", peers |-> {}, from |-> from ]
 
-\* @type: (Int) => [from: Int, peers: Set(Int), type: Str];
+\* @type: (Int) => MSG;
 meta_msg(from) == [ type |-> "meta", peers |-> {}, from |-> from ]
 
-\* @type: (Int) => [from: Int, peers: Set(Int), type: Str];
+\* @type: (Int) => MSG;
 ack_msg(from) == [ type |-> "ack", peers |-> {}, from |-> from ]
 
-\* @type: (Int) => [from: Int, peers: Set(Int), type: Str];
+\* @type: (Int) => MSG;
 nack_msg(from) == [ type |-> "nack", peers |-> {}, from |-> from ]
 
-\* @type: (Int, Set(Int)) => [from: Int, peers: Set(Int), type: Str];
+\* @type: (Int, Set(Int)) => MSG;
 nack_peers_msg(from, ps) == [ type |-> "nack", from |-> from, peers |-> ps ]
 
 \* @type: Set(Int);
@@ -77,10 +78,10 @@ Nodes == BAD_NODES \cup GOOD_NODES
 \* @type: (Int) => Bool;
 Bad(n) == n \in BAD_NODES
 
-\* @type: Set([from: Int, peers: Set(Int), type: Str]);
+\* @type: Set(MSG);
 Bad_messages == [ type : {"conn", "meta", "ack", "nack", "bad"}, peers : {{}}, from : BAD_NODES ]
 
-\* @type: Set([from: Int, peers: Set(Int), type: Str]);
+\* @type: Set(MSG);
 Messages == Bad_messages \cup
     [ type : {"conn", "meta", "ack"}, peers : {{}}, from : GOOD_NODES ] \cup
     [ type : {"nack"}, peers : SUBSET Nodes, from : GOOD_NODES ]
@@ -184,7 +185,7 @@ RespondToConnectionMessage == \E g \in GOOD_NODES :
 
 \* meta messages
 
-\* @type: (Int, Int, [from: Int, peers: Set(Int), type: Str]) => Bool;
+\* @type: (Int, Int, MSG) => Bool;
 exchange_meta(g, n, msg) ==
     LET type == msg.type IN
     IF n \in sent_meta[g]
@@ -216,7 +217,7 @@ ExchangeMeta == \E g \in GOOD_NODES :
 
 \* ack/nack messages
 
-\* @type: (Int, Int, [from: Int, peers: Set(Int), type: Str]) => Bool;
+\* @type: (Int, Int, MSG) => Bool;
 exchange_ack(g, n, msg) ==
     LET type == msg.type IN
     IF n \in sent_ack[g]
@@ -247,7 +248,7 @@ ExchangeAck == \E g \in GOOD_NODES :
         /\ n \in in_progress[g]
         /\ exchange_ack(g, n, msg)
 
-\* @type: (Int, Int, [from: Int, peers: Set(Int), type: Str]) => Bool;
+\* @type: (Int, Int, MSG) => Bool;
 nack_no_peers(g, n, msg) ==
     /\ blacklist' = [ blacklist EXCEPT ![g] = @ \cup {n} ]
     /\ connections' = [ connections EXCEPT ![g] = @ \ {n} ]
@@ -263,7 +264,7 @@ nack_no_peers(g, n, msg) ==
     /\ in_progress' = [ in_progress EXCEPT ![g] = @ \ {n} ]
     /\ UNCHANGED peers
 
-\* @type: (Int, Int, [from: Int, peers: Set(Int), type: Str], Set(Int)) => Bool;
+\* @type: (Int, Int, MSG, Set(Int)) => Bool;
 nack_peers(g, n, msg, ps) ==
     /\ blacklist' = [ blacklist EXCEPT ![g] = @ \cup {n} ]
     /\ connections' = [ connections EXCEPT ![g] = @ \ {n} ]

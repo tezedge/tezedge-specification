@@ -52,11 +52,12 @@ Nodes == BAD_NODES \cup GOOD_NODES
 
 Bad(n) == n \in BAD_NODES
 
-Bad_messages == [ type : {"conn", "meta", "ack", "nack", "bad"}, peers : {{}}, from : BAD_NODES ]
+Bad_messages == [ type : {"conn", "meta", "ack", "nack", "bad"}, from : BAD_NODES ]
 
-Messages == Bad_messages \cup
-    [ type : {"conn", "meta", "ack"}, peers : {{}}, from : GOOD_NODES ] \cup
-    [ type : {"nack"}, peers : SUBSET Nodes, from : GOOD_NODES ]
+Good_messages == [ type : {"nack"}, peers : SUBSET Nodes, from : GOOD_NODES ] \cup
+    [ type : {"conn", "meta", "ack", "nack"}, from : GOOD_NODES ]
+
+Messages == Bad_messages \cup Good_messages
 
 Num_connections(g) == Cardinality(connections[g])
 
