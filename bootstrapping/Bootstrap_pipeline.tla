@@ -10,13 +10,12 @@ CONSTANTS
     MIN_PEERS,          \* minimum number of peers
     MAX_PEERS,          \* maximum number of peers
     MAX_LEVEL,          \* maximum level of a block
-    NODE_MEMPOOL,       \* each good node's mempool
-    CURRENT_HEAD        \* each good node's current head
+    CURRENT_HEAD,       \* each good node's current head
+    BLOCKS              \* each good node's blocks
 
 VARIABLES
     b_blacklist,        \* each good bootstrapping node's set of blacklisted peers
     b_messages,         \* each good bootstrapping node's set of messages
-    mempool,            \* each good bootstrapping node's mempool
     n_blacklist,        \* each good node's set of blacklisted peers
     n_messages          \* each good node's set of messages
 
@@ -84,7 +83,7 @@ n_non_op_vars == <<activated, sent_branch, sent_head, sent_headers, recv_get_bra
 
 node_nonservice_vars == <<activated, sent_branch, sent_head, sent_headers, sent_ops, recv_get_branch, recv_get_head, recv_get_headers, recv_get_ops>>
 
-vars == <<messages, mempool, blacklist, bootstrapping_vars, node_vars>>
+vars == <<messages, blacklist, bootstrapping_vars, node_vars>>
 
 ----
 
@@ -103,6 +102,36 @@ ASSUME
 (* Helpers *)
 (***********)
 
+NESeq(s) == Seq(s) \ {<<>>}
+
+Seq_n(s) == { seq \in Seq(s) : Len(s) < MAX_LEVEL }
+
+ToSet(seq) == { seq[i] : i \in DOMAIN seq }
+
+Cons(x, seq) == <<x>> \o seq
+
+RECURSIVE seq_of_set(_, _)
+seq_of_set(s, acc) ==
+    IF s = {} THEN acc
+    ELSE
+        LET x == CHOOSE xx \in s : TRUE
+            t == s \ {x}
+        IN
+        seq_of_set(t, Append(acc, x))
+
+SetToSeq(s) == seq_of_set(s, <<>>)
+
+RECURSIVE index(_, _, _)
+index(x, seq, i) ==
+    IF seq = <<>> THEN 0
+    ELSE
+        IF x = Head(seq) THEN i + 1
+        ELSE index(x, Tail(seq), i + 1)
+
+Index(x, seq) == index(x, seq, 0)
+
+----
+
 Nodes == BAD_NODES \cup GOOD_NODES
 
 N == Cardinality(Nodes)
@@ -111,20 +140,14 @@ Bootstrapping_nodes == BAD_BOOTSTRAPPING \cup GOOD_BOOTSTRAPPING
 
 ConnectionSets == { ps \in SUBSET Nodes : Cardinality(ps) >= MIN_PEERS /\ Cardinality(ps) <= MAX_PEERS }
 
-NESeq(s) == Seq(s) \ {<<>>}
-
-Seq_n(s) == { seq \in Seq(s) : Len(s) < MAX_LEVEL }
-
-ToSet(seq) == { seq[i] : i \in DOMAIN seq }
-
-Headers == [ level : Nat, fitness : Nat ] \* TODO fitness
+Headers == [ level : Nat, pred : Nat, fitness : Nat ] \* TODO fitness
 
 \* head has higher level, end has lower level
 Steps == [ head : Nat, end : Nat ]
 
 Locators == [ current_head : Headers, history : Seq_n(Nat) ]
 
-Operations == [ block : Nat, op : Nat ]
+Operations == [ block_hash : Nat, op : Nat ]
 
 Blocks == [ header : Headers, ops : Operations ]
 
@@ -140,6 +163,12 @@ has_sent_header(n, bn) == sent_headers[n][bn] /= {}
 
 has_sent_operation(n, bn) == sent_ops[n][bn] /= {}
 
+\* block/header hash
+hash(hd) == Index(hd, SetToSeq(Headers))
+
+\* operation hash
+op_hash(op) == <<op.block_hash, op.op>>
+
 (************)
 (* messages *)
 (************)
@@ -147,30 +176,25 @@ has_sent_operation(n, bn) == sent_ops[n][bn] /= {}
 \* good requests
 GetCurrentBranchMessages == [ type : {"Get_current_branch"}, from : GOOD_BOOTSTRAPPING ]
 
-GetCurrentHeadMessages == [ type : {"Get_current_head"}, from : GOOD_BOOTSTRAPPING ]
-
 GetBlockHeadersMessages == [ type : {"Get_block_headers"}, from : GOOD_BOOTSTRAPPING, hashes : NESeq(Nat) ]
 
 GetOperationsMessages == [ type : {"Get_operations"}, from : GOOD_BOOTSTRAPPING, blocks : NESeq(Nat) ]
 
-GoodGetMessages == GetCurrentBranchMessages \cup GetCurrentHeadMessages \cup GetBlockHeadersMessages \cup GetOperationsMessages
+GoodGetMessages == GetCurrentBranchMessages \cup GetBlockHeadersMessages \cup GetOperationsMessages
 
 \* bad requests
 BadGetMessages ==
     LET BadGetCurrentBranch == [ type : {"Get_current_branch"}, from : BAD_BOOTSTRAPPING ]
-        BadGetCurrentHead   == [ type : {"Get_current_head"}, from : BAD_BOOTSTRAPPING ]
         BadGetBlockHeaders  == [ type : {"Get_block_headers"}, from : BAD_BOOTSTRAPPING, hashes : NESeq(Nat) ]
         BadGetOperations    == [ type : {"Get_operations"}, from : BAD_BOOTSTRAPPING, blocks : NESeq(Nat) ]
         Bad                 == [ type : {"bad"}, from : BAD_BOOTSTRAPPING ]
-    IN BadGetCurrentBranch \cup BadGetCurrentHead \cup BadGetBlockHeaders \cup BadGetOperations \cup Bad
+    IN BadGetCurrentBranch \cup BadGetBlockHeaders \cup BadGetOperations \cup Bad
 
 \* all requests
 GetMessages == GoodGetMessages \cup BadGetMessages
 
 \* request constructors
 get_current_branch_msg(n) == [ type |-> "Get_current_branch", from |-> n ]
-
-get_current_head_msg(n) == [ type |-> "Get_current_head", from |-> n ]
 
 get_block_headers_msg(n, hs) == [ type |-> "Get_block_headers", from |-> n, hashes |-> hs ]
 
@@ -179,8 +203,6 @@ get_operations_msg(n, bs) == [ type |-> "Get_operations", from |-> n, blocks |->
 \* sets of message types
 current_branch_msgs(n) == { msg \in b_messages[n] : msg.type = "Current_branch" }
 
-current_head_msgs(n) == { msg \in b_messages[n] : msg.type = "Current_head" }
-
 block_header_msgs(n) == { msg \in b_messages[n] : msg.type = "Block_header" }
 
 operation_msgs(n) == { msg \in b_messages[n] : msg.type = "Operation" }
@@ -188,22 +210,19 @@ operation_msgs(n) == { msg \in b_messages[n] : msg.type = "Operation" }
 \* good responses
 CurrentBranchMessages == [ type : {"Current_branch"}, from : GOOD_NODES, locator : Locators ]
 
-CurrentHeadMessages == [ type : {"Current_head"}, from : GOOD_NODES, header : Headers, mempool : Mempool ]
-
 BlockHeaderMessages == [ type : {"Block_header"}, from : GOOD_NODES, header : Headers ]
 
 OperationsMessages == [ type : {"Operation"}, from : GOOD_NODES, operation : Operations ]
 
-GoodResponseMessages == CurrentBranchMessages \cup CurrentHeadMessages \cup BlockHeaderMessages \cup OperationsMessages
+GoodResponseMessages == CurrentBranchMessages \cup BlockHeaderMessages \cup OperationsMessages
 
 \* bad responses
 BadResponseMessages ==
     LET BadCurrentBranch == [ type : {"Current_branch"}, from : BAD_NODES, locator : Locators ]
-        BadCurrentHead   == [ type : {"Current_head"}, from : BAD_NODES, mempool : Mempool ]
         BadBlockHeader   == [ type : {"Block_header"}, from : BAD_NODES, header : Headers ]
         BadOperations    == [ type : {"Operation"}, from : BAD_NODES, operation : Operations ]
         Bad              == [ type : {"bad"}, from : BAD_NODES ]
-    IN BadCurrentBranch \cup BadCurrentHead \cup BadBlockHeader \cup BadOperations \cup Bad
+    IN BadCurrentBranch \cup BadBlockHeader \cup BadOperations \cup Bad
 
 \* all responses
 ResponseMessages == GoodResponseMessages \cup BadResponseMessages
@@ -211,16 +230,12 @@ ResponseMessages == GoodResponseMessages \cup BadResponseMessages
 \* response constructors
 current_branch_msg(n, l) == [ type |-> "Current_branch", from |-> n, locator |-> l ]
 
-current_head_msg(n, hd, mp) == [ type |-> "Current_head", from |-> n, header |-> hd, mempool |-> mp ]
-
 block_header_msg(n, hd) == [ type |-> "Block_header", from |-> n, header |-> hd ]
 
 operation_msg(n, op) == [ type |-> "Operation", from |-> n, operation |-> op ]
 
 \* sets of message types
 get_current_branch_msgs(n) == { msg \in n_messages[n] : msg.type = "Get_current_branch" }
-
-get_current_head_msgs(n) == { msg \in n_messages[n] : msg.type = "Get_current_head" }
 
 get_block_headers_msgs(n) == { msg \in n_messages[n] : msg.type = "Get_block_headers" }
 
@@ -280,29 +295,17 @@ Drop_b(bn, msg) == b_messages' = [ b_messages EXCEPT ![bn] = @ \ {msg}]
 send_get_current_branch(bn, n) ==
     /\ Send_n(n, get_current_branch_msg(bn))
     /\ sent_get_branch' = [ sent_get_branch EXCEPT ![bn] = @ \cup {n} ]
-    /\ UNCHANGED <<b_messages, blacklist, mempool, node_vars, b_non_branch_vars, recv_branch>>
+    /\ UNCHANGED <<b_messages, blacklist, node_vars, b_non_branch_vars, recv_branch>>
 
 SendGetCurrentBranch == \E bn \in GOOD_BOOTSTRAPPING :
     \E n \in connections[bn] :
         /\ n \notin sent_get_branch[bn]
         /\ send_get_current_branch(bn, n)
 
-send_get_current_head(bn, n) ==
-    /\ Send_n(n, get_current_head_msg(bn))
-    /\ sent_get_head' = [ sent_get_head EXCEPT ![bn] = @ \cup {n} ]
-    /\ UNCHANGED <<b_messages, blacklist, mempool, node_vars, b_non_head_vars, recv_head>>
-
-SendGetCurrentHead == \E bn \in GOOD_BOOTSTRAPPING :
-    \E n \in connections[bn] :
-        /\ n \in sent_get_branch[bn]
-        /\ n \in recv_branch[bn]
-        /\ n \notin sent_get_head[bn]
-        /\ send_get_current_head(bn, n)
-
 send_get_block_headers(bn, n, hs) ==
     /\ Send_n(n, get_block_headers_msg(bn, hs))
     /\ sent_get_headers' = [ sent_get_headers EXCEPT ![bn][n] = @ \cup ToSet(hs) ]
-    /\ UNCHANGED <<b_messages, blacklist, mempool, node_vars, b_non_header_vars, recv_header>>
+    /\ UNCHANGED <<b_messages, blacklist, node_vars, b_non_header_vars, recv_header>>
 
 SendGetBlockHeaders == \E bn \in GOOD_BOOTSTRAPPING :
     \E n \in connections[bn] :
@@ -317,7 +320,7 @@ SendGetBlockHeaders == \E bn \in GOOD_BOOTSTRAPPING :
 send_get_operations(bn, n, bs) ==
     /\ Send_n(n, get_operations_msg(bn, bs))
     /\ sent_get_ops' = [ sent_get_ops EXCEPT ![bn][n] = @ \cup ToSet(bs) ]
-    /\ UNCHANGED <<b_messages, blacklist, mempool, node_vars, b_non_op_vars, recv_ops>>
+    /\ UNCHANGED <<b_messages, blacklist, node_vars, b_non_op_vars, recv_ops>>
 
 \* TODO which headers to request operations for?
 SendGetOperations == \E bn \in GOOD_BOOTSTRAPPING :
@@ -341,15 +344,7 @@ HandleGetCurrentBranch == \E n \in GOOD_NODES :
         /\ Drop_n(n, msg)
         /\ Send_b(bn, current_branch_msg(n, [ current_head |-> {}, history |-> <<>> ]))
         /\ sent_branch' = [ sent_branch EXCEPT ![n] = @ \cup {bn} ]
-        /\ UNCHANGED <<blacklist, mempool, bootstrapping_vars, n_non_branch_vars, recv_get_branch>>
-
-HandleGetCurrentHead == \E n \in GOOD_NODES :
-    \E msg \in get_current_head_msgs(n) :
-        LET bn == msg.from IN
-        /\ Drop_n(n, msg)
-        /\ Send_b(bn, current_head_msg(n, CURRENT_HEAD[n], NODE_MEMPOOL[n]))
-        /\ sent_head' = [ sent_head EXCEPT ![n] = @ \cup {bn} ]
-        /\ UNCHANGED <<blacklist, mempool, bootstrapping_vars, n_non_head_vars, recv_get_head>>
+        /\ UNCHANGED <<blacklist, bootstrapping_vars, n_non_branch_vars, recv_get_branch>>
 
 HandleGetBlockHeaders == \E n \in GOOD_NODES :
     \E msg \in get_block_headers_msgs(n) :
@@ -358,7 +353,7 @@ HandleGetBlockHeaders == \E n \in GOOD_NODES :
         IN
         /\ Drop_n(n, msg)
         /\ servicing_headers' = [ servicing_headers EXCEPT ![n][bn] = Append(hs, @) ]
-        /\ UNCHANGED <<b_messages, blacklist, mempool, bootstrapping_vars, node_nonservice_vars, servicing_ops>>
+        /\ UNCHANGED <<b_messages, blacklist, bootstrapping_vars, node_nonservice_vars, servicing_ops>>
 
 HandleGetOperations == \E n \in GOOD_NODES :
     \E msg \in get_operations_msgs(n) :
@@ -367,7 +362,7 @@ HandleGetOperations == \E n \in GOOD_NODES :
         IN
         /\ Drop_n(n, msg)
         /\ servicing_ops' = [ servicing_ops EXCEPT ![n][bn] = Append(bs, @) ]
-        /\ UNCHANGED <<b_messages, blacklist, mempool, bootstrapping_vars, node_nonservice_vars, servicing_headers>>
+        /\ UNCHANGED <<b_messages, blacklist, bootstrapping_vars, node_nonservice_vars, servicing_headers>>
 
 \* bootstrapping node handle messagesresponses
 HandleCurrentBranch == \E bn \in GOOD_BOOTSTRAPPING :
@@ -378,23 +373,9 @@ HandleCurrentBranch == \E bn \in GOOD_BOOTSTRAPPING :
         /\ Drop_b(bn, msg)
         /\ locators' = [ locators EXCEPT ![bn][n] = l ]
         /\ recv_branch' = [ recv_branch EXCEPT ![bn] = @ \cup {n} ]
-        /\ UNCHANGED <<n_messages, blacklist, mempool, node_vars>>
+        /\ UNCHANGED <<n_messages, blacklist, node_vars>>
         /\ UNCHANGED <<connections, fetched_headers, fetched_operations, validated_blocks, header_pipe, operation_pipe,
                        sent_get_branch, sent_get_head, sent_get_headers, sent_get_ops, recv_head, recv_header, recv_ops>>
-
-HandleCurrentHead == \E bn \in GOOD_BOOTSTRAPPING :
-    \E msg \in current_head_msgs(bn) :
-        LET n == msg.from
-            h == msg.header
-            m == msg.mempool
-        IN
-        /\ Drop_b(bn, msg)
-        /\ fetched_headers' = [ fetched_headers EXCEPT ![bn] = <<h>> \o @ ] \* TODO
-        \* TODO mempool' = [ mempool EXCEPT ![bn] = Merge(@, m) ]
-        /\ recv_head' = [ recv_head EXCEPT ![bn] = @ \cup {n} ]
-        /\ UNCHANGED <<n_messages, blacklist, NODE_MEMPOOL, node_vars>>
-        /\ UNCHANGED <<connections, locators, fetched_operations, validated_blocks, header_pipe, operation_pipe,
-                       sent_get_branch, sent_get_head, sent_get_headers, sent_get_ops, recv_branch, recv_header, recv_ops>>
 
 \* TODO
 
@@ -412,7 +393,7 @@ ServeHeader == \E n \in GOOD_NODES, bn \in Bootstrapping_nodes :
         /\ Send_b(bn, block_header_msg(n, hd))
         /\ sent_headers' = [ sent_headers EXCEPT ![n][bn] = @ \o <<hd>> ]
         /\ servicing_headers' = [ servicing_headers EXCEPT ![n][bn] = Tail(@) ]
-        /\ UNCHANGED <<n_messages, blacklist, mempool, node_nonservice_vars, servicing_ops, bootstrapping_vars>>
+        /\ UNCHANGED <<n_messages, blacklist, node_nonservice_vars, servicing_ops, bootstrapping_vars>>
 
 ServeOperation == \E n \in GOOD_NODES, bn \in Bootstrapping_nodes :
     LET ops == servicing_ops[n][bn] IN
@@ -421,7 +402,7 @@ ServeOperation == \E n \in GOOD_NODES, bn \in Bootstrapping_nodes :
         /\ Send_b(bn, operation_msg(n, op))
         /\ sent_ops' = [ sent_ops EXCEPT ![n][bn] = @ \o <<op>> ]
         /\ servicing_ops' = [ servicing_ops EXCEPT ![n][bn] = Tail(@) ]
-        /\ UNCHANGED <<n_messages, blacklist, mempool, node_nonservice_vars, servicing_headers, bootstrapping_vars>>
+        /\ UNCHANGED <<n_messages, blacklist, node_nonservice_vars, servicing_headers, bootstrapping_vars>>
 
 \* nodes form blocks from fetched headers and operations
 
@@ -462,8 +443,6 @@ BlacklistInit ==
     /\ b_blacklist = [ n \in GOOD_BOOTSTRAPPING  |-> {} ]
     /\ n_blacklist = [ n \in GOOD_NODES |-> {} ]
 
-MempoolInit == mempool = [ n \in GOOD_BOOTSTRAPPING |-> {} ]
-
 \* bootstrapping_vars == <<connections, locators, fetched_headers, fetched_operations, validated_blocks, header_pipe, operation_pipe,
 \* sent_get_branch, sent_get_head, sent_get_headers, sent_get_ops, recv_branch, recv_head, recv_header, recv_ops>>
 BootstrappingInit ==
@@ -499,7 +478,6 @@ NodeInit ==
 
 Init ==
     /\ NodeInit
-    /\ MempoolInit
     /\ MessagesInit
     /\ BlacklistInit
     /\ BootstrappingInit
@@ -512,11 +490,9 @@ Init ==
 
 Next ==
     \/ SendGetCurrentBranch
-    \/ SendGetCurrentHead
     \/ SendGetBlockHeaders
     \/ SendGetOperations
     \/ HandleCurrentBranch
-    \/ HandleCurrentHead
     \/ HandleBlockHeader
     \/ HandleOperation
     \/ ServeHeader
@@ -550,8 +526,6 @@ MessagesOK ==
     /\ b_messages \in [ GOOD_BOOTSTRAPPING -> SUBSET ResponseMessages ]
     /\ n_messages \in [ GOOD_NODES -> SUBSET GetMessages ]
 
-MempoolOK == mempool \in [ GOOD_BOOTSTRAPPING -> SUBSET Mempool ]
-
 BootstrappingOK ==
     /\ connections        \in [ GOOD_BOOTSTRAPPING -> SUBSET Nodes ]
     /\ locators           \in [ GOOD_BOOTSTRAPPING -> Seq_n(Steps) ]
@@ -584,7 +558,6 @@ NodesOK ==
 
 TypeOK ==
     /\ NodesOK
-    /\ MempoolOK
     /\ MessagesOK
     /\ BlacklistOK
     /\ BootstrappingOK
