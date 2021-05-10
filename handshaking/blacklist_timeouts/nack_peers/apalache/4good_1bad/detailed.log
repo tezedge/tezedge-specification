@@ -177,3 +177,29 @@
 05:30:51.328 [main] INFO  a.f.a.t.Tool$ - Checker has found an error
 05:30:51.328 [main] INFO  a.f.a.t.Tool$ - It took me 0 days  0 hours  0 min  6 sec
 05:30:51.328 [main] INFO  a.f.a.t.Tool$ - Total time: 6.948 sec
+00:08:11.606 [main] INFO  a.f.a.t.Tool$ - Type checking Handshaking_nack_peers.tla
+00:08:11.787 [main] INFO  a.f.a.i.p.PassChainExecutor - PASS #0: SanyParser
+00:08:12.580 [main] DEBUG a.f.a.i.p.PassChainExecutor - PASS #0: SanyParser [OK]
+00:08:12.581 [main] INFO  a.f.a.i.p.PassChainExecutor - PASS #1: TypeCheckerSnowcat
+00:08:12.581 [main] INFO  a.f.a.t.t.p.EtcTypeCheckerPassImpl -  > Running Snowcat .::.
+00:08:12.645 [main] DEBUG a.f.a.t.t.p.EtcTypeCheckerPassImpl -  > JSON output: /var/apalache/x/00.08-04.05.2021-933726812608427139/out-pre-TypeCheckerSnowcat.json
+00:08:12.791 [main] ERROR a.f.a.t.t.p.LoggingTypeCheckerListener - [Handshaking_nack_peers.tla:61:1-61:66]: Expected ((Int) => MSG) in conn_msg. Found: ((Int) => [from: Int, peers: Set(a1434), type: Str])
+00:08:12.809 [main] ERROR a.f.a.t.t.p.LoggingTypeCheckerListener - [Handshaking_nack_peers.tla:61:1-61:66]: Error when computing the type of conn_msg
+00:08:12.809 [main] INFO  a.f.a.t.t.p.EtcTypeCheckerPassImpl -  > Snowcat asks you to fix the types. Meow.
+00:08:12.810 [main] DEBUG a.f.a.i.p.PassChainExecutor - PASS #1: TypeCheckerSnowcat [FAIL]
+00:08:12.810 [main] INFO  a.f.a.t.Tool$ - Type checker [FAILED]
+00:08:12.810 [main] INFO  a.f.a.t.Tool$ - It took me 0 days  0 hours  0 min  1 sec
+00:08:12.810 [main] INFO  a.f.a.t.Tool$ - Total time: 1.205 sec
+00:10:27.651 [main] INFO  a.f.a.t.Tool$ - Type checking Handshaking_nack_peers.tla
+00:10:27.826 [main] INFO  a.f.a.i.p.PassChainExecutor - PASS #0: SanyParser
+00:10:28.595 [main] DEBUG a.f.a.i.p.PassChainExecutor - PASS #0: SanyParser [OK]
+00:10:28.595 [main] INFO  a.f.a.i.p.PassChainExecutor - PASS #1: TypeCheckerSnowcat
+00:10:28.595 [main] INFO  a.f.a.t.t.p.EtcTypeCheckerPassImpl -  > Running Snowcat .::.
+00:10:28.664 [main] DEBUG a.f.a.t.t.p.EtcTypeCheckerPassImpl -  > JSON output: /var/apalache/x/00.10-04.05.2021-12822226651335083807/out-pre-TypeCheckerSnowcat.json
+00:10:28.812 [main] ERROR a.f.a.t.t.p.LoggingTypeCheckerListener - [Handshaking_nack_peers.tla:61:1-61:66]: Expected ((Int) => MSG) in conn_msg. Found: ((Int) => [from: Int, peers: Set(a1434), type: Str])
+00:10:28.828 [main] ERROR a.f.a.t.t.p.LoggingTypeCheckerListener - [Handshaking_nack_peers.tla:61:1-61:66]: Error when computing the type of conn_msg
+00:10:28.828 [main] INFO  a.f.a.t.t.p.EtcTypeCheckerPassImpl -  > Snowcat asks you to fix the types. Meow.
+00:10:28.828 [main] DEBUG a.f.a.i.p.PassChainExecutor - PASS #1: TypeCheckerSnowcat [FAIL]
+00:10:28.828 [main] INFO  a.f.a.t.Tool$ - Type checker [FAILED]
+00:10:28.829 [main] INFO  a.f.a.t.Tool$ - It took me 0 days  0 hours  0 min  1 sec
+00:10:28.829 [main] INFO  a.f.a.t.Tool$ - Total time: 1.178 sec

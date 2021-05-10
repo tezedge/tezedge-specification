@@ -395,3 +395,165 @@ java.lang.OutOfMemoryError: Java heap space
 	at scala.collection.AbstractTraversable.map(Traversable.scala:108)
 02:11:58.371 [main] INFO  a.f.a.t.Tool$ - It took me 0 days  0 hours  8 min 23 sec
 02:11:58.371 [main] INFO  a.f.a.t.Tool$ - Total time: 503.523 sec
+00:16:54.155 [main] INFO  a.f.a.t.Tool$ - Checker options: filename=MC_safety_2good_8bad.tla, init=IndInv, next=, inv=IndInv
+00:16:54.608 [main] INFO  a.f.a.t.Tool$ - Tuning: 
+00:16:54.609 [main] INFO  a.f.a.i.p.PassChainExecutor - PASS #0: SanyParser
+00:16:55.397 [main] DEBUG a.f.a.i.p.PassChainExecutor - PASS #0: SanyParser [OK]
+00:16:55.397 [main] INFO  a.f.a.i.p.PassChainExecutor - PASS #1: TypeCheckerSnowcat
+00:16:55.397 [main] INFO  a.f.a.t.t.p.EtcTypeCheckerPassImpl -  > Running Snowcat .::.
+00:16:55.544 [main] DEBUG a.f.a.t.t.p.EtcTypeCheckerPassImpl -  > JSON output: /var/apalache/x/00.16-02.05.2021-2283573049146511051/out-pre-TypeCheckerSnowcat.json
+00:16:56.311 [main] INFO  a.f.a.t.t.p.EtcTypeCheckerPassImpl -  > Your types are great!
+00:16:56.311 [main] INFO  a.f.a.t.t.p.EtcTypeCheckerPassImpl -  > All expressions are typed
+00:16:56.421 [main] DEBUG a.f.a.t.t.p.EtcTypeCheckerPassImpl -  > JSON output: /var/apalache/x/00.16-02.05.2021-2283573049146511051/out-post-TypeCheckerSnowcat.json
+00:16:56.422 [main] DEBUG a.f.a.i.p.PassChainExecutor - PASS #1: TypeCheckerSnowcat [OK]
+00:16:56.422 [main] INFO  a.f.a.i.p.PassChainExecutor - PASS #2: ConfigurationPass
+00:16:56.425 [main] INFO  a.f.a.t.p.p.ConfigurationPassImpl -   > MC_safety_2good_8bad.cfg: Loading TLC configuration
+00:16:56.473 [main] INFO  a.f.a.t.p.p.ConfigurationPassImpl -   > MC_safety_2good_8bad.cfg: Using SPECIFICATION Spec
+00:16:56.473 [main] WARN  a.f.a.t.p.p.ConfigurationPassImpl -   > MC_safety_2good_8bad.cfg: Init operator is set in TLC config but overridden via --init command line option; using IndInv
+00:16:56.474 [main] INFO  a.f.a.t.p.p.ConfigurationPassImpl -   > Using the next predicate Next from the TLC config
+00:16:56.474 [main] INFO  a.f.a.t.p.p.ConfigurationPassImpl -   > MC_safety_2good_8bad.cfg: found INVARIANTS: TypeOK, NoSelfInteractions, GoodNodesOnlyConnectWithPeers, GoodNodesDoNotExceedMaxConnections, GoodNodesOnlyExchangeMessagesWithPeers, GoodNodesNeverHaveMessagesFromBlacklistedPeers, GoodNodesHaveExlcusiveInProgressAndConnections, GoodNodesOnlyConnectToNodesWithWhomTheyHaveExchangedAllMessages, GoodNodesOnlyExchangeMetaMessagesAfterSendingAndReceivingConnectionMessages, GoodNodesOnlyExchangeAckMessagesAfterSendingAndReceivingConnectionAndMetaMessages
+00:16:56.474 [main] WARN  a.f.a.t.p.p.ConfigurationPassImpl -   > Overriding with command line arguments: --inv IndInv
+00:16:56.475 [main] INFO  a.f.a.t.p.p.ConfigurationPassImpl -   > Set the initialization predicate to IndInv
+00:16:56.476 [main] INFO  a.f.a.t.p.p.ConfigurationPassImpl -   > Set the transition predicate to Next
+00:16:56.476 [main] INFO  a.f.a.t.p.p.ConfigurationPassImpl -   > Set an invariant to IndInv
+00:16:56.478 [main] INFO  a.f.a.t.p.ConstAndDefRewriter -   > Replaced CONSTANT BAD_NODES with Bad_nodes()
+00:16:56.478 [main] INFO  a.f.a.t.p.ConstAndDefRewriter -   > Replaced CONSTANT MIN with Min()
+00:16:56.478 [main] INFO  a.f.a.t.p.ConstAndDefRewriter -   > Replaced CONSTANT MAX with Max()
+00:16:56.478 [main] INFO  a.f.a.t.p.ConstAndDefRewriter -   > Replaced CONSTANT MIN_PEERS with Min_peers()
+00:16:56.479 [main] INFO  a.f.a.t.p.ConstAndDefRewriter -   > Replaced CONSTANT GOOD_NODES with Good_nodes()
+00:16:56.543 [main] DEBUG a.f.a.i.p.PassChainExecutor - PASS #2: ConfigurationPass [OK]
+00:16:56.543 [main] INFO  a.f.a.i.p.PassChainExecutor - PASS #3: DesugarerPass
+00:16:56.543 [main] INFO  a.f.a.t.p.p.DesugarerPassImpl -   > Desugaring...
+00:16:56.602 [main] DEBUG a.f.a.i.p.PassChainExecutor - PASS #3: DesugarerPass [OK]
+00:16:56.603 [main] INFO  a.f.a.i.p.PassChainExecutor - PASS #4: UnrollPass
+00:16:56.649 [main] INFO  a.f.a.t.p.p.UnrollPassImpl -   > Unroller
+00:16:56.713 [main] DEBUG a.f.a.i.p.PassChainExecutor - PASS #4: UnrollPass [OK]
+00:16:56.713 [main] INFO  a.f.a.i.p.PassChainExecutor - PASS #5: PrimingPass
+00:16:56.716 [main] INFO  a.f.a.t.a.p.PrimingPassImpl -   > Introducing IndInvPrimed for IndInv'
+00:16:56.766 [main] DEBUG a.f.a.i.p.PassChainExecutor - PASS #5: PrimingPass [OK]
+00:16:56.767 [main] INFO  a.f.a.i.p.PassChainExecutor - PASS #6: CoverAnalysisPass
+00:16:56.767 [main] DEBUG a.f.a.i.p.PassChainExecutor - PASS #6: CoverAnalysisPass [OK]
+00:16:56.767 [main] INFO  a.f.a.i.p.PassChainExecutor - PASS #7: InlinePass
+00:16:56.768 [main] INFO  a.f.a.t.p.p.InlinePassImpl -   > InlinerOfUserOper
+00:16:56.816 [main] INFO  a.f.a.t.p.p.InlinePassImpl -   > LetInExpander
+00:16:56.829 [main] INFO  a.f.a.t.p.p.InlinePassImpl -   > InlinerOfUserOper
+00:16:56.835 [main] INFO  a.f.a.t.p.p.InlinePassImpl - Leaving only relevant operators: CInitPrimed, IndInv, IndInvPrimed, Next
+00:16:56.878 [main] DEBUG a.f.a.i.p.PassChainExecutor - PASS #7: InlinePass [OK]
+00:16:56.879 [main] INFO  a.f.a.i.p.PassChainExecutor - PASS #8: VCGen
+00:16:56.879 [main] INFO  a.f.a.t.b.p.VCGenPassImpl -   > Producing verification conditions from the invariant IndInv
+00:16:56.881 [main] INFO  a.f.a.t.b.VCGenerator -   > VCGen produced 30 verification condition(s)
+00:16:56.934 [main] DEBUG a.f.a.i.p.PassChainExecutor - PASS #8: VCGen [OK]
+00:16:56.935 [main] INFO  a.f.a.i.p.PassChainExecutor - PASS #9: PreprocessingPass
+00:16:56.935 [main] INFO  a.f.a.t.p.p.PreproPassImpl -   > Before preprocessing: unique renaming
+00:16:56.944 [main] INFO  a.f.a.t.p.p.PreproPassImpl -  > Applying standard transformations:
+00:16:56.944 [main] INFO  a.f.a.t.p.p.PreproPassImpl -   > PrimePropagation
+00:16:57.008 [main] INFO  a.f.a.t.p.p.PreproPassImpl -   > Desugarer
+00:16:57.064 [main] INFO  a.f.a.t.p.p.PreproPassImpl -   > UniqueRenamer
+00:16:57.140 [main] INFO  a.f.a.t.p.p.PreproPassImpl -   > Normalizer
+00:16:57.212 [main] INFO  a.f.a.t.p.p.PreproPassImpl -   > Keramelizer
+00:16:57.296 [main] INFO  a.f.a.t.p.p.PreproPassImpl -   > After preprocessing: UniqueRenamer
+00:16:57.393 [main] DEBUG a.f.a.i.p.PassChainExecutor - PASS #9: PreprocessingPass [OK]
+00:16:57.394 [main] INFO  a.f.a.i.p.PassChainExecutor - PASS #10: TransitionFinderPass
+00:16:57.436 [main] INFO  a.f.a.t.a.p.TransitionPassImpl -   > Found 1 initializing transitions
+00:16:57.506 [main] INFO  a.f.a.t.a.p.TransitionPassImpl -   > Found 20 transitions
+00:16:57.506 [main] INFO  a.f.a.t.a.p.TransitionPassImpl -   > No constant initializer
+00:16:57.507 [main] INFO  a.f.a.t.a.p.TransitionPassImpl -   > Applying unique renaming
+00:16:57.591 [main] DEBUG a.f.a.i.p.PassChainExecutor - PASS #10: TransitionFinderPass [OK]
+00:16:57.591 [main] INFO  a.f.a.i.p.PassChainExecutor - PASS #11: OptimizationPass
+00:16:57.595 [main] INFO  a.f.a.t.p.p.OptPassImpl -  > Applying optimizations:
+00:16:57.596 [main] INFO  a.f.a.t.p.p.OptPassImpl -   > ConstSimplifier
+00:16:57.632 [main] INFO  a.f.a.t.p.p.OptPassImpl -   > ExprOptimizer
+00:16:57.657 [main] INFO  a.f.a.t.p.p.OptPassImpl -   > ConstSimplifier
+00:16:57.738 [main] DEBUG a.f.a.i.p.PassChainExecutor - PASS #11: OptimizationPass [OK]
+00:16:57.739 [main] INFO  a.f.a.i.p.PassChainExecutor - PASS #12: AnalysisPass
+00:16:57.740 [main] INFO  a.f.a.t.b.p.AnalysisPassImpl -  > Marking skolemizable existentials and sets to be expanded...
+00:16:57.741 [main] INFO  a.f.a.t.b.p.AnalysisPassImpl -   > SkolemizationMarker
+00:16:57.744 [main] INFO  a.f.a.t.b.p.AnalysisPassImpl -   > ExpansionMarker
+00:16:57.749 [main] WARN  a.f.a.t.b.a.ExpansionMarker - The set SUBSET ((0 .. 7) ∪ (8 .. 9)) will be expanded. This will blow up the solver.
+00:16:57.767 [main] WARN  a.f.a.t.b.a.ExpansionMarker - The set SUBSET ((0 .. 7) ∪ (8 .. 9)) will be expanded. This will blow up the solver.
+00:16:57.768 [main] WARN  a.f.a.t.b.a.ExpansionMarker - The set SUBSET ((0 .. 7) ∪ (8 .. 9)) will be expanded. This will blow up the solver.
+00:16:57.771 [main] INFO  a.f.a.t.b.p.AnalysisPassImpl -  > Running analyzers...
+00:16:57.848 [main] INFO  a.f.a.t.b.p.AnalysisPassImpl -   > Introduced expression grades
+00:16:57.848 [main] INFO  a.f.a.t.b.p.AnalysisPassImpl -   > Introduced 8 formula hints
+00:16:57.848 [main] DEBUG a.f.a.i.p.PassChainExecutor - PASS #12: AnalysisPass [OK]
+00:16:57.848 [main] INFO  a.f.a.i.p.PassChainExecutor - PASS #13: PostTypeCheckerSnowcat
+00:16:57.848 [main] INFO  a.f.a.t.b.p.PostTypeCheckerPassImpl -  > Running Snowcat .::.
+00:16:57.961 [main] DEBUG a.f.a.t.b.p.PostTypeCheckerPassImpl -  > JSON output: /var/apalache/x/00.16-02.05.2021-2283573049146511051/out-pre-PostTypeCheckerSnowcat.json
+00:17:03.641 [main] INFO  a.f.a.t.b.p.PostTypeCheckerPassImpl -  > Your types are great!
+00:17:03.641 [main] INFO  a.f.a.t.b.p.PostTypeCheckerPassImpl -  > All expressions are typed
+00:17:03.733 [main] DEBUG a.f.a.t.b.p.PostTypeCheckerPassImpl -  > JSON output: /var/apalache/x/00.16-02.05.2021-2283573049146511051/out-post-PostTypeCheckerSnowcat.json
+00:17:03.733 [main] DEBUG a.f.a.i.p.PassChainExecutor - PASS #13: PostTypeCheckerSnowcat [OK]
+00:17:03.733 [main] INFO  a.f.a.i.p.PassChainExecutor - PASS #14: BoundedChecker
+00:17:03.984 [main] DEBUG a.f.a.t.b.t.TransitionExecutorImpl - Step #0, transition #0
+00:17:03.984 [main] DEBUG a.f.a.t.b.t.TransitionExecutorImpl - Translating to SMT...
+00:11:05.718 [main] INFO  a.f.a.t.Tool$ - Type checking Handshaking_nack_peers.tla
+00:11:05.892 [main] INFO  a.f.a.i.p.PassChainExecutor - PASS #0: SanyParser
+00:11:06.667 [main] DEBUG a.f.a.i.p.PassChainExecutor - PASS #0: SanyParser [OK]
+00:11:06.668 [main] INFO  a.f.a.i.p.PassChainExecutor - PASS #1: TypeCheckerSnowcat
+00:11:06.668 [main] INFO  a.f.a.t.t.p.EtcTypeCheckerPassImpl -  > Running Snowcat .::.
+00:11:06.733 [main] DEBUG a.f.a.t.t.p.EtcTypeCheckerPassImpl -  > JSON output: /var/apalache/x/00.11-04.05.2021-5714303614929900449/out-pre-TypeCheckerSnowcat.json
+00:11:06.737 [main] ERROR a.f.a.t.Tool$ - Typing input error: Unexpected annotation alias in front of messages: 
+00:11:06.738 [main] INFO  a.f.a.t.Tool$ - It took me 0 days  0 hours  0 min  1 sec
+00:11:06.738 [main] INFO  a.f.a.t.Tool$ - Total time: 1.20 sec
+00:11:55.142 [main] INFO  a.f.a.t.Tool$ - Type checking Handshaking_nack_peers.tla
+00:11:55.318 [main] INFO  a.f.a.i.p.PassChainExecutor - PASS #0: SanyParser
+00:11:56.103 [main] DEBUG a.f.a.i.p.PassChainExecutor - PASS #0: SanyParser [OK]
+00:11:56.103 [main] INFO  a.f.a.i.p.PassChainExecutor - PASS #1: TypeCheckerSnowcat
+00:11:56.103 [main] INFO  a.f.a.t.t.p.EtcTypeCheckerPassImpl -  > Running Snowcat .::.
+00:11:56.177 [main] DEBUG a.f.a.t.t.p.EtcTypeCheckerPassImpl -  > JSON output: /var/apalache/x/00.11-04.05.2021-10496282250946990240/out-pre-TypeCheckerSnowcat.json
+00:11:56.199 [main] ERROR a.f.a.t.t.TypeCheckerTool - Parsing error in the alias annotation:  NonPeerMsg = [from: Int, type: Str]
+00:11:56.200 [main] ERROR a.f.a.t.Tool$ - Typing input error: Parser error in type alias of messages: typeConst expected
+00:11:56.201 [main] INFO  a.f.a.t.Tool$ - It took me 0 days  0 hours  0 min  1 sec
+00:11:56.201 [main] INFO  a.f.a.t.Tool$ - Total time: 1.60 sec
+00:12:25.389 [main] INFO  a.f.a.t.Tool$ - Type checking Handshaking_nack_peers.tla
+00:12:25.563 [main] INFO  a.f.a.i.p.PassChainExecutor - PASS #0: SanyParser
+00:12:26.338 [main] DEBUG a.f.a.i.p.PassChainExecutor - PASS #0: SanyParser [OK]
+00:12:26.339 [main] INFO  a.f.a.i.p.PassChainExecutor - PASS #1: TypeCheckerSnowcat
+00:12:26.339 [main] INFO  a.f.a.t.t.p.EtcTypeCheckerPassImpl -  > Running Snowcat .::.
+00:12:26.414 [main] DEBUG a.f.a.t.t.p.EtcTypeCheckerPassImpl -  > JSON output: /var/apalache/x/00.12-04.05.2021-5381145528326984735/out-pre-TypeCheckerSnowcat.json
+00:12:26.563 [main] ERROR a.f.a.t.t.p.LoggingTypeCheckerListener - [Handshaking_nack_peers.tla:63:1-63:52]: Expected ((Int) => MSG) in conn_msg. Found: ((Int) => [from: Int, type: Str])
+00:12:26.581 [main] ERROR a.f.a.t.t.p.LoggingTypeCheckerListener - [Handshaking_nack_peers.tla:63:1-63:52]: Error when computing the type of conn_msg
+00:12:26.582 [main] INFO  a.f.a.t.t.p.EtcTypeCheckerPassImpl -  > Snowcat asks you to fix the types. Meow.
+00:12:26.582 [main] DEBUG a.f.a.i.p.PassChainExecutor - PASS #1: TypeCheckerSnowcat [FAIL]
+00:12:26.582 [main] INFO  a.f.a.t.Tool$ - Type checker [FAILED]
+00:12:26.583 [main] INFO  a.f.a.t.Tool$ - It took me 0 days  0 hours  0 min  1 sec
+00:12:26.583 [main] INFO  a.f.a.t.Tool$ - Total time: 1.194 sec
+00:13:02.208 [main] INFO  a.f.a.t.Tool$ - Type checking Handshaking_nack_peers.tla
+00:13:02.386 [main] INFO  a.f.a.i.p.PassChainExecutor - PASS #0: SanyParser
+00:13:03.169 [main] DEBUG a.f.a.i.p.PassChainExecutor - PASS #0: SanyParser [OK]
+00:13:03.170 [main] INFO  a.f.a.i.p.PassChainExecutor - PASS #1: TypeCheckerSnowcat
+00:13:03.170 [main] INFO  a.f.a.t.t.p.EtcTypeCheckerPassImpl -  > Running Snowcat .::.
+00:13:03.244 [main] DEBUG a.f.a.t.t.p.EtcTypeCheckerPassImpl -  > JSON output: /var/apalache/x/00.13-04.05.2021-7574494567119082398/out-pre-TypeCheckerSnowcat.json
+00:13:03.346 [main] ERROR a.f.a.t.Tool$ - Unhandled exception
+scala.MatchError: (List(Int, Set(Int))~None) (of class scala.util.parsing.combinator.Parsers$$tilde)
+	at at.forsyte.apalache.tla.typecheck.parser.DefaultType1Parser$.$anonfun$typeExpr$5(DefaultType1Parser.scala:69)
+	at scala.util.parsing.combinator.Parsers$Success.map(Parsers.scala:140)
+	at scala.util.parsing.combinator.Parsers$Success.map(Parsers.scala:139)
+	at scala.util.parsing.combinator.Parsers$Parser.$anonfun$map$1(Parsers.scala:235)
+	at scala.util.parsing.combinator.Parsers$$anon$1.apply(Parsers.scala:215)
+	at scala.util.parsing.combinator.Parsers$$anon$5.apply(Parsers.scala:919)
+	at scala.util.parsing.combinator.Parsers$Parser.$anonfun$map$1(Parsers.scala:235)
+	at scala.util.parsing.combinator.Parsers$$anon$1.apply(Parsers.scala:215)
+	at at.forsyte.apalache.tla.typecheck.parser.DefaultType1Parser$.parseType(DefaultType1Parser.scala:32)
+	at at.forsyte.apalache.tla.typecheck.etc.ToEtcExpr.parseType(ToEtcExpr.scala:99)
+	at at.forsyte.apalache.tla.typecheck.etc.ToEtcExpr.$anonfun$findTypeFromTagOrAnnotation$1(ToEtcExpr.scala:119)
+	at scala.Option.map(Option.scala:230)
+	at at.forsyte.apalache.tla.typecheck.etc.ToEtcExpr.findTypeFromTagOrAnnotation(ToEtcExpr.scala:117)
+	at at.forsyte.apalache.tla.typecheck.etc.ToEtcExpr.operDefToDecl(ToEtcExpr.scala:74)
+	at at.forsyte.apalache.tla.typecheck.etc.ToEtcExpr.apply(ToEtcExpr.scala:48)
+	at at.forsyte.apalache.tla.typecheck.TypeCheckerTool.$anonfun$check$1(TypeCheckerTool.scala:38)
+	at scala.collection.immutable.List.$anonfun$foldRight$1(List.scala:447)
+	at scala.collection.immutable.List.foldRight(List.scala:91)
+	at at.forsyte.apalache.tla.typecheck.TypeCheckerTool.check(TypeCheckerTool.scala:37)
+	at at.forsyte.apalache.tla.typecheck.TypeCheckerTool.checkAndTag(TypeCheckerTool.scala:67)
+	at at.forsyte.apalache.tla.typecheck.passes.EtcTypeCheckerPassImpl.execute(EtcTypeCheckerPassImpl.scala:62)
+	at at.forsyte.apalache.infra.passes.PassChainExecutor.exec$1(PassChainExecutor.scala:22)
+	at at.forsyte.apalache.infra.passes.PassChainExecutor.run(PassChainExecutor.scala:37)
+	at at.forsyte.apalache.tla.Tool$.runTypeCheck(Tool.scala:243)
+	at at.forsyte.apalache.tla.Tool$.$anonfun$run$7(Tool.scala:109)
+	at at.forsyte.apalache.tla.Tool$.handleExceptions(Tool.scala:319)
+	at at.forsyte.apalache.tla.Tool$.run(Tool.scala:109)
+	at at.forsyte.apalache.tla.Tool$.main(Tool.scala:45)
+	at at.forsyte.apalache.tla.Tool.main(Tool.scala)
+00:13:03.347 [main] INFO  a.f.a.t.Tool$ - It took me 0 days  0 hours  0 min  1 sec
+00:13:03.348 [main] INFO  a.f.a.t.Tool$ - Total time: 1.140 sec
