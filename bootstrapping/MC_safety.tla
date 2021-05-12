@@ -14,9 +14,12 @@ Min_peers == 1
 
 Max_peers == 2
 
-\* (Bad_nodes \cup Good_nodes) -> Headers
+Max_level == 2
+
+Max_ops == 2
+
+\* Good_nodes -> Headers
 Current_head ==
-    0 :> {} @@
     1 :> {}
 
 \* Good_nodes -> SUBSET Blocks
@@ -29,9 +32,6 @@ Validator == [ b \in Blocks |->
     CASE b \in All_good_node_blocks -> "known_valid"
       [] OTHER -> "unknown" ]
 
-\* TLC assertions
-Current_head_aasert == Assert(DOMAIN Current_head = Bad_nodes \cup Good_nodes, TRUE)
-
-Good_node_blocks_assert == Assert(DOMAIN Good_node_blocks = Good_nodes, TRUE)
+Node_samples == [ n \in Good_nodes |-> [ bn \in Bad_bootstrapping \cup Good_bootstrapping |-> <<>> ] ]
 
 ==========================
