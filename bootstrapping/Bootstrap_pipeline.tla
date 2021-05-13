@@ -62,8 +62,8 @@ VARIABLES
     recv_operation      \* each good bootstrapping node's function from peers from whom they have received a Operation message to set of operations received
 
 \* inclusive bootstrapping variables
-fetch_vars  == <<fetched_headers, fetched_operations, level_to_validate>>
-pipe_vars   == <<validated_blocks, header_pipe, operation_pipe>>
+fetch_vars  == <<fetched_headers, fetched_operations>>
+pipe_vars   == <<validated_blocks, header_pipe, operation_pipe, level_to_validate>>
 b_sent_vars == <<sent_get_branch, sent_get_headers, sent_get_ops>>
 b_recv_vars == <<recv_branch, recv_header, recv_operation>>
 
@@ -75,6 +75,7 @@ b_non_op_vars         == <<connections, current_head, locator, fetch_vars, pipe_
 b_non_pipe_vars       == <<connections, current_head, locator, fetch_vars, b_sent_vars, b_recv_vars>>
 b_non_fetch_vars      == <<connections, current_head, locator, pipe_vars, b_sent_vars, b_recv_vars>>
 b_non_fetch_pipe_vars == <<connections, current_head, locator, b_sent_vars, b_recv_vars>>
+b_non_fetch_recv_vars == <<connections, current_head, locator, pipe_vars, b_sent_vars>>
 
 \* all bootstrapping variables
 bootstrapping_vars == <<connections, current_head, locator, fetch_vars, pipe_vars, b_sent_vars, b_recv_vars>>
@@ -221,15 +222,15 @@ Levels == 1..MAX_LEVEL
 
 Samples == { s \in NESeq_hd(Levels) : \A i \in DOMAIN s \ {1} : s[i - 1] < s[i] }
 
-PartialHeaders == [ level : Levels, branch : Branches ]
+PartialHeaders == [ level : Levels, branch : Branches, op_num : 0..MAX_OPS ]
 
 BlockHashes == 0..Cardinality(PartialHeaders)
 
 \* @type: (Int, BLOCK_HASH, Int) => HEADER;
-header(l, p, b) == [ level |-> l, pred_hash |-> p, branch |-> b ]
+header(l, p, b, o) == [ level |-> l, pred_hash |-> p, branch |-> b, op_num |-> o ]
 
 \* @type: NODE => Set(HEADER);
-headers(bn) == fetched_headers[bn] \cup ToSet(header_pipe[bn])
+headers(bn) == UNION { recv_header[bn][n] : n \in connections[bn] }
 
 \* @type: (BLOCK_HASH, Int) => OPERATION;
 operation(bh, op) == [ block_hash |-> bh, op |-> op ]
@@ -238,7 +239,7 @@ operation(bh, op) == [ block_hash |-> bh, op |-> op ]
 operations(bh, ops) == [ block_hash : {bh}, op : ops ]
 
 \* @type: HEADER;
-gen_header == header(0, 0, 0)
+gen_header == header(0, 0, 0, 0)
 
 \* @type: Set(OPERATION);
 gen_operations == operations(0, {})
@@ -250,26 +251,26 @@ block(hd, ops) == [ header |-> hd, ops |-> ops ]
 genesis == block(gen_header, gen_operations)
 
 \* block/header hash
-\* @type: HEADER -> BLOCK_HASH;
+\* @type: HEADER => BLOCK_HASH;
 hash(hd) ==
     IF hd = gen_header THEN 0
-    ELSE Index([ level |-> hd.level, branch |-> hd.branch ], SetToSeq(PartialHeaders))
+    ELSE Index([ level |-> hd.level, branch |-> hd.branch, op_num |-> hd.op_num ], SetToSeq(PartialHeaders))
 
 \* headers
-\* @type: Int -> Set(HEADER);
+\* @type: LEVEL -> Set(HEADER);
 headers_at_level[ l \in Levels \cup {0} ] ==
     LET prev_hashes == { hash(hd) : hd \in headers_at_level[l - 1] } IN
-    IF l > 0 THEN [ level : {l}, pred_hash : prev_hashes, branch : Branches ]
+    IF l > 0 THEN [ level : {l}, pred_hash : prev_hashes, branch : Branches, op_num : 0..MAX_OPS ]
     ELSE {gen_header}
 
 \* @type: Set(HEADER);
 Headers == UNION { headers_at_level[l] : l \in Levels \cup {0} }
 
-\* @type: Int -> Set(BLOCK_HASH);
+\* @type: LEVEL -> Set(BLOCK_HASH);
 hashes_at_level[ l \in Levels \cup {0} ] == { hash(hd) : hd \in headers_at_level[l] }
 
 \* operations
-\* @type: Int -> Set(OPERATION);
+\* @type: LEVEL -> Set(OPERATION);
 operations_at_level[ l \in Levels \cup {0} ] ==
     IF l > 0 THEN [ block_hash : hashes_at_level[l], operations : 0..MAX_OPS ]
     ELSE {gen_operations}
@@ -280,7 +281,7 @@ History == Seq_hd(BlockHashes)
 Operations == UNION { operations_at_level[l] : l \in Levels \cup {0} }
 
 \* blocks
-\* @type: Level -> Set(BLOCK);
+\* @type: LEVEL -> Set(BLOCK);
 blocks_at_level[ l \in Levels \cup {0} ] ==
     LET bs == { block(hd, ops) : hd \in headers_at_level[l], ops \in SUBSET operations_at_level[l] } IN
     { b \in bs : hash(b.header) = Pick({ op.block_hash : op \in b.ops }) }
@@ -290,14 +291,16 @@ Blocks == UNION { blocks_at_level[l] : l \in Levels \cup {0} }
 
 \* @typeAlias: LOCATOR = [ current_head: HEADER, history: Seq(Int) ];
 \* @type: Set(LOCATOR);
-Locators == [ current_head : UNION { CURRENT_HEAD[n] : n \in Nodes }, history : History ]
+Locators ==
+    LET Heads == UNION { CURRENT_HEAD[n] : n \in Nodes } IN
+    [ current_head : Heads, history : History ]
 
-\* @type: BLOCK_HASH => HEADER;
+\* @type: BLOCK_HASH -> HEADER;
 lookup_block_hash[ h \in BlockHashes ] == Pick({ bh \in Headers : hash(bh) = h })
 
 \* operation hash
-\* @typeAlias: OPERATION_HASH = <<Int, Int>>;
-\* @type: OPERATION => OPERATION_HASH;
+\* @typeAlias: OPERATION_HASH = <<BLOCK_HASH, Int>>;
+\* @type: OPERATION -> OPERATION_HASH;
 op_hash[ op \in Operations ] == <<op.block_hash, op.op>>
 
 \* @type: Set(OPERATION_HASH);
@@ -326,6 +329,25 @@ hashes(bn) == { hash(hd) : hd \in headers(bn) }
 
 \* all bootstrapping nodes have connections
 All_bootstrapping_initialized == \A bn \in Bootstrapping_nodes : connections[bn] \in ConnectionSets
+
+\* @type: (NODE, NODE, BLOCK_HASH) => Set(OPERATION);
+received_operations_block_hash(bn, n, bh) == { op \in recv_operation[bn][n] : op.block_hash = bh }
+
+\* @type: (NODE, BLOCK_HASH) => Set(OPERATION);
+all_recv_operations_block_hash(bn, bh) == UNION { received_operations_block_hash(bn, n, bh) : n \in Nodes }
+
+\* node data
+\* @type: NODE => Set(HEADER);
+node_headers(n) == { b.header : b \in BLOCKS[n] }
+
+\* @type: NODE => Set(BLOCK_HASH);
+node_hashes(n) == { hash(hd) : hd \in node_headers(n) }
+
+\* @type: NODE => Set(OPERATION);
+node_operations(n) == { b.operation : b \in BLOCKS[n] }
+
+\* @type: NODE => Set(OPERATION_HASH);
+node_op_hashes(n) == { op_hash[op] : op \in node_operations(n) }
 
 ----
 
@@ -466,17 +488,23 @@ SendGetCurrentBranch == \E bn \in GOOD_BOOTSTRAPPING :
 
 SendGetBlockHeaders == \E bn \in GOOD_BOOTSTRAPPING :
     \E n \in connections[bn] :
-        LET hs == locator[bn][n] IN
-        /\ hs /= <<>>
-        /\ Send_n(n, get_block_headers_msg(bn, hs))
-        /\ sent_get_headers' = [ sent_get_headers EXCEPT ![bn][n] = @ \cup ToSet(hs) ]
-        /\ UNCHANGED <<b_messages, blacklist, node_vars, b_non_header_vars, recv_header>>
+        LET locs == UNION { {locator[bn][m]} : m \in Nodes } IN
+        \E hs \in locs :
+            /\ hs /= <<>>
+            /\ Send_n(n, get_block_headers_msg(bn, hs))
+            /\ sent_get_headers' = [ sent_get_headers EXCEPT ![bn][n] = @ \cup ToSet(hs) ]
+            /\ UNCHANGED <<b_messages, blacklist, node_vars, b_non_header_vars, recv_header>>
 
 SendGetOperations == \E bn \in GOOD_BOOTSTRAPPING :
     \E n \in connections[bn], hd \in headers(bn) :
-        /\ ~has_requested_ops(bn, n)
-        /\ Send_n(n, get_operations_msg(bn, bs))
-        /\ sent_get_ops' = [ sent_get_ops EXCEPT ![bn][n] = @ \cup ToSet(bs) ]
+        LET bh    == hash(hd)
+            ops   == operations(bh, 1..hd.op_num)
+            req   == ops \ all_recv_operations_block_hash(bn, bh)
+            op_hs == { op_hash[op] : op \in req }
+        IN
+        /\ req /= {}
+        /\ Send_n(n, get_operations_msg(bn, op_hs))
+        /\ sent_get_ops' = [ sent_get_ops EXCEPT ![bn][n] = @ \cup op_hs ]
         /\ UNCHANGED <<b_messages, blacklist, node_vars, b_non_op_vars, recv_operation>>
 
 \* responses - nodes
@@ -496,22 +524,25 @@ HandleGetCurrentBranch == \E n \in GOOD_NODES :
         /\ sent_branch'     = [ sent_branch     EXCEPT ![n][bn] = @ \cup ToSet(history) ]
         /\ UNCHANGED <<blacklist, bootstrapping_vars, n_non_branch_vars>>
 
+\* TODO how should nodes handle block hashes they don't know?
 HandleGetBlockHeaders == \E n \in GOOD_NODES :
     \E msg \in get_block_headers_msgs(n) :
         LET bn == msg.from
-            hs == msg.hashes
+            hs == msg.hashes \cap node_hashes(n)
         IN
         /\ Drop_n(n, msg)
-        /\ recv_get_headers' = [ recv_get_headers EXCEPT ![n][bn] = @ \cup ToSet(hs) ]
+        /\ recv_get_headers' = [ recv_get_headers EXCEPT ![n][bn] = @ \cup hs ]
         /\ serving_headers'  = [ serving_headers  EXCEPT ![n][bn] = @ \cup hs ]
         /\ UNCHANGED <<b_messages, blacklist, bootstrapping_vars, n_non_serving_vars, serving_ops>>
 
+\* TODO how should nodes handle operation hashes they don't know?
 HandleGetOperations == \E n \in GOOD_NODES :
     \E msg \in get_operations_msgs(n) :
         LET bn  == msg.from
-            ohs == msg.op_hashes
+            ohs == msg.op_hashes \ node_op_hashes(n)
             bh  == Pick({ oh[1] : oh \in ohs })
         IN
+        /\ bh \in node_hashes(n)
         /\ Drop_n(n, msg)
         /\ recv_get_ops' = [ recv_get_ops EXCEPT ![n][bn] = @ \cup ohs ]
         /\ serving_ops'  = [ serving_ops  EXCEPT ![n, bn][bh] = @ \cup { oh[2] : oh \in ohs } ]
@@ -520,16 +551,30 @@ HandleGetOperations == \E n \in GOOD_NODES :
 \* bootstrapping nodes handle responses
 
 \* bootstrapping node receives a Current_branch message
+\* adjust current_head if the received head is at a higher level
+\* UpdateCurrentHead == \E bn \in GOOD_BOOTSTRAPPING :
+\*     LET locs == UNION { locator[bn][n] : n \in Nodes } IN
+\*     /\ locs /= {}
+\*     /\ LET max_hd == Max_level_set({ l.current_head : l \in locs }) IN
+\*         CASE current_head[bn].level < max_hd.level ->
+\*                 /\ current_head' = [ current_head EXCEPT ![bn] = max_hd ]
+\*                 /\ UNCHANGED <<messages, blacklist, connections, locator, fetch_vars, pipe_vars, b_sent_vars, b_recv_vars, node_vars>>
+\*           [] /\ current_head[bn].level = max_hd.level
+\*              /\ current_head[bn] /= max_hd
+\*              -> FALSE \* TODO what to do in this case?
+\*           [] OTHER -> FALSE
 HandleCurrentBranch == \E bn \in GOOD_BOOTSTRAPPING :
     \E msg \in current_branch_msgs(bn) :
-        LET n == msg.from
-            l == msg.locator
+        LET n  == msg.from
+            hs == msg.locator.history
+            ch == msg.current_head
         IN
         /\ n \in sent_get_branch_to(bn)
         /\ Drop_b(bn, msg)
-        /\ locator'     = [ locator     EXCEPT ![bn][n] = l ]
-        /\ recv_branch' = [ recv_branch EXCEPT ![bn][n] = @ \cup ToSet(l) ]
-        /\ UNCHANGED <<n_messages, blacklist, node_vars, connections, current_head, pipe_vars, b_sent_vars, b_recv_vars>>
+        /\ current_head' = [ current_head EXCEPT ![bn] = IF ch.level > @.level THEN ch ELSE @ ]
+        /\ locator'      = [ locator      EXCEPT ![bn][n] = hs ]
+        /\ recv_branch'  = [ recv_branch  EXCEPT ![bn][n] = @ \cup ToSet(hs) ]
+        /\ UNCHANGED <<n_messages, blacklist, node_vars, connections, fetch_vars, pipe_vars, b_sent_vars, recv_header, recv_operation>>
 
 \* bootstrapping node receives a Block_header message
 HandleBlockHeader == \E bn \in GOOD_BOOTSTRAPPING :
@@ -537,21 +582,27 @@ HandleBlockHeader == \E bn \in GOOD_BOOTSTRAPPING :
         LET n  == msg.from
             hd == msg.header
         IN
-        /\ fetched_headers' = [ fetched_headers EXCEPT ![bn][hd.level] = @ \cup {hd} ]
-        /\ UNCHANGED <<messages, blacklist, node_vars, b_non_fetch_vars, fetched_operations, level_to_validate>>
+        /\ hash(hd) \in sent_get_headers[bn][n]
+        /\ hd \notin recv_header[bn][n]
+        /\ Drop_b(bn, msg)
+        /\ fetched_headers' = [ fetched_headers EXCEPT ![bn, n][hd.level] = @ \cup {hd} ]
+        /\ recv_header' = [ recv_header EXCEPT ![bn][n] = @ \cup {hd} ]
+        /\ UNCHANGED <<n_messages, blacklist, node_vars, b_non_fetch_vars, fetched_operations, level_to_validate>>
 
 \* bootstrapping node receives an Operation message
 HandleOperation == \E bn \in GOOD_BOOTSTRAPPING :
     \E msg \in operation_msgs(bn) :
         LET n  == msg.from
-            bh == msg.operation.block_hash
-            op == operation(bh, msg.operation)
-            hs == { h \in hashes(bn) : h = bh }
+            op == msg.operation
+            bh == op.block_hash
         IN
-        /\ hs /= {}
-        /\ LET l == Pick(hs) IN
-            /\ fetched_operations' = [ fetched_operations EXCEPT ![bn][l] = @ \cup {op} ]
-            /\ UNCHANGED <<messages, blacklist, node_vars, b_non_fetch_vars, fetched_headers, level_to_validate>>
+        \E hd \in headers(bn) :
+            /\ bh = hash(hd)
+            /\ op \notin recv_operation[bn][n]
+            /\ Drop_b(bn, msg)
+            /\ fetched_operations' = [ fetched_operations EXCEPT ![bn][hd.level] = @ \cup {op} ]
+            /\ recv_operation'     = [ recv_operation EXCEPT ![bn][n] = @ \cup {op} ]
+            /\ UNCHANGED <<n_messages, blacklist, node_vars, b_non_fetch_recv_vars, fetched_headers, level_to_validate, recv_branch, recv_header>>
 
 \* move header from fetched_headers to header_pipe
 EnqueueHeader == \E bn \in GOOD_BOOTSTRAPPING :
@@ -578,26 +629,14 @@ EnqueueOperations == \E bn \in GOOD_BOOTSTRAPPING :
                     ELSE Cons(ops, @) ]
             /\ UNCHANGED <<messages, blacklist, node_vars, b_non_fetch_pipe_vars, fetched_headers, level_to_validate, validated_blocks, header_pipe, vars>>
 
-\* bootstrapping node updates current_head from received locators
-UpdateCurrentHead == \E bn \in GOOD_BOOTSTRAPPING :
-    LET locs == UNION { locator[bn][n] : n \in Nodes } IN
-    /\ locs /= {}
-    /\ LET max_hd == Max_level_set({ l.current_head : l \in locs }) IN
-        CASE current_head[bn].level < max_hd.level ->
-                /\ current_head' = [ current_head EXCEPT ![bn] = max_hd ]
-                /\ UNCHANGED <<messages, blacklist, connections, locator, fetch_vars, pipe_vars, b_sent_vars, b_recv_vars, node_vars>>
-          [] /\ current_head[bn].level = max_hd.level
-             /\ current_head[bn] /= max_hd
-             -> FALSE \* TODO what to do in this case?
-          [] OTHER -> FALSE
-
 \* nodes serve bootstrapping nodes' requests
 
 ServeHeader == \E n \in GOOD_NODES, bn \in Bootstrapping_nodes :
     LET sh == serving_headers[n][bn] IN
     /\ sh /= {}
     /\ LET h   == Pick(sh)
-           hd  == lookup_block_hash(h)
+           hd  == lookup_block_hash[h]
+           msg == block_header_msg(n, hd)
        IN
         /\ Send_b(bn, msg)
         /\ sent_headers'    = [ sent_headers    EXCEPT ![n][bn] = @ \cup {hd} ]
@@ -607,14 +646,16 @@ ServeHeader == \E n \in GOOD_NODES, bn \in Bootstrapping_nodes :
 ServeOperation == \E n \in GOOD_NODES, bn \in Bootstrapping_nodes, bh \in BlockHashes :
     LET ops == serving_ops[n, bn][bh] IN
     /\ ops /= {}
-    /\ LET op  == operation(bh, Pick(ops)) IN
+    /\ LET op  == operation(bh, Pick(ops))
+           msg == operation_msg(n, op)
+       IN
         /\ Send_b(bn, msg)
         /\ sent_ops'    = [ sent_ops    EXCEPT ![n][bn] = @ \cup {op} ]
         /\ serving_ops' = [ serving_ops EXCEPT ![n, bn][bh] = @ \ {op.op} ]
         /\ UNCHANGED <<n_messages, blacklist, n_non_serving_vars, serving_headers, bootstrapping_vars>>
 
 \* nodes form blocks from fetched headers and operations
-
+\* TODO how to handle non-known_valid cases?
 validate_block(bn, hd, ops) ==
     LET b == block(hd, ops)
         v == VALIDATOR[b]
@@ -625,8 +666,8 @@ validate_block(bn, hd, ops) ==
         /\ operation_pipe'    = [ operation_pipe    EXCEPT ![bn] = Tail(@) ]
         /\ validated_blocks'  = [ validated_blocks  EXCEPT ![bn] = @ \cup {b} ]
         /\ UNCHANGED <<messages, blacklist, b_non_pipe_vars, node_vars>>
-      [] v = "known_invalid" -> FALSE \* TODO
-      [] v = "unknown" -> FALSE \* TODO
+      [] v = "known_invalid" -> FALSE
+      [] v = "unknown" -> FALSE
 
 ValidateBlock == \E bn \in GOOD_BOOTSTRAPPING :
     \E n \in Nodes :
@@ -644,23 +685,16 @@ ValidateBlock == \E bn \in GOOD_BOOTSTRAPPING :
 
 \* undesirable actions
 
-\* TODO
-BadBootstrapperSendsGoodNodeArbitraryMessage == \E bn \in BAD_BOOTSTRAPPING, n \in Nodes :
+BadBootstrapSendsGoodNodeArbitraryMessage == \E bn \in BAD_BOOTSTRAPPING, n \in GOOD_NODES :
     \E msg \in { m \in BadGetMessages : m.from = bn } :
         /\ Send_n(n, msg)
-        \* send request for known invalid block header/operations
+        /\ UNCHANGED <<b_messages, blacklist, node_vars, bootstrapping_vars>>
 
-\* TODO
-BadNodeSendsGoodBootstrapperArbitraryMessage == \E n \in BAD_NODES, bn \in Bootstrapping_nodes :
+BadNodeSendsGoodBootstrapArbitraryMessage == \E n \in BAD_NODES, bn \in GOOD_BOOTSTRAPPING :
     \E msg \in { m \in BadResponseMessages : m.from = n } :
         /\ n \in connections[bn]
-        /\ LET t == msg.type IN
-            CASE t = "Block_header" ->
-                \E hd \in { h \in Headers : hash(h) \notin recv_get_headers[n][bn] } :
-                    /\ block_header_msg(n, hd)
-                    /\ UNCHANGED <<>>
-                    /\
-\* 
+        /\ Send_b(bn, msg)
+        /\ UNCHANGED <<n_messages, blacklist, node_vars, bootstrapping_vars>>
 
 \* TODO
 BootstrapTimeout == \E bn \in GOOD_BOOTSTRAPPING :
@@ -678,8 +712,11 @@ NodeTimeout == FALSE
 \* handling headers request
 \* handling operations request
 
+BootstrapBlacklist == FALSE
 \* TODO
-Blacklist == FALSE
+
+NodeBlacklist == FALSE
+\* TODO
 
 \* intialize connections
 InitConnections == \E bn \in Bootstrapping_nodes :
@@ -705,11 +742,11 @@ BlacklistInit ==
 BootstrappingInit ==
     /\ connections        = [ n \in Bootstrapping_nodes |-> {} ]
     /\ current_head       = [ n \in GOOD_BOOTSTRAPPING  |-> genesis ]
-    /\ locator            = [ n \in GOOD_BOOTSTRAPPING  |-> [ m \in Nodes |-> {} ] ]
+    /\ locator            = [ n \in GOOD_BOOTSTRAPPING  |-> [ m \in Nodes |-> <<>> ] ]
     /\ fetched_headers    = [ p \in GOOD_BOOTSTRAPPING \X Nodes |-> [ l \in Levels |-> {} ] ]
     /\ fetched_operations = [ p \in GOOD_BOOTSTRAPPING \X Nodes |-> [ l \in Levels |-> {} ] ]
     /\ validated_blocks   = [ n \in GOOD_BOOTSTRAPPING  |-> [ l \in Levels |-> {} ] ]
-    /\ level_to_validate  = [ n \in GOOD_BOOTSTRAPPING  |-> 0 ]
+    /\ level_to_validate  = [ n \in GOOD_BOOTSTRAPPING  |-> 1 ]
     /\ header_pipe        = [ n \in GOOD_BOOTSTRAPPING  |-> <<>> ]
     /\ operation_pipe     = [ n \in GOOD_BOOTSTRAPPING  |-> <<>> ]
     /\ sent_get_branch    = [ n \in GOOD_BOOTSTRAPPING  |-> [ m \in Nodes |-> {} ] ]
@@ -739,26 +776,27 @@ Init ==
 (* Next actions *)
 (****************)
 
-\* TODO check that all actions are accounted for
-
 Next ==
     \/ SendGetCurrentBranch
     \/ SendGetBlockHeaders
     \/ SendGetOperations
-    \/ HandleCurrentBranch
-    \/ HandleBlockHeader
-    \/ HandleOperation
     \/ HandleGetCurrentBranch
     \/ HandleGetBlockHeaders
     \/ HandleGetOperations
+    \/ HandleCurrentBranch
+    \/ HandleBlockHeader
+    \/ HandleOperation
+    \/ EnqueueHeader
+    \/ EnqueueOperations
     \/ ServeHeader
-    \/ ServeOperations
+    \/ ServeOperation
     \/ ValidateBlock
-    \/ BadBootstrapperSendsGoodNodeArbitraryMessage
-    \/ BadNodeSendsGoodBootstrapperArbitraryMessage
-    \/ Blacklist
+    \/ BadBootstrapSendsGoodNodeArbitraryMessage
+    \/ BadNodeSendsGoodBootstrapArbitraryMessage
     \/ BootstrapTimeout
     \/ NodeTimeout
+    \/ BootstrapBlacklist
+    \/ NodeBlacklist
     \/ InitConnections
 
 (*****************)
@@ -773,8 +811,6 @@ Spec == Init /\ [][Next]_vars /\ WF_vars(Next)
 (* Invariants *)
 (**************)
 
-\* TODO check all variabels accounted for
-
 BlacklistOK ==
     /\ b_blacklist \in [ GOOD_BOOTSTRAPPING -> SUBSET Nodes ]
     /\ n_blacklist \in [ GOOD_NODES -> SUBSET Bootstrapping_nodes ]
@@ -784,18 +820,19 @@ MessagesOK ==
     /\ n_messages \in [ GOOD_NODES -> SUBSET GetMessages ]
 
 BootstrappingOK ==
-    /\ connections        \in [ GOOD_BOOTSTRAPPING -> SUBSET Nodes ]
+    /\ connections        \in [ Bootstrapping_nodes -> SUBSET Nodes ]
     /\ current_head       \in [ GOOD_BOOTSTRAPPING -> Headers ]
     /\ locator            \in [ GOOD_BOOTSTRAPPING -> [ Nodes -> Seq_hd(BlockHashes) ] ]
     /\ fetched_headers    \in [ GOOD_BOOTSTRAPPING \X Nodes -> [ Levels -> SUBSET Headers ] ]
     /\ fetched_operations \in [ GOOD_BOOTSTRAPPING \X Nodes -> [ Levels -> SUBSET Operations ] ]
+    /\ level_to_validate  \in [ GOOD_BOOTSTRAPPING -> 1..MAX_LEVEL ]
     /\ validated_blocks   \in [ GOOD_BOOTSTRAPPING -> SUBSET Blocks ]
     /\ header_pipe        \in [ GOOD_BOOTSTRAPPING -> Seq_n(Headers) ]
     /\ operation_pipe     \in [ GOOD_BOOTSTRAPPING -> Seq_n(Set_op(Operations)) ]
-    /\ sent_get_branch    \in [ GOOD_BOOTSTRAPPING -> [ Nodes -> SUBSET Levels ]
-    /\ sent_get_headers   \in [ GOOD_BOOTSTRAPPING -> [ Nodes -> SUBSET Headers ] ]
-    /\ sent_get_ops       \in [ GOOD_BOOTSTRAPPING -> [ Nodes -> SUBSET Operations ] ]
-    /\ recv_branch        \in [ GOOD_BOOTSTRAPPING -> [ Nodes -> SUBSET BlockHashes ]
+    /\ sent_get_branch    \in [ GOOD_BOOTSTRAPPING -> [ Nodes -> SUBSET Levels ] ]
+    /\ sent_get_headers   \in [ GOOD_BOOTSTRAPPING -> [ Nodes -> SUBSET BlockHashes ] ]
+    /\ sent_get_ops       \in [ GOOD_BOOTSTRAPPING -> [ Nodes -> SUBSET OperationHashes ] ]
+    /\ recv_branch        \in [ GOOD_BOOTSTRAPPING -> [ Nodes -> SUBSET BlockHashes ] ]
     /\ recv_header        \in [ GOOD_BOOTSTRAPPING -> [ Nodes -> SUBSET Headers ] ]
     /\ recv_operation     \in [ GOOD_BOOTSTRAPPING -> [ Nodes -> SUBSET Operations ] ]
 
@@ -804,8 +841,8 @@ NodesOK ==
     /\ sent_headers      \in [ GOOD_NODES -> [ Bootstrapping_nodes -> SUBSET Headers ] ]
     /\ sent_ops          \in [ GOOD_NODES -> [ Bootstrapping_nodes -> SUBSET Operations ] ]
     /\ recv_get_branch   \in [ GOOD_NODES -> [ Bootstrapping_nodes -> SUBSET Levels ] ]
-    /\ recv_get_headers  \in [ GOOD_NODES -> [ Bootstrapping_nodes -> SUBSET Headers ] ]
-    /\ recv_get_ops      \in [ GOOD_NODES -> [ Bootstrapping_nodes -> SUBSET Operations ] ]
+    /\ recv_get_headers  \in [ GOOD_NODES -> [ Bootstrapping_nodes -> SUBSET BlockHashes ] ]
+    /\ recv_get_ops      \in [ GOOD_NODES -> [ Bootstrapping_nodes -> SUBSET OperationHashes ] ]
     /\ serving_headers   \in [ GOOD_NODES -> [ Bootstrapping_nodes -> Set_n(BlockHashes) ] ]
     /\ serving_ops       \in [ GOOD_NODES \X Bootstrapping_nodes -> [ BlockHashes -> SUBSET 0..MAX_OPS ] ]
 
@@ -815,7 +852,7 @@ TypeOK ==
     /\ BlacklistOK
     /\ BootstrappingOK
 
-\* TODO
+\* TODO safety properties
 
 Safety ==
     /\ TypeOK
@@ -824,6 +861,6 @@ Safety ==
 (* Properties *)
 (**************)
 
-\* TODO
+\* TODO liveness properties
 
 ===================================
