@@ -58,21 +58,26 @@ VARIABLES
     recv_header,        \* each good bootstrapping node's function from peers from whom they have received a Block_header message to set of headers received
     recv_operation      \* each good bootstrapping node's function from peers from whom they have received a Operation message to set of operations received
 
+VARIABLES
+    chain_lengths,      \* each good bootstrapping node's knowledge of each node's chain length
+    merkle_roots        \* each good bootstrapping node's knowledge of each node's merkle_root at each level
+
 \* inclusive bootstrapping variables
 pipe_vars   == <<validated_blocks, header_pipe, operation_pipe, level_to_validate>>
 b_sent_vars == <<sent_get_branch, sent_get_headers, sent_get_ops>>
 b_recv_vars == <<recv_branch, recv_header, recv_operation>>
+b_node_vars == <<chain_lengths, merkle_roots>>
 
 \* exclusive bootstrapping variables
 b_non_conn_vars   == <<current_head, pipe_vars, b_sent_vars, b_recv_vars>>
-b_non_branch_vars == <<connections, current_head, pipe_vars, sent_get_headers, sent_get_ops, recv_header, recv_operation>>
-b_non_header_vars == <<connections, current_head, pipe_vars, sent_get_branch, sent_get_ops, recv_branch, recv_operation>>
-b_non_op_vars     == <<connections, current_head, pipe_vars, sent_get_branch, sent_get_headers, recv_branch, recv_header>>
-b_non_pipe_vars   == <<connections, current_head, b_sent_vars, b_recv_vars>>
-b_non_recv_vars   == <<connections, current_head, pipe_vars, b_sent_vars>>
+b_non_branch_vars == <<connections, current_head, pipe_vars, sent_get_headers, sent_get_ops, recv_header, recv_operation, b_node_vars>>
+b_non_header_vars == <<connections, current_head, pipe_vars, sent_get_branch, sent_get_ops, recv_branch, recv_operation, b_node_vars>>
+b_non_op_vars     == <<connections, current_head, pipe_vars, sent_get_branch, sent_get_headers, recv_branch, recv_header, b_node_vars>>
+b_non_pipe_vars   == <<connections, current_head, b_sent_vars, b_recv_vars, b_node_vars>>
+b_non_recv_vars   == <<connections, current_head, pipe_vars, b_sent_vars, b_node_vars>>
 
 \* all bootstrapping variables
-bootstrapping_vars == <<connections, current_head, pipe_vars, b_sent_vars, b_recv_vars>>
+bootstrapping_vars == <<connections, current_head, pipe_vars, b_sent_vars, b_recv_vars, b_node_vars>>
 
 \* node variables
 VARIABLES
@@ -340,6 +345,16 @@ node_operations(n) == { b.operation : b \in BLOCKS[n] }
 
 \* @type: NODE => Set(OPERATION_HASH);
 node_op_hashes(n) == { op_hash[op] : op \in node_operations(n) }
+
+----
+
+hash_bound == Cardinality(BlockHashes)
+
+HashPairs == LET Hs == 0..hash_bound IN Hs \X Hs
+
+hash_nums(m, n) == Index(<<m, n>>, SetToSeq(HashPairs))
+
+Hashes == 0..Cardinality(HashPairs)
 
 ----
 
@@ -813,6 +828,11 @@ BootstrappingInit ==
     /\ recv_header        = [ n \in GOOD_BOOTSTRAPPING  |-> [ m \in Nodes |-> {} ] ]
     /\ recv_operation     = [ n \in GOOD_BOOTSTRAPPING  |-> [ m \in Nodes |-> {} ] ]
 
+KnowledgeInit ==
+    /\ chain_lengths = [ n \in GOOD_BOOTSTRAPPING |-> [ m \in Nodes |-> 0 ] ]
+    /\ merkle_roots  = LET gen_hash == hash(gen_header) IN
+        [ n \in GOOD_BOOTSTRAPPING |-> [ m \in Nodes |-> [ l \in {0} |-> gen_hash ] ] ]
+
 NodeInit ==
     /\ recv_get_branch   = [ n \in GOOD_NODES |-> [ m \in Bootstrapping_nodes |-> {} ] ]
     /\ recv_get_headers  = [ n \in GOOD_NODES |-> [ m \in Bootstrapping_nodes |-> {} ] ]
@@ -827,6 +847,7 @@ Init ==
     /\ NodeInit
     /\ MessagesInit
     /\ BlacklistInit
+    /\ KnowledgeInit
     /\ BootstrappingInit
 
 (****************)
@@ -889,6 +910,10 @@ BootstrappingOK ==
     /\ recv_branch        \in [ GOOD_BOOTSTRAPPING -> [ Nodes -> SUBSET BlockHashes ] ]
     /\ recv_header        \in [ GOOD_BOOTSTRAPPING -> [ Nodes -> SUBSET Headers ] ]
     /\ recv_operation     \in [ GOOD_BOOTSTRAPPING -> [ Nodes -> SUBSET Operations ] ]
+
+KnowledgeOK ==
+    /\ chain_lengths \in [ GOOD_BOOTSTRAPPING -> [ Nodes -> SUBSET Levels ] ]
+    /\ merkle_roots  \in [ GOOD_BOOTSTRAPPING -> [ Nodes -> [ SUBSET Levels -> Hashes ] ] ]
 
 NodesOK ==
     /\ sent_branch       \in [ GOOD_NODES -> [ Bootstrapping_nodes -> SUBSET BlockHashes ] ]
