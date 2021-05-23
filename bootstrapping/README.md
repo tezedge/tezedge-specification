@@ -1,6 +1,6 @@
 # bootstrapping
 
-The main specification is in [`Bootstrap_pipeline.tla`](Bootstrap_pipeline.tla)
+The main specification is in [`Bootstrap_pipeline.tla`](./Bootstrap_pipeline.tla)
 
 ## Assumptions/Simplifications
 
@@ -34,17 +34,20 @@ block = {
 ```
 header = {
   level       : Levels,
+  predecessor : BlockHashes,
   context     : Hashes,
   fitness     : 0..Max_fitness,
-  predecessor : BlockHashes,
   ops_hash    : Hashes
 }
 ```
 
-## Operations structure
+### Operations structure
 
 ```
-ops = { branch : BlockHashes }
+ops = {
+  block_hash : BlockHashes,
+  op         : 0..MAX_OPS
+}
 ```
 
 ## Constants
@@ -60,7 +63,7 @@ ops = { branch : BlockHashes }
 - `CURRENT_HEAD` - each good node's current head
 - `BLOCKS` - each good node's blocks
 - `VALIDATOR` - Blocks -> { "known_valid", "known_invalid", "unknown" }
-- `SAMPLES` - GOOD_NODES \X Bootstrapping_nodes -> Seq_n(Levels)
+- `SAMPLES` - GOOD_NODES * Bootstrapping_nodes -> Seq_n(Levels)
 - `HASH_BLOCK_MAP` - BlockHashes -> Headers
 
 ## Variables

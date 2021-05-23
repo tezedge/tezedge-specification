@@ -72,14 +72,6 @@ VARIABLES
     fittest_head,
     \* each good bootstrapping node's peer's current heads
 
-    \* @type: NODE -> LEVEL;
-    level_to_validate,
-    \* each good bootstrapping node's next level to validate
-
-    \* @type: NODE -> Set(BLOCK);
-    validated_blocks,
-    \* each good bootstrapping node's validated blocks
-
     \* @type: NODE -> Seq(HEADER);
     header_pipe,
     \* each good bootstrapping node's queue of fetched headers
@@ -87,6 +79,13 @@ VARIABLES
     \* @type: NODE -> Seq(Sety(<<HASH, OPERATION>>));
     operation_pipe,
     \* each good bootstrapping node's queue of fetched operations
+
+    \* @type: NODE -> Set(BLOCK);
+    validated_blocks,
+    \* each good bootstrapping node's validated blocks
+
+    \* TODO prevalidated_headers : node -> Set(header)
+    \* TODO prevalidate_ops : node -> Set(block_hash * operation)
 
     \* @type: NODE -> Set(NODE);
     sent_get_branch,
@@ -104,11 +103,11 @@ VARIABLES
     recv_branch,
     \* each good bootstrapping node's set of peers from whom they have received a Current_branch message
 
-    \* @type: NODE -> NODE -> ;
+    \* @type: NODE -> NODE -> Set(HEADER);
     recv_header,
     \* each good bootstrapping node's function from peers from whom they have received a Block_header message to set of headers received
 
-    \* @type: ;
+    \* @type: NODE -> NODE -> Set(<<BLOCK_HASH, OPERATION>>);
     recv_operation
     \* each good bootstrapping node's function from peers from whom they have received a Operation message to set of operations received
 
@@ -126,7 +125,7 @@ VARIABLES
     \* each good bootstrapping node's estimated memory used
 
 \* inclusive bootstrapping variables
-pipe_vars   == <<validated_blocks, header_pipe, operation_pipe, level_to_validate>>
+pipe_vars   == <<validated_blocks, header_pipe, operation_pipe>>
 b_sent_vars == <<sent_get_branch, sent_get_headers, sent_get_ops>>
 b_recv_vars == <<recv_branch, recv_header, recv_operation>>
 trace_vars  == <<phase_trace>>
@@ -140,7 +139,7 @@ b_non_op_vars     == <<phase, connections, current_head, pipe_vars, sent_get_bra
 b_non_pipe_vars   == <<phase, connections, current_head, b_sent_vars, b_recv_vars, mem_vars>>
 b_non_recv_vars   == <<phase, connections, current_head, pipe_vars, b_sent_vars, mem_vars>>
 b_non_node_vars   == <<phase, connections, current_head, pipe_vars, b_sent_vars, b_recv_vars, mem_vars>>
-b_non_phase_vars  == <<connections, current_head, pipe_vars, b_sent_vars, b_recv_vars, mem_vars>>
+b_non_phase_vars  == <<connections, pipe_vars, b_sent_vars, b_recv_vars, mem_vars>>
 non_mem_vars      == <<phase, connections, current_head, pipe_vars, b_sent_vars, b_recv_vars, trace_vars>>
 
 \* all bootstrapping variables
@@ -152,15 +151,15 @@ VARIABLES
     sent_branch,
     \* each good node's set of peers to whom they have sent a Current_branch message
 
-    \* @type: NODE -> NODE -> Set(HEADER);
+    \* @type: NODE -> NODE -> Set(<<BLOCK_HASH, HEADER>>);
     sent_headers,
     \* each good node's function from peers to whom they have sent a Block_header message to the set of headers sent
 
-    \* @type: NODE -> NODE -> Set(OPERATION);
+    \* @type: NODE -> NODE -> Set(<<BLOCK_HASH, OPERATION>>);
     sent_ops,
     \* each good node's function from peers to whom they have sent a Operation message to the set of operations sent
 
-    \* @type: NODE -> Set(NODE);
+    \* @type: NODE -> Set(<<NODE, Seq(LEVEL)>>);
     recv_get_branch,
     \* each good node's set of peers from whom they have received a Get_current_branch message
 
@@ -302,7 +301,7 @@ Max_level_seq(seq) ==
 \* @type: Set(HEADER) => HEADER;
 Max_level_set(s) == Max_level_seq(SetToSeq(s))
 
-\* 
+\*
 Max_hd_set(s) ==
     LET max_fit_hds  == { x \in s : \A y \in s : x.fitness >= y.fitness }
         max_fit_lvls == { x \in max_fit_hds : \A y \in max_fit_hds : x.level >= y.level }
@@ -331,10 +330,15 @@ Levels  == 1..MAX_LEVEL
 Levels0 == Levels \cup {0}
 
 \* phases
+search_phase    == <<"searching_for_major_branch", {}>>
+major_phase(ls) == <<"gathering_evidence", ls>>
+\* TODO enqueue_phase
+apply_phase(ls) == <<"building_blocks", ls>>
+
 Phase_init   == { <<"init", {}>> }
-Phase_search == { <<"searching_for_major_level", {}>> }
-Phase_major  == { <<"gathering_evidence", ls>> : ls \in SUBSET Levels }
-Phase_apply  == { <<"building_blocks", ls>> : ls \in SUBSET Levels }
+Phase_search == { search_phase }
+Phase_major  == { major_phase(ls) : ls \in SUBSET Levels }
+Phase_apply  == { apply_phase(ls) : ls \in SUBSET Levels }
 
 Phases == Phase_init \cup Phase_search \cup Phase_major \cup Phase_apply
 
@@ -356,8 +360,9 @@ PossibleHeaders  == [
 
 Ops == 0..MAX_OPS
 
-\* @type: (LEVEL, BLOCK_HASH, BRANCH, HASH) => HEADER;
-header(l, pred, br, op) == [ level |-> l, predecessor |-> pred, branch |-> br, ops_hash |-> op ]
+\* @type: (LEVEL, BLOCK_HASH, HASH, FITNESS, HASH) => HEADER;
+header(l, pred, ctx, fit, op) ==
+    [ level |-> l, predecessor |-> pred, context |-> ctx, fitness |-> fit, ops_hash |-> op ]
 
 \* @type: NODE => Set(HEADER);
 headers(bn) == UNION { recv_header[bn][n] : n \in connections[bn] }
@@ -373,13 +378,13 @@ block(hdr, ops, fit, ctx) == [ header |-> hdr, ops |-> ops, fitness |-> fit, con
 
 \* genesis
 \* @type: HEADER;
-gen_header == header(0, 0, 0, 0)
+gen_header == header(0, 0, 0, 0, 0)
 
 \* block/header hash
 \* @type: HEADER => BLOCK_HASH;
 hash(hd) ==
     IF hd = gen_header THEN 0
-    ELSE Index([ level |-> hd.level, branch |-> hd.branch, ops_hash |-> hd.ops_hash ], SetToSeq(PossibleHeaders))
+    ELSE Index(hd, SetToSeq(PossibleHeaders))
 
 \* @type: Set(OPERATION);
 gen_operations == operations(0, {})
@@ -506,9 +511,6 @@ node_op_hashes(n) == { op_hash[op] : op \in node_operations(n) }
 \* @type: (NODE, NODE) => LEVEL;
 chain_levels(bn, n) == fittest_head[bn][n].level
 
-\* 
-fitness_witnessed(bn) == Max_set({ hd.fitness : hd \in fetched_headers(bn) })
-
 \* @type: NODE => Set(NODE);
 num_peers(bn) == Cardinality(connections[bn] \cup b_blacklist[bn])
 
@@ -539,10 +541,14 @@ all_recv_hashes(bn) == UNION { recv_hashes[bn, n] : n \in Nodes }
 major_hashes(bn) == { fh \in all_recv_hashes(bn) :
     \* majority of peers agree with [fh]
     LET seen_agreeing == { n \in Nodes : fh \in ToSet(recv_branch[bn][n]) } IN
-    (2 * Cardinality(seen_agreeing)) > num_peers(bn)
-}
+    (2 * Cardinality(seen_agreeing)) > num_peers(bn) }
 
 has_major_hashes(bn) == major_hashes(bn) /= {}
+
+major_headers(bn) == { hd \in fetched_headers(bn) :
+    \* majority of peers agree with [hd]
+    LET seen_agreeing == { n \in Nodes : hd \in ToSet(recv_header[bn][n]) } IN
+    (2 * Cardinality(seen_agreeing)) > num_peers(bn) }
 
 hash_bound == Cardinality(BlockHashes)
 
@@ -566,12 +572,23 @@ hash_list(l) == __hash_list(hash_nums, l, 0)
 \* hash a list of lists
 hash_list_list(ll) == __hash_list(_hash_list, ll, 0)
 
-\* 
+\*
 \* @type: NODE => Bool;
 found_major_level(bn) == \E l \in Levels : highest_major_level(bn) >= l
 
 \* @type: NODE => Set(NODE);
 nodes_should_have_major_level(bn) == { n \in Nodes : fittest_head[bn][n].level >= highest_major_level(bn) }
+
+log_transition(bn, p) ==
+    phase_trace' = [ phase_trace EXCEPT ![bn] = Cons(p, @) ]
+
+RECURSIVE associated(_, _)
+associated(hd1, hd2) ==
+    IF hd1.fitness >= hd2.fitness THEN
+        \/ hd1 = hd2
+        \/ hash(hd2) = hd1.predecessor
+        \/ associated(lookup_block_hash[hd1.predecessor], hd2)
+    ELSE associated(hd2, hd1)
 
 ----
 
@@ -929,7 +946,6 @@ validate_block(bn, hd, ops, ctx) ==
         v == VALIDATOR[b]
     IN
     IF v = "known_valid" THEN
-        /\ level_to_validate' = [ level_to_validate EXCEPT ![bn] = @ + 1 ]
         /\ header_pipe'       = [ header_pipe       EXCEPT ![bn] = Tail(@) ]
         /\ operation_pipe'    = [ operation_pipe    EXCEPT ![bn] = Tail(@) ]
         /\ validated_blocks'  = [ validated_blocks  EXCEPT ![bn] = @ \cup {b} ]
@@ -937,21 +953,28 @@ validate_block(bn, hd, ops, ctx) ==
     ELSE
         /\ header_pipe'    = [ header_pipe    EXCEPT ![bn] = Tail(@) ]
         /\ operation_pipe' = [ operation_pipe EXCEPT ![bn] = Tail(@) ]
-        /\ UNCHANGED <<messages, blacklist, node_vars, b_non_pipe_vars, level_to_validate, validated_blocks>>
+        /\ UNCHANGED <<messages, blacklist, node_vars, b_non_pipe_vars, validated_blocks>>
 
 ValidateBlock == \E bn \in GOOD_BOOTSTRAPPING :
-    \E n \in Nodes :
-        LET hds == header_pipe[bn]
-            ops == operation_pipe[bn]
+    LET hds == header_pipe[bn]
+        ops == operation_pipe[bn]
+    IN
+    /\ phase[bn] \in Phase_apply
+    /\ hds /= <<>>
+    /\ ops /= <<>>
+    /\ LET hd == Head(hds)
+            op == Head(ops)
         IN
-        /\ hds /= <<>>
-        /\ ops /= <<>>
-        /\ LET hd == Head(hds)
-               op == Head(ops)
-           IN
-            /\ hd.level = level_to_validate[bn]
-            /\ op.block_hash = hash(hd)
-            /\ validate_block(bn, hd, ops, 0) \* TODO fix ctx hash
+        /\ op.block_hash = hash(hd)
+        /\ validate_block(bn, hd, ops, 0) \* TODO fix ctx hash
+
+ExitBlockValidation == \E bn \in GOOD_BOOTSTRAPPING :
+    /\ phase[bn] \in Phase_apply
+    /\ header_pipe[bn] = <<>>
+    /\ operation_pipe[bn] = <<>>
+    /\ phase' = [ phase EXCEPT ![bn] = search_phase ]
+    /\ log_transition(bn, search_phase)
+    /\ UNCHANGED non_phase_vars
 
 \* [7] undesirable actions
 
@@ -1013,11 +1036,7 @@ NodeTimeout == FALSE
 \*     /\ UNCHANGED <<n_messages, n_blacklist, node_vars, pipe_vars, b_sent_vars>>
 
 n_blacklist_bootstrap(n, bn) ==
-    /\ n_blacklist' = [ n_blacklist EXCEPT ![n] = @ \cup {bn} ]
-
-
-BootstrapBlacklist == FALSE
-\* TODO
+    n_blacklist' = [ n_blacklist EXCEPT ![n] = @ \cup {bn} ]
 
 NodeBlacklist == \E bn \in GOOD_BOOTSTRAPPING :
     \/ \E n \in connections[bn], msg \in b_messages[bn] :
@@ -1046,10 +1065,6 @@ NodeBlacklist == \E bn \in GOOD_BOOTSTRAPPING :
 
 \* [8] Phase transitions
 
-search_phase    == <<"searching_for_major_level", {}>>
-major_phase(ls) == <<"gathering_evidence", ls>>
-apply_phase(ls) == <<"building_blocks", ls>>
-
 \* [8.1] Connection intialization
 InitConnections == \E bn \in Bootstrapping_nodes :
     \E ps \in ConnectionSets :
@@ -1059,12 +1074,6 @@ InitConnections == \E bn \in Bootstrapping_nodes :
         /\ connections' = [ connections EXCEPT ![bn] = ps ]
         /\ UNCHANGED <<blacklist, messages, b_non_conn_vars, node_vars>>
 
-log_transition(bn, p) ==
-    phase_trace' = [ phase_trace EXCEPT ![bn] = Cons(p, @) ]
-
-\* TODO
-validated(bn, l) == FALSE
-
 \* [8.2] Init -> Searching
 InitToSearch == \E bn \in GOOD_BOOTSTRAPPING :
     /\ phase \in Phase_init
@@ -1073,47 +1082,54 @@ InitToSearch == \E bn \in GOOD_BOOTSTRAPPING :
     /\ UNCHANGED non_phase_vars
 
 \* [8.3] Searching -> Validating l
-\* level l has a major block hash
+\* major brach at level
 SearchToMajor == \E bn \in GOOD_BOOTSTRAPPING :
     \E l \in Levels :
         /\ phase[bn] \in Phase_search
         /\ l = highest_major_level(bn)
-        /\ phase' = [ phase EXCEPT ![bn] = major_phase(l) ]
-        /\ log_transition(bn, major_phase(l))
+        /\ phase' = [ phase EXCEPT ![bn] = major_phase(1..l) ]
+        /\ log_transition(bn, major_phase(1..l))
         /\ UNCHANGED non_phase_vars
 
-\* [8.4] Validating l -> Downloading 0..(l - 1)
+\* [8.4] Validating l -> Apply l
 MajorToApply == \E bn \in GOOD_BOOTSTRAPPING :
     \E l \in Levels :
         /\ phase[bn] \in Phase_major
-        /\ phase[bn][2] = {l}
-        /\ validated(bn, l)
-        /\ phase' = [ phase EXCEPT ![bn] = apply_phase(1..(l - 1)) ]
-        /\ log_transition(bn, apply_phase(1..(l - 1)))
+        /\ phase[bn][2] = 1..l
+        \* TODO prevalidated_headers
+        /\ { _l \in Levels : \E hd \in fetched_headers(bn) : hd.level = _l } = 1..l
+        \* TODO prevalidated_ops
+        \* /\ all headers represented
+        /\ phase' = [ phase EXCEPT ![bn] = apply_phase(1..l) ]
+        /\ log_transition(bn, apply_phase(1..l))
         /\ UNCHANGED non_phase_vars
 
 \* [8.5] Validating l -> Validating k, l <= k
 MajorToMajor == \E bn \in GOOD_BOOTSTRAPPING :
-    \E l \in Levels : \E k \in Levels :
-        /\ l <= k
+    \E new \in fetched_headers(bn), l \in Levels :
+        LET k == new.level IN
+        /\ new.fitness > current_head[bn].fitness
         /\ phase[bn] \in Phase_major
-        /\ phase[bn][2] = {l}
-        /\ phase' = [ phase EXCEPT ![bn] = major_phase(k) ]
-        /\ log_transition(bn, major_phase(k))
+        /\ phase[bn][2] = 1..l
+        /\ current_head' = [ current_head EXCEPT ![bn] = new ]
+        /\ phase'        = [ phase        EXCEPT ![bn] = major_phase(1..k) ]
+        /\ log_transition(bn, major_phase(1..k))
         /\ UNCHANGED non_phase_vars
 
 \* [8.6] Downloading l -> Validating k, l <= k
 ApplyToMajor == \E bn \in GOOD_BOOTSTRAPPING :
-    \E new \in Headers :
-        LET curr == current_head[bn] IN
+    \E new \in fetched_headers(bn) :
+        LET curr == current_head[bn]
+            k    == new.level
+        IN
         /\ curr.fitness < new.fitness
         /\ new.level = highest_major_level(bn)
         /\ phase[bn] \in Phase_apply
         /\ curr \in phase[bn][2]
         /\ current_head' = [ current_head EXCEPT ![bn] = new ]
-        /\ phase'        = [ phase EXCEPT ![bn] = apply_phase(new) ]
-        /\ log_transition(bn, apply_phase(new))
-        /\ UNCHANGED b_non_phase_vars
+        /\ phase'        = [ phase EXCEPT ![bn] = apply_phase(1..k) ]
+        /\ log_transition(bn, apply_phase(1..k))
+        /\ UNCHANGED non_phase_vars
 
 ----
 
@@ -1133,11 +1149,11 @@ BootstrappingInit ==
     /\ phase             = [ n \in GOOD_BOOTSTRAPPING  |-> <<"init", {}>> ]
     /\ connections       = [ n \in Bootstrapping_nodes |-> {} ]
     /\ current_head      = [ n \in GOOD_BOOTSTRAPPING  |-> genesis ]
-    /\ validated_blocks  = [ n \in GOOD_BOOTSTRAPPING  |-> [ l \in Levels |-> {} ] ]
     /\ fittest_head      = [ n \in GOOD_BOOTSTRAPPING  |-> gen_header ]
-    /\ level_to_validate = [ n \in GOOD_BOOTSTRAPPING  |-> 1 ]
     /\ header_pipe       = [ n \in GOOD_BOOTSTRAPPING  |-> <<>> ]
     /\ operation_pipe    = [ n \in GOOD_BOOTSTRAPPING  |-> <<>> ]
+    /\ validated_blocks  = [ n \in GOOD_BOOTSTRAPPING  |-> [ l \in Levels |-> {} ] ]
+
     /\ sent_get_branch   = [ n \in GOOD_BOOTSTRAPPING  |-> {} ]
     /\ sent_get_headers  = [ n \in GOOD_BOOTSTRAPPING  |-> [ m \in Nodes |-> {} ] ]
     /\ sent_get_ops      = [ n \in GOOD_BOOTSTRAPPING  |-> [ m \in Nodes |-> {} ] ]
@@ -1146,14 +1162,15 @@ BootstrappingInit ==
     /\ recv_operation    = [ n \in GOOD_BOOTSTRAPPING  |-> [ m \in Nodes |-> {} ] ]
 
 NodeInit ==
+    /\ serving_headers   = [ n \in GOOD_NODES |-> [ m \in Bootstrapping_nodes |-> {} ] ]
+    /\ serving_ops       = [ p \in GOOD_NODES |-> [ m \in Bootstrapping_nodes |-> [ h \in BlockHashes |-> {} ] ] ]
+
     /\ recv_get_branch   = [ n \in GOOD_NODES |-> {} ]
     /\ recv_get_headers  = [ n \in GOOD_NODES |-> [ m \in Bootstrapping_nodes |-> {} ] ]
     /\ recv_get_ops      = [ n \in GOOD_NODES |-> [ m \in Bootstrapping_nodes |-> {} ] ]
     /\ sent_branch       = [ n \in GOOD_NODES |-> [ m \in Bootstrapping_nodes |-> {} ] ]
     /\ sent_headers      = [ n \in GOOD_NODES |-> [ m \in Bootstrapping_nodes |-> {} ] ]
     /\ sent_ops          = [ n \in GOOD_NODES |-> [ m \in Bootstrapping_nodes |-> {} ] ]
-    /\ serving_headers   = [ n \in GOOD_NODES |-> [ m \in Bootstrapping_nodes |-> {} ] ]
-    /\ serving_ops       = [ p \in GOOD_NODES |-> [ m \in Bootstrapping_nodes |-> [ h \in BlockHashes |-> {} ] ] ]
 
 TraceInit == phase_trace = [ n \in GOOD_BOOTSTRAPPING |-> <<>> ]
 
@@ -1175,7 +1192,7 @@ Next ==
     \/ MajorToApply
     \/ MajorToMajor
     \/ ApplyToMajor
-    
+
     \* Message passing
     \/ SendGetCurrentBranch
     \/ SendGetBlockHeaders
@@ -1201,7 +1218,6 @@ Next ==
     \/ NodeTimeout
 
     \* Blacklist actions
-    \/ BootstrapBlacklist
     \/ NodeBlacklist
 
     \* Byzantine actions
@@ -1235,11 +1251,10 @@ BootstrappingOK ==
     /\ connections        \in [ Bootstrapping_nodes -> SUBSET Nodes ]
     /\ current_head       \in [ GOOD_BOOTSTRAPPING  -> Headers ]
     /\ fittest_head       \in [ GOOD_BOOTSTRAPPING  -> [ Nodes -> Headers ] ]
-    /\ level_to_validate  \in [ GOOD_BOOTSTRAPPING  -> 1..(MAX_LEVEL + 1) ]
     /\ validated_blocks   \in [ GOOD_BOOTSTRAPPING  -> SUBSET Blocks ]
     /\ header_pipe        \in [ GOOD_BOOTSTRAPPING  -> Seq_n(Headers) ]
     /\ operation_pipe     \in [ GOOD_BOOTSTRAPPING  -> Seq_n(Set_op(Operations)) ]
-    
+
     /\ sent_get_branch    \in [ GOOD_BOOTSTRAPPING  -> SUBSET Nodes ]
     /\ sent_get_headers   \in [ GOOD_BOOTSTRAPPING  -> [ Nodes -> SUBSET (Levels \X BlockHashes) ] ]
     /\ sent_get_ops       \in [ GOOD_BOOTSTRAPPING  -> [ Nodes -> SUBSET (Hashes \X OperationHashes) ] ]
@@ -1268,9 +1283,10 @@ TypeOK ==
 
 \* [2] General safety properties
 
-\* TODO
-Safety ==
-    /\ TypeOK
+good_conns(bn)  == connections[bn] \cap GOOD_NODES
+good_headers(n) == { b.header : b \in BLOCKS[n] }
+
+ConnectionSafety ==
     /\ \A bn \in GOOD_BOOTSTRAPPING :
         /\ num_peers(bn) <= MAX_PEERS
         /\ b_blacklist[bn] \cap connections[bn] = {}
@@ -1278,39 +1294,128 @@ Safety ==
     \* phase conjectures
     /\ \A bn \in GOOD_BOOTSTRAPPING :
         LET p == phase[bn] IN
-        /\ p \in    Phase_init => num_peers(bn) = 0
         /\ p \notin Phase_init => num_peers(bn) >= MIN_PEERS
         /\ \E l \in Levels :
-            p = major_phase(l) <=> l = highest_major_level(bn)
-        /\ {}
-    \* 
-    \* /\ IF (
-    \*     \E bn \in GOOD_BOOTSTRAPPING :
-    \*         LET n_hashes == fetched_hashes(bn) IN
-    \*         \E h \in n_hashes :
-    \*             highest_major_level(bn) = HASH_BLOCK_MAP[h].level
-    \* ) THEN 
+            p = major_phase(1..l) <=> l = highest_major_level(bn)
+        /\ \E l \in Levels :
+            p = apply_phase(1..l) <=> l = highest_major_level(bn)
+
+\* A majority of good peers agree with a bootstrapping node's current head
+CurrentHeadIsAlwaysMajor == \A bn \in GOOD_BOOTSTRAPPING :
+    2 * Cardinality({ n \in good_conns(bn) : current_head[bn] \in good_headers(n) }) > Cardinality(good_conns(bn))
+
+\* Without a major branch, bootstrapping nodes do not change their head
+HeadDoesNotChangeWithoutMajoritySupport == \A bn \in GOOD_BOOTSTRAPPING :
+    highest_major_level(bn) = 0 => current_head[bn] = gen_header
+
+\* TODO only enqueue headers and operations which correspond to our current branch
+
+Safety ==
+    /\ TypeOK
+    /\ ConnectionSafety
+    /\ CurrentHeadIsAlwaysMajor
+    /\ HeadDoesNotChangeWithoutMajoritySupport
 
 (**************)
 (* Properties *)
 (**************)
 
-\* TODO liveness properties
+PeerConservation ==
+    \A bn \in GOOD_BOOTSTRAPPING :
+        [][ IF \/ connections[bn] /= {}
+               \/ b_blacklist[bn] /= {}
+            THEN connections[bn] \cup b_blacklist[bn] = connections'[bn] \cup b_blacklist'[bn]
+            ELSE connections[bn] \cup b_blacklist[bn] \subseteq connections'[bn] \cup b_blacklist'[bn] ]_vars
+
+\* fitness always increases
+MonotonicFitness == \A bn \in GOOD_BOOTSTRAPPING :
+    LET old_head  == current_head[bn]
+        new_head  == current_head'[bn]
+    IN
+    [][ old_head /= new_head => old_head.fitness < new_head.fitness ]_vars
+
+\* Allowable phase transitions
+\* Init -> Search
+FromInit == \A bn \in GOOD_BOOTSTRAPPING :
+    LET old_phase == phase[bn]
+        new_phase == phase'[bn]
+    IN
+    [][ /\ old_phase \in Phase_init
+        /\ old_phase /= new_phase
+        =>
+        /\ new_phase \in Phase_search
+        /\ connections[bn] = {}
+        /\ connections'[bn] /= {} ]_vars
+
+\* Search -> Major
+FromSearch == \A bn \in GOOD_BOOTSTRAPPING :
+    LET old_phase == phase[bn]
+        old_head  == current_head[bn]
+        new_phase == phase'[bn]
+        new_head  == current_head'[bn]
+    IN
+    [][ /\ old_phase \in Phase_search
+        /\ old_phase /= new_phase
+        =>
+        /\ new_phase \in Phase_major
+        /\ old_head.fitness < new_head.fitness
+        /\ old_head.level < new_head.level ]_vars
+
+\* Major -> { Major, Apply }
+FromMajor == \A bn \in GOOD_BOOTSTRAPPING :
+    LET old_phase == phase[bn]
+        old_head  == current_head[bn]
+        new_phase == phase'[bn]
+        new_head  == current_head'[bn]
+    IN
+    \* Major -> Apply
+    /\ [][ (old_phase \in Phase_major) => new_phase \in Phase_major \cup Phase_apply ]_vars
+    \* Major -> Major
+    /\ [][ \E l \in Levels :
+            /\ old_phase = major_phase(1..l)
+            /\ old_head.level = l
+            /\ new_phase \in Phase_major
+            =>
+            \E k \in Levels :
+                /\ k > l
+                /\ new_head.level = k
+                /\ new_phase = major_phase(1..k) ]_vars
+
+\* Apply -> { Major, Search }
+FromApply == \A bn \in GOOD_BOOTSTRAPPING :
+    LET old_phase == phase[bn]
+        old_head  == current_head[bn]
+        new_phase == phase'[bn]
+        new_head  == current_head'[bn]
+    IN
+    \* Apply -> Search
+    /\ [][ /\ old_phase \in Phase_apply
+           /\ new_phase /= new_phase
+           => new_phase \in Phase_search \cup Phase_major ]_vars
+    \* Apply -> Major
+    /\ [][ /\ old_phase \in Phase_apply
+           /\ old_phase \in Phase_major
+            =>
+            /\ old_head.fitness < new_head.fitness
+            /\ old_head.level < new_head.level ]_vars
+
+AllowableTransitions ==
+    /\ FromInit
+    /\ FromApply
+    /\ FromMajor
+    /\ FromSearch
+
+\* Bootstrapping nodes always learn about local major branches
+IfLocalMajorBranchExistsThenBootstrapppingWillHearAboutIt == \A bn \in GOOD_BOOTSTRAPPING :
+    LET curr_hd == current_head[bn] IN
+    \E hd \in major_headers(bn) :
+        <>( \/ hd = curr_hd
+            \/ hd.fitness < curr_hd.fitness )
 
 Liveness ==
-    \* if a specified majority of peers agree up to level l,
-    \* then node will eventually get all corresponding headers up through level l
-    \* start with something like .95l..l
-    /\ \A bn \in GOOD_BOOTSTRAPPING :
-        /\ [][ connections[bn] \cup b_blacklist[bn] \subseteq connections'[bn] \cup b_blacklist'[bn] ]_vars
-        /\ [][ \/ connections[bn] /= {}
-            \/ b_blacklist[bn] /= {}
-            => connections[bn] \cup b_blacklist[bn] = connections'[bn] \cup b_blacklist'[bn]
-            ]_vars
-        \* fitness always increases
-        /\ [][ current_head[bn].fitness < current_head'[bn].fitness ]_vars
-    /\ PrintT("TODO")
-    \* Never seriously consider non-majority hashes
-    /\ {}
+    /\ PeerConservation
+    /\ MonotonicFitness
+    /\ AllowableTransitions
+    /\ IfLocalMajorBranchExistsThenBootstrapppingWillHearAboutIt
 
 ===================================
