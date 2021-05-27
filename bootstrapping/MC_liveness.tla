@@ -22,20 +22,20 @@ Threshold == 0
 
 \* block 0 = genesis
 \* block 1
-\*   header(level, pred_hash, branch, ops_hash)
-LOCAL hd1  == header(1, 0, 0, 1)
+\*   header(level, predecessor, context, fitness, ops_hash)
+LOCAL ctx1 == hash_nums(0, 0)
+LOCAL hd1  == header(1, 0, ctx1, 0, 1)
 LOCAL hsh1 == hash(hd1)
 LOCAL ops1 == operations(hsh1, 0..0)
 LOCAL fit1 == 1
-LOCAL ctx1 == hash_nums(0, hsh1)
-LOCAL b1   == block(hd1, ops1, fit1, ctx1)
+LOCAL b1   == block(hd1, ops1)
 \* block 2
-LOCAL hd2  == header(2, hsh1, 0, 2)
+LOCAL ctx2 == hash_nums(ctx1, hsh1)
+LOCAL hd2  == header(2, hsh1, ctx2, 0, 2)
 LOCAL hsh2 == hash(hd2)
 LOCAL ops2 == operations(hsh2, 0..1)
 LOCAL fit2 == 2
-LOCAL ctx2 == hash_nums(ctx1, hsh2)
-LOCAL b2   == block(hd2, ops2, fit2, ctx2)
+LOCAL b2   == block(hd2, ops2)
 
 \* Good_nodes -> Headers
 Current_head[ n \in Good_nodes ] == hd2
@@ -45,7 +45,6 @@ Good_node_blocks ==
     LET chain == <<genesis, b1, b2>> IN
     [ n \in Good_nodes |-> chain ]
 
-\* 
 All_good_node_blocks == UNION { ToSet(Good_node_blocks[n]) : n \in GOOD_NODES }
 
 Good_node_levels[    n \in Good_nodes ] == { b.header.level : b \in ToSet(Good_node_blocks[n]) }

@@ -18,14 +18,20 @@ Max_level == 2
 
 Max_ops == 2
 
-Threshold == 0
-
-LOCAL hd1  == header(1, 0, 0, 1)
+\*   header(level, predecessor, context, fitness, ops_hash)
+LOCAL ctx1 == hash_nums(0, 0)
+LOCAL hd1  == header(1, 0, ctx1, 0, 1)
 LOCAL hsh1 == hash(hd1)
 LOCAL ops1 == operations(hsh1, 0..0)
+LOCAL fit1 == 1
 LOCAL b1   == block(hd1, ops1)
-LOCAL hd2  == header(2, hsh1, 0, 2)
-LOCAL b2   == block(hd2, operations(hash(hd2), 0..1))
+\* block 2
+LOCAL ctx2 == hash_nums(ctx1, hsh1)
+LOCAL hd2  == header(2, hsh1, ctx2, 0, 2)
+LOCAL hsh2 == hash(hd2)
+LOCAL ops2 == operations(hsh2, 0..1)
+LOCAL fit2 == 2
+LOCAL b2   == block(hd2, ops2)
 
 \* Good_nodes -> Headers
 Current_head == 1 :> hd2
