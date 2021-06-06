@@ -7,6 +7,7 @@ Delegates == 1..5
 
 Max_bake == 2
 Max_cycle == 3
+Max_delay == 5
 Max_endorse == 4
 Min_endorse == 1
 Max_time == 10
