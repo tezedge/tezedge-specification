@@ -14,8 +14,7 @@ CONSTANTS
     MAX_REWARD,             \* maximum baking/endorsement reward
     MIN_ENDORSE,            \* minimum number of endorses to close a block
     MIN_BLOCK_DELAY,        \* minimum block delay
-    BAKING_DELAY,           \* delay per missed baking slot
-    ENDORSEMENT_DELAY,      \* delay per missing endorsement
+    BLOCK_DELAY,            \* priority -> endorsements -> time
     INITIAL_ENDORSERS,      \* number of endorsements required to not incure additional block delay
     TOKENS_PER_ROLL,        \* 8000
     BLOCKS_PER_CYCLE,       \* 8192
@@ -29,19 +28,19 @@ CONSTANTS
     ENDORSEMENT_REWARD      \* cycle -> block_slot -> delegate -> int
 
 VARIABLES
-    time,               \* timestamp: 1 time ~ MIN_BLOCK_DELAY
-    cycle,              \* int
-    block_slot,         \* int
-    phase,              \* phase \in { "active", "cycle_admin", "snapshot_admin" }
-    all_blocks,         \* cycle -> block -> Set(roll * time)
-    delegate_blocks,    \* cycle -> block_slot -> delegate -> bool * roll * time
-    balance,            \* cycle -> block_slot -> delegate -> int
-    baking_reward,      \* cycle -> block_slot -> delegate -> int
-    endorsement_reward, \* cycle -> block_slot -> delegate -> int
-    rolls_snapshot,     \* cycle -> block_slot -> delegate -> Set(roll)
-    rolls_lifo,         \* cycle -> block_slot -> Seq(roll)
-    endorsements,       \* cycle -> block_slot -> roll -> Set(roll)
-    safety_deposit      \* cycle -> delegate -> int
+    time,                   \* timestamp: 1 time ~ MIN_BLOCK_DELAY
+    cycle,                  \* int
+    block_slot,             \* int
+    phase,                  \* phase \in { "active", "cycle_admin", "snapshot_admin" }
+    all_blocks,             \* cycle -> block -> Set(roll * time)
+    delegate_blocks,        \* cycle -> block_slot -> delegate -> bool * roll * time
+    balance,                \* cycle -> block_slot -> delegate -> int
+    baking_reward,          \* cycle -> block_slot -> delegate -> int
+    endorsement_reward,     \* cycle -> block_slot -> delegate -> int
+    rolls_snapshot,         \* cycle -> block_slot -> delegate -> Set(roll)
+    rolls_lifo,             \* cycle -> block_slot -> Seq(roll)
+    endorsements,           \* cycle -> block_slot -> roll -> Set(roll)
+    safety_deposit          \* cycle -> delegate -> int
 
 \* inclusive variables
 
@@ -54,6 +53,10 @@ non_time_vars == <<cycle, block_slot, phase, all_blocks, delegate_blocks, balanc
 vars == <<time, cycle, block_slot, phase, all_blocks, delegate_blocks, balance, baking_reward, endorsement_reward, rolls_snapshot, rolls_lifo, endorsements>>
 
 ----
+
+(***************)
+(* Definitions *)
+(***************)
 
 All_time == 0..MAX_TIME
 
@@ -149,15 +152,23 @@ inj_seq(S) == { s \in Seq_n(S, card(S)) : \A x \in ToSet(s) : num_occ(x, s, 0) =
 
 ----
 
+(***************)
+(* Assumptions *)
+(***************)
+
 \* MAX_TIME is at least as long as the time is would take to bake all blocks at priority 0
 ASSUME MAX_TIME >= card(Cycles) * card(Block_slots) * MIN_BLOCK_DELAY
 
-ASSUME \A c \in Cycles, b \in Block_slots : Len(BAKING_PRIORITY[c][b]) <= MAX_BAKE
+ASSUME \A p \in 0..MAX_BAKE, e \in 0..MAX_ENDORSE : BLOCK_DELAY[p][e] >= MIN_BLOCK_DELAY
 
-ASSUME \A c \in Cycles, b \in Block_slots :
-    Sum(Map(LAMBDA r : ENDORSEMENT_RIGHTS[c][b][r], SetToSeq(ROLLS))) <= MAX_ENDORSE
+ASSUME \A c \in Cycles, bs \in Block_slots : Len(BAKING_PRIORITY[c][bs]) = MAX_BAKE
+
+ASSUME \A c \in Cycles, bs \in Block_slots :
+    Sum(Map(LAMBDA r : ENDORSEMENT_RIGHTS[c][bs][r], SetToSeq(ROLLS))) <= MAX_ENDORSE
 
 ASSUME \A d1, d2 \in DELEGATES : d1 /= d2 => INIT_ROLLS_SNAPSHOT[d1] \cap INIT_ROLLS_SNAPSHOT[d2] = {}
+
+----
 
 (*****************)
 (* Initial state *)
@@ -200,24 +211,9 @@ TypeOK ==
 
 ----
 
-(***************)
-(* Block delay *)
-(***************)
-\*
-\* emmy_delay(p) = MIN_BLOCK_DELAY + BAKING_DELAY * p
-\*
-\* emmy_plus_delay(p, e) =
-\*   MIN_BLOCK_DELAY + BAKING_DELAY * p + ENDORSEMENT_DELAY * max(0, INITIAL_ENDORSERS - e)
-\* where
-\*   BAKING_DELAY      (40) - delay per missing baking slot
-\*   ENDORSEMENT_DELAY (8)  - delay per missing endorsement
-\*   INITIAL_ENDORSERS (24) - threshold of endorsers needed to get least delay
-\*
-\* emmy_star_delay(p, e) ==
-\*     IF p = 0 /\ 5 * e >= 3 * MAX_ENDORSE THEN MIN_BLOCK_DELAY
-\*     ELSE emmy_plus_delay(p, e)
-
-----
+(***********)
+(* Helpers *)
+(***********)
 
 baking_priority(c, bs, r) == Index(r, BAKING_PRIORITY[c][bs]) - 1
 
@@ -288,9 +284,50 @@ block_delay(c, bs, d) ==
             baker  == prev_b[3]
             e      == num_endorsements(cyc, slot, baker)
         IN
-        MIN_BLOCK_DELAY + BAKING_DELAY * p + ENDORSEMENT_DELAY * max(0, INITIAL_ENDORSERS - e)
+        BLOCK_DELAY[p][e]
 
 has_baked_block(c, bs, r) == r \in { b[1] : b \in all_blocks[c][bs] }
+
+\* list of <<cycle num, block slot>> for which there is at least one block
+curr_slots ==
+    LET has_b   == all_blocks[cycle][block_slot] /= {}
+        prev_c  == IF has_b \/ block_slot /= 0 THEN cycle ELSE cycle - 1
+        prev_bs == IF has_b THEN block_slot ELSE IF block_slot /= 0 THEN block_slot - 1 ELSE max_slot
+    IN
+    (0..(prev_c - 1)) \X Block_slots \cup {prev_c} \X (0..prev_bs)
+
+RECURSIVE delegate_slots(_, _, _)
+delegate_slots(c, bs, d) ==
+    LET has_b   == delegate_blocks[c][bs][d][1]
+        prev_c  == IF has_b \/ block_slot /= 0 THEN cycle ELSE cycle - 1
+        prev_bs == IF has_b THEN block_slot ELSE IF block_slot /= 0 THEN block_slot - 1 ELSE max_slot
+    IN
+    IF ~has_b THEN delegate_slots(prev_c, prev_bs, d)
+    ELSE (0..(prev_c - 1)) \X Block_slots \cup {prev_c} \X (0..prev_bs)
+
+\* list of <<cycle num, block slot>> for which the delegate has a block
+curr_delegate_slots(d) == delegate_slots(cycle, block_slot, d)
+
+\* chain up to the most recent block
+chain ==
+    \* the best block is the lowest priority block with the most endorsements
+    LET best_block(cbs) ==
+        LET c    == cbs[1]
+            bs   == cbs[2]
+            blks == all_blocks[c][bs]
+            most_endorsed == { b \in blks : \A bb \in blks :
+                card(endorsements[c][bs][b[1]]) >= card(endorsements[c][bs][bb[1]])
+            }
+            lowest_prio == { b \in blks : \A bb \in blks :
+                baking_priority(c, bs, b[1]) <= baking_priority(c, bs, bb[1])
+            }
+        IN Pick(lowest_prio)
+    IN
+    Map(best_block, SetToSeq(curr_slots))
+
+\* [d]'s view of the blockchain
+delegate_chain(d) ==
+    Map(LAMBDA cbs : LET b == delegate_blocks[cbs[1]][cbs[2]][d] IN <<b[2], b[3]>>, SetToSeq(curr_delegate_slots(d)))
 
 (***********)
 (* Actions *)
@@ -325,7 +362,7 @@ IncrBlockSlot == \E r \in ROLLS :
             /\ FALSE
             /\ UNCHANGED <<block_slot, cycle>>
 
-\* an active roll bakes a block on top of [prev_block]
+\* active roll [r] bakes a block on top of [prev_block]
 bake_block(prev_block, r) ==
     LET del == lookup_roll_opt(r)
         d   == del[2]
@@ -342,6 +379,7 @@ Bake == \E r \in nonzero_baking_rights(cycle, block_slot) :
         d   == del[2]
         b   == prev_delegate_block(cycle, block_slot, d)
     IN
+    /\ time < MAX_TIME
     /\ phase = "active"
     /\ isSome(del)
     /\ incr_time
@@ -354,6 +392,7 @@ Endorse == \E r \in nonzero_endorsement_rights(cycle, block_slot), b \in all_blo
         bkr == b[1]
         t   == b[2]
     IN
+    /\ time < MAX_TIME
     /\ phase = "active"
     /\ isSome(del)                                    \* [r] is an active roll
     /\ ~isSome(delegate_blocks[cycle][block_slot][d]) \* [d] has not already baked or endorsed a block in this slot
@@ -410,6 +449,7 @@ EndorsementRewards(c, bs) == \A r \in endorsers(c, bs) :
 \* once a block has been endorsed by suff many endorsers in "snapshot slot"
 \* we temporarily stop baking/endorsing and 
 ActiveToAdmin == \E r \in ROLLS :
+    /\ time < MAX_TIME
     /\ phase = "active"
     /\ num_endorsements(cycle, block_slot, r) >= MIN_ENDORSE
     /\ IF block_slot = BLOCKS_PER_CYCLE - 1
@@ -420,6 +460,7 @@ ActiveToAdmin == \E r \in ROLLS :
 
 \* 
 SnapshotAdminToActive == \E r \in nonzero_baking_rights(cycle, block_slot) :
+    /\ time < MAX_TIME
     /\ phase = "snapshot_admin"
     /\ num_endorsements(cycle, block_slot, r) >= MIN_ENDORSE
     /\ phase_change("active")
@@ -429,6 +470,7 @@ SnapshotAdminToActive == \E r \in nonzero_baking_rights(cycle, block_slot) :
 
 \* 
 CycleAdminToActive == \E r \in nonzero_baking_rights(cycle, block_slot) :
+    /\ time < MAX_TIME
     /\ phase = "cycle_admin"
     /\ num_endorsements(cycle, block_slot, r) >= MIN_ENDORSE
     /\ phase_change("active")
@@ -458,8 +500,7 @@ Spec == Init /\ [][Next]_vars /\ Fairness
 (**************)
 
 BalanceRollCorrectness == \A c \in Cycles, bs \in Block_slots, d \in DELEGATES :
-    /\ balance[c][bs][d] >= TOKENS_PER_ROLL * card(rolls_snapshot[c][bs][d])
-    /\ balance[c][bs][d] <  TOKENS_PER_ROLL * (card(rolls_snapshot[c][bs][d]) + 1)
+    balance[c][bs][d] \div TOKENS_PER_ROLL = card(rolls_snapshot[c][bs][d])
 
 DisjointRolls == \A c \in Cycles, bs \in Block_slots, d1, d2 \in DELEGATES :
     rolls_snapshot[c][bs][d1] \cap rolls_snapshot[c][bs][d2] = {}
@@ -477,6 +518,8 @@ EndorsersHaveNonzeroPriorityForEndorsedSlots == \A c \in Cycles, b \in Block_slo
         ENDORSEMENT_RIGHTS[c][b][r] > 0
 
 \* TODO more properties
+
+\* delegate chains always consist of blocks from all_blocks
 
 \* TODO
 \* chain health - blocks have priority 0 and almost all (80%?) endorsement slots are filled

@@ -31,11 +31,7 @@ Baking_priority == {} \* TODO
 Endorsement_rights == {} \* TODO
 
 emmy_plus_delay(p, e) ==
-    MIN_BLOCK_DELAY + BAKING_DELAY * p + ENDORSEMENT_DELAY * max(0, INITIAL_ENDORSERS - e)
-
-emmy_star_delay(p, e) ==
-    IF p = 0 /\ 5 * e >= 3 * MAX_ENDORSE THEN MIN_BLOCK_DELAY
-    ELSE emmy_plus_delay(p, e)
+    Min_block_delay + Baking_delay * p + Endorsement_delay * max(0, Initial_endorsers - e)
 
 baking_reward_(c, bs, r) ==
     LET p == baking_priority(c, bs, r)
