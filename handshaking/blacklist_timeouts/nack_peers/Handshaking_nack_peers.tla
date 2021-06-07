@@ -46,8 +46,6 @@ meta_msg(from) == [ type |-> "meta", from |-> from ]
 
 ack_msg(from) == [ type |-> "ack", from |-> from ]
 
-nack_msg(from) == [ type |-> "nack", from |-> from ]
-
 nack_peers_msg(from, ps) == [ type |-> "nack", from |-> from, peers |-> ps ]
 
 disconnect_msg(from) == [ type |-> "disconnect", from |-> from ]
@@ -56,10 +54,11 @@ Nodes == BAD_NODES \cup GOOD_NODES
 
 Bad(n) == n \in BAD_NODES
 
-Bad_messages == [ type : {"conn", "meta", "ack", "nack", "disconnect", "bad"}, from : BAD_NODES ]
+Bad_messages == [ type: {"nack"}, peers: SUBSET Nodes, from : BAD_NODES ] \cup
+    [ type : {"conn", "meta", "ack", "disconnect", "bad"}, from : BAD_NODES ]
 
-Good_messages == [ type : {"conn", "meta", "ack", "disconnect", "nack"}, from : GOOD_NODES ] \cup
-    [ type : {"conn", "meta", "ack", "nack", "disconnect"}, peers : SUBSET Nodes, from : GOOD_NODES ]
+Good_messages == [ type : {"nack"}, peers : SUBSET Nodes, from : GOOD_NODES ] \cup
+    [ type : {"conn", "meta", "ack", "disconnect"}, from : GOOD_NODES ]
 
 Messages == Bad_messages \cup Good_messages
 
@@ -229,21 +228,6 @@ ExchangeAck == \E g \in GOOD_NODES :
         /\ n \in in_progress[g]
         /\ exchange_ack(g, n, msg)
 
-nack_no_peers(g, n, msg) ==
-    /\ blacklist'   = [ blacklist   EXCEPT ![g] = @ \cup {n} ]
-    /\ connections' = [ connections EXCEPT ![g] = @ \ {n} ]
-    /\ messages'    = [ messages    EXCEPT
-                        ![g] = { m \in @ : m.from /= n },
-                        ![n] = IF Bad(n) \/ Blacklisted(n, g) THEN @ ELSE @ \cup {nack_msg(g)} ]
-    /\ recv_conn'   = [ recv_conn   EXCEPT ![g] = @ \ {n} ]
-    /\ sent_conn'   = [ sent_conn   EXCEPT ![g] = @ \ {n} ]
-    /\ recv_meta'   = [ recv_meta   EXCEPT ![g] = @ \ {n} ]
-    /\ sent_meta'   = [ sent_meta   EXCEPT ![g] = @ \ {n} ]
-    /\ recv_ack'    = [ recv_ack    EXCEPT ![g] = @ \ {n} ]
-    /\ sent_ack'    = [ sent_ack    EXCEPT ![g] = @ \ {n} ]
-    /\ in_progress' = [ in_progress EXCEPT ![g] = @ \ {n} ]
-    /\ UNCHANGED peers
-
 nack_peers(g, n, msg, ps) ==
     /\ blacklist'   = [ blacklist   EXCEPT ![g] = @ \cup {n} ]
     /\ connections' = [ connections EXCEPT ![g] = @ \ {n} ]
@@ -268,8 +252,7 @@ Nack == \E g \in GOOD_NODES :
         /\ n \in peers[g]
         /\ n \in sent_conn[g]
         /\ n \in recv_conn[g]
-        /\ \/ nack_no_peers(g, n, msg)
-           \/ \E ps \in SUBSET (peers[g] \ {n}) \ {{}} : nack_peers(g, n, msg, ps)
+        /\ \E ps \in SUBSET (peers[g] \ {n}) : nack_peers(g, n, msg, ps)
 
 HandleNack == \E g \in GOOD_NODES :
     \E msg \in { m \in messages[g] : m.type = "nack" } :
@@ -317,12 +300,13 @@ HandleBad == \E g \in GOOD_NODES :
         /\ exit_handshaking(g, n)
 
 send_disconnect_msg(g, n) ==
-    messages' = [ messages EXCEPT ![n] = IF Bad(n) THEN @ ELSE @ \cup {disconnect_msg(g)} ]
+    messages' = [ messages EXCEPT ![n] = IF Bad(n) \/ Blacklisted(n, g) THEN @ ELSE @ \cup {disconnect_msg(g)} ]
 
-\* [g] decides to disconnect from [n]
+\* [g] decides to disconnect from [n] and sends diconnect message
 Disconnect == \E g \in GOOD_NODES, n \in Nodes :
     /\ n \in connections[g]
     /\ disconnect(g, n)
+    /\ send_disconnect_msg(g, n)
 
 \* [g] handles a disconnection message from [n]
 HandleDisconnect == \E g \in GOOD_NODES :
