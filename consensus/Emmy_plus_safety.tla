@@ -20,7 +20,7 @@ Endorsement_delay == 1
 Initial_endorsers == 2
 Tokens_per_roll == 300
 Blocks_per_cycle == 3
-Blocks_per_snapshot == 1
+\* Blocks_per_snapshot == 1
 Init_balance == [ d \in Delegates |-> 200 ]
 Init_rolls_snapshot == [ d \in Delegates |-> {} ]
 Init_safety_deposit == [ d \in Delegates |-> 100 ]
