@@ -32,7 +32,7 @@ VARIABLES
     cycle,                  \* int
     block_slot,             \* int
     phase,                  \* phase \in { "active", "cycle_admin", "snapshot_admin" }
-    all_blocks,             \* cycle -> block -> Set(roll * time)
+    all_blocks,             \* cycle -> block_slot -> Set(roll * time)
     delegate_blocks,        \* cycle -> block_slot -> delegate -> bool * roll * time
     balance,                \* cycle -> block_slot -> delegate -> int
     rolls_snapshot,         \* cycle -> block_slot -> delegate -> Set(roll)
@@ -316,7 +316,7 @@ latest_block_time(c, bs, d) == prev_delegate_block(c, bs, d)[4]
 cmp_time(b1, b2) == b1[2] <= b2[2]
 
 \* @type: Seq(BLOCK) => Seq(ROLL);
-roll_list_of_chain(blk_seq) == Map(Head, blk_seq)
+roll_list_of_slice(blk_seq) == Map(Head, blk_seq)
 
 \* block delay for the given roll in the given cycle/block slot
 block_delay(c, bs, r) ==
@@ -344,6 +344,9 @@ curr_slots ==
     IN
     (0..(prev_c - 1)) \X Block_slots \cup {prev_c} \X (0..prev_bs)
 
+\* all cycle-block slot pairs in cycle [c]
+cycle_slots(c) == SetToSeq({c} \X Block_slots)
+
 \* given a cycle and block slot, returns <<cycle, block_slot>> for which delegate [d] knows of a block
 RECURSIVE delegate_slots(_, _, _)
 delegate_slots(c, bs, d) ==
@@ -357,25 +360,29 @@ delegate_slots(c, bs, d) ==
 \* list of <<cycle, block slot>> for which the delegate knows of a block
 curr_delegate_slots(d) == delegate_slots(cycle, block_slot, d)
 
+\* @type: <<CYCLE, BLOCK_SLOT>> => BLOCK;
+\* the best block is the lowest priority block with the most endorsements
+best_block(cbs) ==
+    LET c    == cbs[1]
+        bs   == cbs[2]
+        \* cycle * block_slot * roll * time
+        blks == { <<c, bs, b[1], b[2]>> : b \in all_blocks[c][bs] }
+        most_endorsed == { b \in blks : \A bb \in blks :
+            card(endorsements[c][bs][b[3]]) >= card(endorsements[c][bs][bb[3]]) }
+        lowest_prio == { b \in blks : \A bb \in blks :
+            baking_priority(c, bs, b[3]) <= baking_priority(c, bs, bb[3]) }
+    IN
+    Pick(lowest_prio)
+
+\* blocks of the chain in cycle [c]
+slice(c) == Map(best_block, cycle_slots(c))
+
 \* @type: Seq(<<CYCLE, BLOCK_SLOT, ROLL, TIME>>);
 \* best chain up to the most recent block
-chain ==
-    \* the best block is the lowest priority block with the most endorsements
-    LET best_block(cbs) ==
-        LET c    == cbs[1]
-            bs   == cbs[2]
-            \* cycle * block_slot * roll * time
-            blks == { <<c, bs, b[1], b[2]>> : b \in all_blocks[c][bs] }
-            most_endorsed == { b \in blks : \A bb \in blks :
-                card(endorsements[c][bs][b[3]]) >= card(endorsements[c][bs][bb[3]]) }
-            lowest_prio == { b \in blks : \A bb \in blks :
-                baking_priority(c, bs, b[3]) <= baking_priority(c, bs, bb[3]) }
-        IN Pick(lowest_prio)
-    IN
-    Map(best_block, SetToSeq(curr_slots))
+chain == Map(best_block, SetToSeq(curr_slots))
 
 \* delegate [d]'s view of the blockchain
-delegate_chain(d) ==
+delegate_slice(d) ==
     Map(LAMBDA cbs : LET b == delegate_blocks[cbs[1]][cbs[2]][d] IN <<b[2], b[3]>>,
         SetToSeq(curr_delegate_slots(d)) )
 
@@ -397,7 +404,7 @@ Convert(seq) == convert(seq, zero_reward_fn)
 
 \* @type: Seq(<<CYCLE, BLOCK_SLOT, ROLL, TIME>>) => DELEGATE -> Int;
 \* Converts a chain into a seq of baking rewards
-baking_rewards(_chain) ==
+baking_rewards(_slice) ==
     LET reward_pairs ==
         Map(LAMBDA q :
             LET c  == q[1]
@@ -406,7 +413,7 @@ baking_rewards(_chain) ==
                 d  == lookup_roll_opt(r)[2]
             IN
             <<d, BAKING_REWARD[c][bs][r]>>,
-            _chain)
+            _slice)
     IN
     Convert(reward_pairs)
 
@@ -437,7 +444,7 @@ fold(comb(_, _), seq, acc) ==
 
 \* @type: Seq(<<CYCLE, BLOCK_SLOT, ROLL, TIME>>) => DELEGATE -> Int;
 \* 
-endorsement_rewards(_chain) ==
+endorsement_rewards(_slice) ==
     LET reward_fns ==
         Map(LAMBDA q :
             LET c  == q[1]
@@ -446,7 +453,7 @@ endorsement_rewards(_chain) ==
                 es == endorsements[c][bs][r]
             IN
             reward_fn_of_endorsers({ <<c, bs, e>> : e \in es}),
-            _chain)
+            _slice)
     IN
     fold(fn_add, reward_fns, zero_reward_fn)
 
@@ -534,8 +541,10 @@ Endorse == \E r \in nonzero_endorsement_rights(cycle, block_slot), b \in all_blo
 \* TODO exclude delegates with baking or endorsement slots?
 IncludeBlock == \E d \in DELEGATES, c \in Cycles, bs \in Block_slots :
     \E b \in all_blocks[c][bs] :
+        /\ phase = "active"
         /\ c <= cycle
         /\ c < cycle => bs <= block_slot
+        \* time/prioroity
         /\ ~delegate_blocks[c][bs][d][1] \* [d] does not have a block in this cycle/block slot
         /\ delegate_blocks' = [ delegate_blocks EXCEPT ![c][bs][d] = b ]
         /\ UNCHANGED non_del_vars
@@ -562,9 +571,9 @@ adjust_rolls(type, amt, d) ==
             /\ UNCHANGED <<rolls_lifo, rolls_snapshot>>
 
 \* 
-rewards(_chain) ==
-    LET rewards_from_baking    == baking_rewards(_chain)
-        rewards_from_endorsing == endorsement_rewards(_chain)
+rewards(_slice) ==
+    LET rewards_from_baking    == baking_rewards(_slice)
+        rewards_from_endorsing == endorsement_rewards(_slice)
     IN
     fn_add(rewards_from_baking, rewards_from_endorsing)
 
@@ -604,7 +613,7 @@ CycleAdminToActive == \E r \in nonzero_baking_rights(cycle, block_slot) :
     /\ time < MAX_TIME
     /\ phase = "cycle_admin"
     /\ phase_change("active")
-    /\ balance' = [ balance EXCEPT ![cycle][block_slot] = fn_add(@, rewards(chain)) ]
+    /\ balance' = [ balance EXCEPT ![cycle][block_slot] = fn_add(@, rewards(slice(cycle))) ]
     /\ deposit_management
     /\ roll_management
     /\ incr_block_slot
@@ -636,6 +645,8 @@ CorrectFrequencyOfBakingPriorities == \A c \in Cycles, bs \in Block_slots :
         num_occs    == Sum(Map(LAMBDA seq : Num_occ(r, seq), prio_lists))
     IN
     abs(num_occs * total_rolls - total_slots) < baking_slot_freq_threshold
+
+\* endorsements
 
 BalanceRollCorrectness == \A c \in Cycles, bs \in Block_slots, d \in DELEGATES :
     balance[c][bs][d] \div TOKENS_PER_ROLL = card(rolls_snapshot[c][bs][d])
