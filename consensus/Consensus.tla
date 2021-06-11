@@ -221,6 +221,19 @@ ASSUME
         IN
         abs(num_occs * total_rolls - total_slots) < baking_slot_freq_threshold
 
+LOCAL endorsement_slot_freq_threshold == 2
+
+\* Endorsement rights have the correct frequency of active rolls
+ASSUME
+    LET total_rolls == card(init_active_rolls)
+        total_slots == MAX_ENDORSE * BLOCKS_PER_CYCLE
+    IN
+    \A c \in Cycles, r \in init_active_rolls :
+        LET rights   == Map(LAMBDA bs : ENDORSEMENT_RIGHTS[c][bs][r], SetToSeq(Block_slots))
+            num_occs == Sum(rights)
+        IN
+        abs(num_occs * total_rolls - total_slots) < endorsement_slot_freq_threshold
+
 ----
 
 (*****************)
@@ -457,6 +470,14 @@ endorsement_rewards(_slice) ==
     IN
     fold(fn_add, reward_fns, zero_reward_fn)
 
+\* 
+RECURSIVE take_drop(_, _, _)
+take_drop(n, seq, acc) ==
+    IF n = 0 THEN <<acc, seq>>
+    ELSE take_drop(n - 1, Tail(seq), Append(acc, Head(seq)))
+
+Take_drop(n, seq) == take_drop(n, seq, <<>>)
+
 (***********)
 (* Actions *)
 (***********)
@@ -549,27 +570,6 @@ IncludeBlock == \E d \in DELEGATES, c \in Cycles, bs \in Block_slots :
         /\ delegate_blocks' = [ delegate_blocks EXCEPT ![c][bs][d] = b ]
         /\ UNCHANGED non_del_vars
 
-\* variables: balance, rolls_lifo, rolls_snapshot
-adjust_rolls(type, amt, d) ==
-    LET bal == balance[cycle][block_slot][d] IN
-    CASE type = "add" ->
-        IF amt + loose(bal) >= TOKENS_PER_ROLL THEN
-            /\ balance'        = [ balance EXCEPT ![cycle][block_slot][d] = @ + amt ]
-            /\ rolls_lifo'     = Tail(rolls_lifo)
-            /\ rolls_snapshot' = [ rolls_snapshot EXCEPT ![cycle][block_slot][d] = @ \cup {Head(rolls_lifo)} ]
-        ELSE
-            /\ balance' = [ balance EXCEPT ![cycle][block_slot][d] = @ + amt ]
-            /\ UNCHANGED <<rolls_lifo, rolls_snapshot>>
-      [] type = "sub" ->
-        IF amt > loose(bal) THEN
-            LET r == Pick(rolls_snapshot[cycle][block_slot][d]) IN
-            /\ balance'        = [ balance EXCEPT ![cycle][block_slot][d] = @ - amt ]
-            /\ rolls_lifo'     = <<r>> \o rolls_lifo
-            /\ rolls_snapshot' = [ rolls_snapshot EXCEPT ![cycle][block_slot][d] = @ \ {r} ]
-        ELSE
-            /\ balance' = [ balance EXCEPT ![cycle][block_slot][d] = @ - amt ]
-            /\ UNCHANGED <<rolls_lifo, rolls_snapshot>>
-
 \* 
 rewards(_slice) ==
     LET rewards_from_baking    == baking_rewards(_slice)
@@ -604,8 +604,27 @@ ActiveToAdmin == \E r \in ROLLS :
 \*     /\ incr_block_slot
 \*     /\ UNCHANGED <<time, all_blocks, delegate_blocks, endorsements>>
 
+\* TODO
 deposit_management == {}
-roll_management == {}
+
+\* functional update of rolls_snapshot and rolls_lifo
+RECURSIVE roll_management(_, _, _)
+roll_management(snapshot, lifo, rem_dels) ==
+    IF rem_dels = {} THEN <<snapshot, lifo>>
+    ELSE
+        LET d       == Pick(rem_dels)
+            bal     == balance[cycle][max_slot][d]
+            delta   == balance'[cycle][max_slot][d] - bal + loose(bal)
+            new_rem == rem_dels \ {d}
+        IN
+        IF delta < TOKENS_PER_ROLL THEN roll_management(snapshot, lifo, new_rem)
+        ELSE
+            LET n         == delta \div TOKENS_PER_ROLL
+                roll_pair == Take_drop(n, lifo)
+                new_snap  == snapshot[cycle][max_slot][d] \cup ToSet(roll_pair[1])
+                new_lifo  == roll_pair[2]
+            IN
+            roll_management([ snapshot EXCEPT ![cycle][max_slot][d] = new_snap ], new_lifo, new_rem)
 
 \* Once we complete reward allocations and roll management,
 \* we move to the active phase in the next block slot
@@ -614,8 +633,10 @@ CycleAdminToActive == \E r \in nonzero_baking_rights(cycle, block_slot) :
     /\ phase = "cycle_admin"
     /\ phase_change("active")
     /\ balance' = [ balance EXCEPT ![cycle][block_slot] = fn_add(@, rewards(slice(cycle))) ]
-    /\ deposit_management
-    /\ roll_management
+    \* /\ deposit_management
+    /\ LET pair == roll_management(rolls_snapshot, rolls_lifo, DELEGATES) IN
+        /\ rolls_snapshot' = pair[1]
+        /\ rolls_lifo'     = pair[2]
     /\ incr_block_slot
     /\ UNCHANGED <<time, all_blocks, delegate_blocks, endorsements>>
 
@@ -637,6 +658,7 @@ Spec == Init /\ [][Next]_vars /\ Fairness
 (* Properties *)
 (**************)
 
+\* TODO
 CorrectFrequencyOfBakingPriorities == \A c \in Cycles, bs \in Block_slots :
     \A r \in active_rolls(c, bs) :
     LET total_rolls == card(active_rolls(c, bs))
@@ -646,7 +668,19 @@ CorrectFrequencyOfBakingPriorities == \A c \in Cycles, bs \in Block_slots :
     IN
     abs(num_occs * total_rolls - total_slots) < baking_slot_freq_threshold
 
-\* endorsements
+\* TODO
+CorrectFrequencyOfEndorsingRights == \A c \in Cycles, bs \in Block_slots :
+    \A r \in active_rolls(c, bs) :
+    LET total_rolls == card(active_rolls(c, bs))
+        total_slots == MAX_ENDORSE * BLOCKS_PER_CYCLE
+        rights      == Map(LAMBDA b : ENDORSEMENT_RIGHTS[c][b][r], SetToSeq(Block_slots))
+        num_occs    == Sum(rights)
+    IN
+    abs(num_occs * total_rolls - total_slots) < endorsement_slot_freq_threshold
+
+\* rolls are neither created nor destroyed
+RollConservation == \A c \in Cycles, bs \in Block_slots :
+    active_rolls(c, bs) \cup ToSet(rolls_lifo[c][bs]) = ROLLS
 
 BalanceRollCorrectness == \A c \in Cycles, bs \in Block_slots, d \in DELEGATES :
     balance[c][bs][d] \div TOKENS_PER_ROLL = card(rolls_snapshot[c][bs][d])
@@ -654,11 +688,11 @@ BalanceRollCorrectness == \A c \in Cycles, bs \in Block_slots, d \in DELEGATES :
 DisjointRolls == \A c \in Cycles, bs \in Block_slots, d1, d2 \in DELEGATES :
     rolls_snapshot[c][bs][d1] \cap rolls_snapshot[c][bs][d2] = {}
 
-\* BakersHaveNonzeroPriorityForBakedSlots == \A c \in Cycles, b \in Block_slots :
-\*     LET rts == all_blocks[c][b] IN
-\*     \/ rts = {}
-\*     \/ rts /= {} =>
-\*         \A blk \in rts : \E r \in ToSet(BAKING_PRIORITY[c][b]) : r = rts[1]
+BakersHaveNonzeroPriorityForBakedSlots == \A c \in Cycles, b \in Block_slots :
+    LET rts == all_blocks[c][b] IN
+    \/ rts = {}
+    \/ rts /= {} =>
+        \A blk \in rts : \E r \in ToSet(BAKING_PRIORITY[c][b]) : r = rts[1]
 
 EndorsersHaveNonzeroRightsForEndorsedSlots == \A c \in Cycles, bs \in Block_slots :
     LET blks == all_blocks[c][bs] IN
