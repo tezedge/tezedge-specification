@@ -605,7 +605,7 @@ ActiveToAdmin == \E r \in ROLLS :
 \*     /\ UNCHANGED <<time, all_blocks, delegate_blocks, endorsements>>
 
 \* TODO
-deposit_management == {}
+deposit_management == TRUE
 
 \* functional update of rolls_snapshot and rolls_lifo
 RECURSIVE roll_management(_, _, _)
@@ -633,7 +633,7 @@ CycleAdminToActive == \E r \in nonzero_baking_rights(cycle, block_slot) :
     /\ phase = "cycle_admin"
     /\ phase_change("active")
     /\ balance' = [ balance EXCEPT ![cycle][block_slot] = fn_add(@, rewards(slice(cycle))) ]
-    \* /\ deposit_management
+    /\ deposit_management
     /\ LET pair == roll_management(rolls_snapshot, rolls_lifo, DELEGATES) IN
         /\ rolls_snapshot' = pair[1]
         /\ rolls_lifo'     = pair[2]
@@ -701,17 +701,16 @@ EndorsersHaveNonzeroRightsForEndorsedSlots == \A c \in Cycles, bs \in Block_slot
         LET bkr == Pick(blks)[1] IN
         \A end \in endorsements[c][bs][bkr] : ENDORSEMENT_RIGHTS[c][bs][end] > 0
 
-DelegateChainsAlwaysConsistOfRealBlocks == \A c \in Cycles, bs \in Block_slots, d \in DELEGATES :
+DelegateChainsAlwaysConsistOfValidBlocks == \A c \in Cycles, bs \in Block_slots, d \in DELEGATES :
     LET del_b      == delegate_blocks[c][bs][d]
         if_del_blk == del_b[1]
         del_blk    == <<del_b[2], del_b[3]>>
     IN
     if_del_blk => del_blk \in all_blocks[c][bs]
 
-\* TODO more properties
+ContiguousDelegateChains == {}
 
-\* delegate chains are contiguous
-\* all blocks are valid
+\* TODO properties
 \* chain health - blocks have priority 0 and almost all (80%?) endorsement slots are filled
 \*   properties of healthy chains Seq(roll)
 \* double baking & double endorsing
