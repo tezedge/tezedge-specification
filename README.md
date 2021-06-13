@@ -1,31 +1,60 @@
-# model-p2p
+# tezedge-specification
 
-Various specifications and models for different aspects of the Tezos p2p overlay network and shell.
+Various specifications and models for different aspects of the Tezedge node's p2p overlay network, shell, and consensus.
 
-## counter
+## Tools
 
-This project contains a specification and models of the counter used for I/O resource management (see [Moving_average](https://gitlab.com/Isaac-DeFrain/tezos/-/blob/master/src/lib_stdlib_unix/moving_average.ml))
+### Apalache
 
-## distributed_db
+[Apalache](https://github.com/informalsystems/apalache) is used extensively in this project to typecheck specifications and verify inductive (safety) invariants (see [Apalache docs](https://apalache.informal.systems/docs/apalache/index.html)). The easiest way to get and run Apalache is through [docker](https://apalache.informal.systems/docs/apalache/installation/docker.html):
 
-This project contains a specification and models of the shell's distributed database (see [Distributed_db](https://gitlab.com/tezos/tezos/-/blob/master/src/lib_shell/distributed_db.ml)). Please see this project's readme for more information.
+Pull the `unstable` image:
 
-## handshaking
+```
+docker pull apalache/mc:unstable
+```
 
-This project contains a specification and models of the handshaking protocol (see [P2p_socket](https://gitlab.com/tezos/tezos/-/blob/master/src/lib_p2p/p2p_socket.ml)).
+Set an alias for the `unstable` image (if you're using Linux or macOS):
 
-## high_level
+```
+$ alias apalache='docker run --rm -v $(pwd):/var/apalache apalache/mc:unstable'
+```
 
-This project contains a high-level specification and models of the handshaking and bootstrapping processes.
+Specific instructions to verify inductive invariants are provided in the corresponding spec's directory.
 
-## scheduler
+### TLA+ command line tool
 
-This project contains a specification and models for the fair I/O scheduler (see [P2p_io_scheduler](https://gitlab.com/Isaac-DeFrain/tezos/-/blob/master/src/lib_p2p/p2p_io_scheduler.ml))
+[tla-bin](https://github.com/pmer/tla-bin)
 
-## scheduler_rw
+### TLA+ VSCode extension
 
-This project contains a specification and models for a simple read (or write) scheduler (see [P2p_io_scheduler](https://gitlab.com/Isaac-DeFrain/tezos/-/blob/master/src/lib_p2p/p2p_io_scheduler.ml)). This specification is instantiated in the scheduler specification.
+[vscode-tlaplus](https://github.com/alygin/vscode-tlaplus)
 
-## utils
+## Project navigation
 
-This project contains TLA+ functions and operators used extensively in the other projects.
+There are three main objects of focus for our specifications corresponding to the three layers in Tezos: `p2p`, `shell`, and `consensus`
+
+### p2p
+
+This project contains specifications and models related to the p2p overlay network:
+
+- hanshaking
+- I/O resource management
+
+### shell
+
+This project contains specifications and models related to the shell:
+
+- bootstrapping
+- distributed_db
+
+### consensus
+
+This project contains specifications and models related to consensus:
+
+- Emmy/Emmy+/Emmy★
+- Tenderbake
+
+### utils
+
+This project contains TLA+ functions and operators used extensively in the other projects
