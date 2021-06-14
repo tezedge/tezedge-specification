@@ -409,24 +409,19 @@ genesis == block(gen_header, gen_operations)
 \* @type: BLOCK_HASH;
 gen_hash == hash(gen_header)
 
-\* operations
-\* @type: LEVEL -> Set(OPERATION);
-operations_at_level[ l \in Levels0 ] ==
-    IF l > 0 THEN [ level : {l}, operations : Ops ]
-    ELSE {gen_operations}
-
 \* headers
 \* @type: LEVEL -> Set(HEADER);
 headers_at_level[ l \in Levels0 ] ==
-    LET prev_hashes == { hash(hd) : hd \in headers_at_level[l - 1] } IN
-    IF l > 0 THEN [
-        level       : {l},
-        context     : PossibleHashes,
-        fitness     : 0..Max_fitness,
-        predecessor : prev_hashes,
-        ops_hash    : PossibleOpHashes
-    ] ELSE
-        { gen_header }
+    IF l > 0 THEN
+        LET prev_hashes == { hash(hd) : hd \in headers_at_level[l - 1] } IN
+        [
+            level       : {l},
+            context     : PossibleHashes,
+            fitness     : 0..Max_fitness,
+            predecessor : prev_hashes,
+            ops_hash    : PossibleOpHashes
+        ]
+    ELSE { gen_header }
 
 \* @type: Set(HEADER);
 Headers == UNION { headers_at_level[l] : l \in Levels0 }
@@ -435,6 +430,12 @@ Headers == UNION { headers_at_level[l] : l \in Levels0 }
 hashes_at_level[ l \in Levels0 ] == { hash(hd) : hd \in headers_at_level[l] }
 
 BlockHashes == UNION { hashes_at_level[l] : l \in Levels0 }
+
+\* operations
+\* @type: LEVEL -> Set(OPERATION);
+operations_at_level[ l \in Levels0 ] ==
+    IF l > 0 THEN [ block_hash : hashes_at_level[l], ops : Ops ]
+    ELSE {gen_operations}
 
 \* @type: Set(OPERATION);
 Operations == UNION { operations_at_level[l] : l \in Levels0 }
@@ -581,16 +582,20 @@ hash_list(l) == __hash_list(hash_nums, l, 0)
 \* hash a list of lists
 hash_list_list(ll) == __hash_list(_hash_list, ll, 0)
 
+\* @type: (NODE, BLOCK_HASH) => Set(HEADER);
+headers_with_hash(bn, bh) == { p \in all_header_data(bn) : p[1] = bh }
+
 \* @type: (NODE, BLOCK_HASH) => HEADER;
-lookup_block_hash(bn, bh) == Pick({ p \in all_header_data(bn) : p })
+lookup_block_hash(bn, bh) == Pick(headers_with_hash(bn, bh))
 
 \* @type: (NODE, HEADER, HEADER) => Bool;
-RECURSIVE associated(_, _, _)
-associated(bn, hd1, hd2) ==
+RECURSIVE descendant(_, _, _)
+descendant(bn, hd1, hd2) ==
     CASE hd1.fitness = hd2.fitness -> hd1 = hd2
       [] hd1.fitness < hd2.fitness ->
-        \/ hash(hd2) = hd1.predecessor
-        \/ associated(bn, lookup_block_hash(bn, hd1.predecessor), hd2)
+        LET bh == hash(hd2) IN
+        \/ bh = hd1.predecessor
+        \/ \E hd \in headers_with_hash(bn, bh): descendant(bn, hd, hd2)
 
 \* @type: (NODE, HEADER) => Bool;
 prevalidate_header(bn, hd) ==
@@ -601,7 +606,7 @@ prevalidate_header(bn, hd) ==
             ml     == max_hd.level
         IN
         IF ml = hl THEN hd = max_hd
-        ELSE associated(bn, hd, max_hd)
+        ELSE descendant(bn, hd, max_hd)
 
 ----
 
@@ -917,6 +922,7 @@ EnqueueOperations == \E bn \in GOOD_BOOTSTRAPPING :
 
 \* [5] Nodes serve bootstrapping nodes' requests
 
+\* good node replies to a header request
 ServeHeader == \E n \in GOOD_NODES, bn \in Bootstrapping_nodes :
     LET sh == serving_headers[n][bn] IN
     /\ sh /= {}
@@ -929,6 +935,7 @@ ServeHeader == \E n \in GOOD_NODES, bn \in Bootstrapping_nodes :
         /\ serving_headers' = [ serving_headers EXCEPT ![n][bn] = @ \ {h} ]
         /\ UNCHANGED <<n_messages, blacklist, n_non_serving_vars, serving_ops, bootstrapping_vars>>
 
+\* good node replies to a operation request
 ServeOperation == \E n \in GOOD_NODES, bn \in Bootstrapping_nodes, bh \in BlockHashes :
     LET ops == serving_ops[n][bn][bh] IN
     /\ ops /= {}
@@ -1315,6 +1322,9 @@ HeadDoesNotChangeWithoutMajoritySupport == \A bn \in GOOD_BOOTSTRAPPING :
     highest_major_level(bn) = 0 => current_head[bn] = gen_header
 
 \* TODO only enqueue headers and operations which correspond to our current branch
+OnlyEnqueueCurrentBranchHeaders == \A bn \in GOOD_BOOTSTRAPPING :
+    \A hd \in ToSet(header_pipe[bn]) : descendant(bn, hd, current_head[bn])
+
 \* TODO only prevalidated headers and operations in the respective pipe
 
 Safety ==
@@ -1326,6 +1336,8 @@ Safety ==
 (**************)
 (* Properties *)
 (**************)
+
+\* Safety properties of transitions
 
 PeerConservation ==
     \A bn \in GOOD_BOOTSTRAPPING :
@@ -1405,6 +1417,13 @@ AllowableTransitions ==
     /\ FromMajor
     /\ FromSearch
 
+TransitionSafety ==
+    /\ PeerConservation
+    /\ MonotonicFitness
+    /\ AllowableTransitions
+
+\* Liveness
+
 \* Bootstrapping nodes always learn about local major branches
 IfLocalMajorBranchExistsThenBootstrapppingWillHearAboutIt == \A bn \in GOOD_BOOTSTRAPPING :
     LET curr_hd == current_head[bn] IN
@@ -1412,10 +1431,23 @@ IfLocalMajorBranchExistsThenBootstrapppingWillHearAboutIt == \A bn \in GOOD_BOOT
         <>( \/ hd = curr_hd
             \/ hd.fitness < curr_hd.fitness )
 
+\* Every good bootstrapping node eventually enters the search phase
+EventuallySearch == \A bn \in GOOD_BOOTSTRAPPING : <>(phase[bn] \in Phase_search)
+
+\* Every good bootstrapping node eventually blacklists a majority of their peers or enters the major phase
+EventuallyMajor == \A bn \in GOOD_BOOTSTRAPPING :
+    <>( \/ 2 * Card(blacklist[bn]) >= num_peers(bn)
+        \/ phase[bn] \in Phase_major )
+
+\* Every good bootstrapping node eventually blacklists a majority of their peers or enters the apply phase
+EventuallyApply == \A bn \in GOOD_BOOTSTRAPPING :
+    <>( \/ 2 * Card(blacklist[bn]) >= num_peers(bn)
+        \/ phase[bn] \in Phase_apply )
+
 Liveness ==
-    /\ PeerConservation
-    /\ MonotonicFitness
-    /\ AllowableTransitions
+    /\ EventuallySearch
+    /\ EventuallyMajor
+    /\ EventuallyApply
     /\ IfLocalMajorBranchExistsThenBootstrapppingWillHearAboutIt
 
 ===================================
