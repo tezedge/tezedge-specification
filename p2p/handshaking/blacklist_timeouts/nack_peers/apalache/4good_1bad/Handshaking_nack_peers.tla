@@ -3,24 +3,41 @@
 EXTENDS FiniteSets, Naturals
 
 CONSTANTS
-    BAD_NODES,  \* byzantine nodes
-    GOOD_NODES, \* nodes who follow the protocol
-    MIN,        \* minimum desired connections
-    MAX,        \* maximum desired connections
-    MIN_PEERS   \* minimum number of peers obtained from DNS
+    \* @type: Set(Int);
+    BAD_NODES,
+    \* @type: Set(Int);
+    GOOD_NODES,
+    \* @type: Int;
+    MIN,
+    \* @type: Int;
+    MAX,
+    \* @type: Int;
+    MIN_PEERS
 
 VARIABLES
-    blacklist,   \* each node's set of blacklisted peers
-    connections, \* each node's set of connections
-    messages,    \* each node's set of messages
-    peers,       \* each node's set of peers
-    recv_ack,    \* each node's set of peers from whom they have received an ack message
-    recv_conn,   \* each node's set of peers from whom they have received a connection message
-    recv_meta,   \* each node's set of peers from whom they have received a metadata message
-    sent_ack,    \* each node's set of peers to whom they have sent an ack message
-    sent_conn,   \* each node's set of peers to whom they have sent a connection message
-    sent_meta,   \* each node's set of peers to whom they have sent a metadata message
-    in_progress  \* each node's set of peers with whom they are actively establishing a connection
+    \* @type: Int -> Set(Int);
+    blacklist,
+    \* @type: Int -> Set(Int);
+    connections,
+    \* @typeAlias: MSG = [from: Int, peers: Set(Int), type: Str];
+    \* @type: Int -> Set(MSG);
+    messages,
+    \* @type: Int -> Set(Int);
+    peers,
+    \* @type: Int -> Set(Int);
+    recv_ack,
+    \* @type: Int -> Set(Int);
+    recv_conn,
+    \* @type: Int -> Set(Int);
+    recv_meta,
+    \* @type: Int -> Set(Int);
+    sent_ack,
+    \* @type: Int -> Set(Int);
+    sent_conn,
+    \* @type: Int -> Set(Int);
+    sent_meta,
+    \* @type: Int -> Set(Int);
+    in_progress
 
 vars == <<blacklist, connections, messages, peers, recv_ack, recv_conn, recv_meta, sent_ack, sent_conn, sent_meta, in_progress>>
 
@@ -40,37 +57,53 @@ ASSUME MIN_PEERS \in Nat /\ MIN <= MIN_PEERS
 (* Helpers *)
 (***********)
 
-conn_msg(from) == [ type |-> "conn", from |-> from ]
+\* @type: (Int) => MSG;
+conn_msg(from) == [ type |-> "conn", from |-> from, peers |-> {} ]
 
-meta_msg(from) == [ type |-> "meta", from |-> from ]
+\* @type: (Int) => MSG;
+meta_msg(from) == [ type |-> "meta", from |-> from, peers |-> {} ]
 
-ack_msg(from) == [ type |-> "ack", from |-> from ]
+\* @type: (Int) => MSG;
+ack_msg(from) == [ type |-> "ack", from |-> from, peers |-> {} ]
 
-nack_msg(from) == [ type |-> "nack", from |-> from ]
-
+\* @type: (Int, Set(Int)) => MSG;
 nack_peers_msg(from, ps) == [ type |-> "nack", from |-> from, peers |-> ps ]
 
+\* @type: (Int) => MSG;
+disconnect_msg(from) == [ type |-> "disconnect", from |-> from, peers |-> {} ]
+
+\* @type: Set(Int);
 Nodes == BAD_NODES \cup GOOD_NODES
 
+\* @type: (Int) => Bool;
 Bad(n) == n \in BAD_NODES
 
-Bad_messages == [ type : {"conn", "meta", "ack", "nack", "bad"}, from : BAD_NODES ]
+\* @type: Set(MSG);
+Bad_messages == [ type : { "nack"}, from : BAD_NODES, peers : SUBSET Nodes ] \cup
+    [ type : {"conn", "meta", "ack", "disconnect", "bad"}, from : BAD_NODES, peers : {{}} ]
 
-Good_messages == [ type : {"conn", "meta", "ack", "nack"}, from : GOOD_NODES ] \cup
-    [ type : {"conn", "meta", "ack", "nack"}, peers : SUBSET Nodes, from : GOOD_NODES ]
+\* @type: Set(MSG);
+Good_messages == [ type : {"nack"}, peers : SUBSET Nodes, from : GOOD_NODES ] \cup
+    [ type : {"conn", "meta", "ack", "disconnect", "nack"}, from : GOOD_NODES, peers : {{}} ]
 
+\* @type: Set(MSG);
 Messages == Bad_messages \cup Good_messages
 
+\* @type: (Int) => Int;
 Num_connections(g) == Cardinality(connections[g])
 
+\* @type: (Int) => Bool;
 Can_start_connection_attempt(g) == Num_connections(g) + Cardinality(in_progress[g]) < MAX
 
+\* @type: (Int, Int) => Bool;
 Blacklisted(g, n) == n \in blacklist[g]
 
+\* @type: (Int, Int) => Bool;
 Connected(g, h) == g \in connections[h] /\ h \in connections[g]
 
 PeerSaturated == \A n \in Nodes : Cardinality(peers[n]) + Cardinality(blacklist[n]) >= MIN_PEERS
 
+\* @type: (Int) => Set(Set(Int));
 PeerSets(n) == { ns \in SUBSET (Nodes \ {n}) : Cardinality(ns) >= MIN_PEERS }
 
 (***********)
@@ -79,34 +112,49 @@ PeerSets(n) == { ns \in SUBSET (Nodes \ {n}) : Cardinality(ns) >= MIN_PEERS }
 
 \* Good node actions
 
+\* @type: (Int, Int) => Bool;
 exit_handshaking(g, n) ==
-    /\ blacklist' = [ blacklist EXCEPT ![g] = @ \cup {n}]
+    /\ blacklist'   = [ blacklist   EXCEPT ![g] = @ \cup {n}]
     /\ connections' = [ connections EXCEPT ![g] = @ \ {n} ]
-    /\ messages' = [ messages EXCEPT ![g] = { msg \in @ : msg.from /= n } ]
-    /\ peers' = [ peers EXCEPT ![g] = @ \ {n} ]
-    /\ recv_conn' = [ recv_conn EXCEPT ![g] = @ \ {n} ]
-    /\ sent_conn' = [ sent_conn EXCEPT ![g] = @ \ {n} ]
-    /\ recv_meta' = [ recv_meta EXCEPT ![g] = @ \ {n} ]
-    /\ sent_meta' = [ sent_meta EXCEPT ![g] = @ \ {n} ]
-    /\ recv_ack' = [ recv_ack EXCEPT ![g] = @ \ {n} ]
-    /\ sent_ack' = [ sent_ack EXCEPT ![g] = @ \ {n} ]
+    /\ messages'    = [ messages    EXCEPT ![g] = { msg \in @ : msg.from /= n } ]
+    /\ peers'       = [ peers       EXCEPT ![g] = @ \ {n} ]
+    /\ recv_conn'   = [ recv_conn   EXCEPT ![g] = @ \ {n} ]
+    /\ sent_conn'   = [ sent_conn   EXCEPT ![g] = @ \ {n} ]
+    /\ recv_meta'   = [ recv_meta   EXCEPT ![g] = @ \ {n} ]
+    /\ sent_meta'   = [ sent_meta   EXCEPT ![g] = @ \ {n} ]
+    /\ recv_ack'    = [ recv_ack    EXCEPT ![g] = @ \ {n} ]
+    /\ sent_ack'    = [ sent_ack    EXCEPT ![g] = @ \ {n} ]
     /\ in_progress' = [ in_progress EXCEPT ![g] = @ \ {n} ]
 
+\* @type: (Int, Int, Set(Int)) => Bool;
 exit_handshaking_with_peers(g, n, ps) ==
-    /\ blacklist' = [ blacklist EXCEPT ![g] = @ \cup {n}]
+    /\ blacklist'   = [ blacklist   EXCEPT ![g] = @ \cup {n}]
     /\ connections' = [ connections EXCEPT ![g] = @ \ {n} ]
-    /\ messages' = [ messages EXCEPT ![g] = { msg \in @ : msg.from /= n } ]
-    /\ peers' = [ peers EXCEPT ![n] = (@ \cup ps) \ {n} ]
-    /\ recv_conn' = [ recv_conn EXCEPT ![g] = @ \ {n} ]
-    /\ sent_conn' = [ sent_conn EXCEPT ![g] = @ \ {n} ]
-    /\ recv_meta' = [ recv_meta EXCEPT ![g] = @ \ {n} ]
-    /\ sent_meta' = [ sent_meta EXCEPT ![g] = @ \ {n} ]
-    /\ recv_ack' = [ recv_ack EXCEPT ![g] = @ \ {n} ]
-    /\ sent_ack' = [ sent_ack EXCEPT ![g] = @ \ {n} ]
+    /\ messages'    = [ messages    EXCEPT ![g] = { msg \in @ : msg.from /= n } ]
+    /\ peers'       = [ peers       EXCEPT ![n] = (@ \cup ps) \ {n} ]
+    /\ recv_conn'   = [ recv_conn   EXCEPT ![g] = @ \ {n} ]
+    /\ sent_conn'   = [ sent_conn   EXCEPT ![g] = @ \ {n} ]
+    /\ recv_meta'   = [ recv_meta   EXCEPT ![g] = @ \ {n} ]
+    /\ sent_meta'   = [ sent_meta   EXCEPT ![g] = @ \ {n} ]
+    /\ recv_ack'    = [ recv_ack    EXCEPT ![g] = @ \ {n} ]
+    /\ sent_ack'    = [ sent_ack    EXCEPT ![g] = @ \ {n} ]
     /\ in_progress' = [ in_progress EXCEPT ![g] = @ \ {n} ]
+
+\* @type: (Int, Int) => Bool;
+disconnect(g, n) ==
+    /\ connections' = [ connections EXCEPT ![g] = @ \ {n} ]
+    /\ recv_conn'   = [ recv_conn   EXCEPT ![g] = @ \ {n} ]
+    /\ sent_conn'   = [ sent_conn   EXCEPT ![g] = @ \ {n} ]
+    /\ recv_meta'   = [ recv_meta   EXCEPT ![g] = @ \ {n} ]
+    /\ sent_meta'   = [ sent_meta   EXCEPT ![g] = @ \ {n} ]
+    /\ recv_ack'    = [ recv_ack    EXCEPT ![g] = @ \ {n} ]
+    /\ sent_ack'    = [ sent_ack    EXCEPT ![g] = @ \ {n} ]
+    /\ in_progress' = [ in_progress EXCEPT ![g] = @ \ {n} ]
+    /\ UNCHANGED <<blacklist, peers>> \* messages intentionally missing
 
 \* connection messages
 
+\* @type: (Int, Int) => Bool;
 send_conn_msg(g, n) ==
     /\ messages' = [ messages EXCEPT ![n] = IF Bad(n) \/ Blacklisted(n, g) THEN @ ELSE @ \cup {conn_msg(g)} ]
     /\ sent_conn' = [ sent_conn EXCEPT ![g] = @ \cup {n} ]
@@ -155,6 +203,7 @@ RespondToConnectionMessage == \E g \in GOOD_NODES :
 
 \* meta messages
 
+\* @type: (Int, Int, MSG) => Bool;
 exchange_meta(g, n, msg) ==
     LET type == msg.type IN
     IF n \in sent_meta[g]
@@ -186,6 +235,7 @@ ExchangeMeta == \E g \in GOOD_NODES :
 
 \* ack/nack messages
 
+\* @type: (Int, Int, MSG) => Bool;
 exchange_ack(g, n, msg) ==
     LET type == msg.type IN
     IF n \in sent_ack[g]
@@ -216,21 +266,7 @@ ExchangeAck == \E g \in GOOD_NODES :
         /\ n \in in_progress[g]
         /\ exchange_ack(g, n, msg)
 
-nack_no_peers(g, n, msg) ==
-    /\ blacklist' = [ blacklist EXCEPT ![g] = @ \cup {n} ]
-    /\ connections' = [ connections EXCEPT ![g] = @ \ {n} ]
-    /\ messages' = [ messages EXCEPT
-                        ![g] = { m \in @ : m.from /= n },
-                        ![n] = IF Bad(n) \/ Blacklisted(n, g) THEN @ ELSE @ \cup {nack_msg(g)} ]
-    /\ recv_conn' = [ recv_conn EXCEPT ![g] = @ \ {n} ]
-    /\ sent_conn' = [ sent_conn EXCEPT ![g] = @ \ {n} ]
-    /\ recv_meta' = [ recv_meta EXCEPT ![g] = @ \ {n} ]
-    /\ sent_meta' = [ sent_meta EXCEPT ![g] = @ \ {n} ]
-    /\ recv_ack' = [ recv_ack EXCEPT ![g] = @ \ {n} ]
-    /\ sent_ack' = [ sent_ack EXCEPT ![g] = @ \ {n} ]
-    /\ in_progress' = [ in_progress EXCEPT ![g] = @ \ {n} ]
-    /\ UNCHANGED peers
-
+\* @type: (Int, Int, MSG, Set(Int)) => Bool;
 nack_peers(g, n, msg, ps) ==
     /\ blacklist' = [ blacklist EXCEPT ![g] = @ \cup {n} ]
     /\ connections' = [ connections EXCEPT ![g] = @ \ {n} ]
@@ -255,8 +291,7 @@ Nack == \E g \in GOOD_NODES :
         /\ n \in peers[g]
         /\ n \in sent_conn[g]
         /\ n \in recv_conn[g]
-        /\ \/ nack_no_peers(g, n, msg)
-           \/ \E ps \in SUBSET (peers[g] \ {n}) \ {{}} : nack_peers(g, n, msg, ps)
+        /\ \E ps \in SUBSET (peers[g] \ {n}) : nack_peers(g, n, msg, ps)
 
 HandleNack == \E g \in GOOD_NODES :
     \E msg \in { m \in messages[g] : m.type = "nack" } :
@@ -303,6 +338,24 @@ HandleBad == \E g \in GOOD_NODES :
         /\ n \notin recv_ack[g]
         /\ exit_handshaking(g, n)
 
+\* @type: (Int, Int) => Bool;
+send_disconnect_msg(g, n) ==
+    messages' = [ messages EXCEPT ![n] = IF Bad(n) \/ Blacklisted(n, g) THEN @ ELSE @ \cup {disconnect_msg(g)} ]
+
+\* [g] decides to disconnect from [n] and sends diconnect message
+Disconnect == \E g \in GOOD_NODES, n \in Nodes :
+    /\ n \in connections[g]
+    /\ disconnect(g, n)
+    /\ send_disconnect_msg(g, n)
+
+\* [g] handles a disconnection message from [n]
+HandleDisconnect == \E g \in GOOD_NODES :
+    \E msg \in { m \in messages[g] : m.type = "disconnect" } :
+        LET n == msg.from IN
+        /\ n \in connections[g]
+        /\ disconnect(g, n)
+        /\ messages' = [ messages EXCEPT ![g] = { m \in @ : m.from /= n } ]
+
 \* Undesirable actions
 
 \* bad node action
@@ -320,6 +373,7 @@ Timeout == \E g \in GOOD_NODES :
     /\ \/ \E n \in in_progress[g] : exit_handshaking(g, n)
        \/ \E n \in connections[g] : g \notin connections[n] /\ exit_handshaking(g, n)
 
+\* @type: (Int) => Bool;
 init_peers(n) == \E ps \in PeerSets(n) :
     /\ peers' = [ peers EXCEPT ![n] = ps ]
     /\ UNCHANGED <<blacklist, connections, messages, recv_ack, recv_conn, recv_meta, sent_ack, sent_conn, sent_meta, in_progress>>
@@ -333,16 +387,16 @@ InitPeers == \E n \in Nodes :
 (*****************)
 
 Init ==
-    /\ blacklist = [ n \in Nodes |-> {} ]
+    /\ blacklist   = [ n \in Nodes |-> {} ]
     /\ connections = [ n \in Nodes |-> {} ]
-    /\ messages = [ n \in Nodes |-> {} ]
-    /\ peers = [ n \in Nodes |-> {} ]
-    /\ recv_conn = [ n \in Nodes |-> {} ]
-    /\ sent_conn = [ n \in Nodes |-> {} ]
-    /\ recv_meta = [ n \in Nodes |-> {} ]
-    /\ sent_meta = [ n \in Nodes |-> {} ]
-    /\ recv_ack = [ n \in Nodes |-> {} ]
-    /\ sent_ack = [ n \in Nodes |-> {} ]
+    /\ messages    = [ n \in Nodes |-> {} ]
+    /\ peers       = [ n \in Nodes |-> {} ]
+    /\ recv_conn   = [ n \in Nodes |-> {} ]
+    /\ sent_conn   = [ n \in Nodes |-> {} ]
+    /\ recv_meta   = [ n \in Nodes |-> {} ]
+    /\ sent_meta   = [ n \in Nodes |-> {} ]
+    /\ recv_ack    = [ n \in Nodes |-> {} ]
+    /\ sent_ack    = [ n \in Nodes |-> {} ]
     /\ in_progress = [ n \in Nodes |-> {} ]
 
 Next ==
@@ -353,27 +407,29 @@ Next ==
     \/ ExchangeAck
     \/ Nack
     \/ HandleNack
+    \/ Disconnect
+    \/ HandleDisconnect
     \/ HandleBad
     \/ BadNodeSendsGoodNodeMessage
     \/ Timeout
 
-Spec == Init /\ [][Next]_vars /\ WF_vars(Next)
+Spec == Init /\ [][Next]_vars
 
 (*********************)
 (* Invariants/Safety *)
 (*********************)
 
 TypeOK ==
-    /\ blacklist \in [ Nodes -> SUBSET Nodes ]
+    /\ blacklist   \in [ Nodes -> SUBSET Nodes ]
     /\ connections \in [ Nodes -> SUBSET Nodes ]
-    /\ messages \in [ Nodes -> SUBSET Messages ]
-    /\ peers \in [ Nodes -> SUBSET Nodes ]
-    /\ recv_conn \in [ Nodes -> SUBSET Nodes ]
-    /\ sent_conn \in [ Nodes -> SUBSET Nodes ]
-    /\ recv_meta \in [ Nodes -> SUBSET Nodes ]
-    /\ sent_meta \in [ Nodes -> SUBSET Nodes ]
-    /\ recv_ack \in [ Nodes -> SUBSET Nodes ]
-    /\ sent_ack \in [ Nodes -> SUBSET Nodes ]
+    /\ messages    \in [ Nodes -> SUBSET Messages ]
+    /\ peers       \in [ Nodes -> SUBSET Nodes ]
+    /\ recv_conn   \in [ Nodes -> SUBSET Nodes ]
+    /\ sent_conn   \in [ Nodes -> SUBSET Nodes ]
+    /\ recv_meta   \in [ Nodes -> SUBSET Nodes ]
+    /\ sent_meta   \in [ Nodes -> SUBSET Nodes ]
+    /\ recv_ack    \in [ Nodes -> SUBSET Nodes ]
+    /\ sent_ack    \in [ Nodes -> SUBSET Nodes ]
     /\ in_progress \in [ Nodes -> SUBSET Nodes ]
 
 NoSelfInteractions == \A g \in GOOD_NODES :
@@ -424,67 +480,5 @@ Safety ==
 
 \* inductive invariant
 IndInv == TypeOK /\ Safety
-
-(***********************)
-(* Properties/Liveness *)
-(***********************)
-
-OnceConnectedAlwaysConnected == \A g, h \in GOOD_NODES : Connected(g, h) ~> []Connected(g, h)
-
-OnceBlacklistedAlwaysBlacklisted == \A g \in GOOD_NODES, n \inNodes : Blacklisted(g, n) ~> []Blacklisted(g, n)
-
-PeerSaturationIsMonotonicIncreasing ==
-    [][\A g \in GOOD_NODES : blacklist[g] \cup peers[g] \subseteq blacklist'[g] \cup peers'[g]]_vars
-
-GoodNodesEventuallyExceedMinConnections ==
-    <>[](\A g \in GOOD_NODES :
-        Cardinality(Nodes \ (blacklist[g] \cup {g})) >= MIN => Num_connections(g) >= MIN)
-
-GoodNodesAlwaysRespondToAckMessagesOrBlacklist == \A g, h \in GOOD_NODES :
-    \/ /\ ack_msg(h) \in messages[g]
-       /\ h \notin sent_ack[g]
-       ~> \/ ack_msg(g) \in messages[h]
-          \/ Blacklisted(g, h)
-    \/ /\ ack_msg(h) \in messages[g]
-       /\ h \in sent_ack[g]
-       ~> \/ Connected(g, h)
-          \/ Blacklisted(g, h)
-
-GoodNodesAlwaysRespondToMetaMessagesOrBlacklist == \A g, h \in GOOD_NODES :
-    \/ /\ meta_msg(h) \in messages[g]
-       /\ h \notin sent_meta[g]
-       ~> \/ meta_msg(g) \in messages[h]
-          \/ Blacklisted(g, h)
-    \/ /\ meta_msg(h) \in messages[g]
-       /\ h \in sent_meta[g]
-       ~> \/ ack_msg(g) \in messages[h]
-          \/ Blacklisted(g, h)
-
-GoodNodesAlwaysRespondToConnectionMessagesOrBlacklist == \A g, h \in GOOD_NODES :
-    \/ /\ conn_msg(h) \in messages[g]
-       /\ h \notin sent_conn[g]
-       ~> \/ /\ conn_msg(g) \in messages[h]
-             /\ h \in peers[g]
-          \/ Blacklisted(g, h)
-    \/ /\ conn_msg(h) \in messages[g]
-       /\ h \in sent_conn[g]
-       ~> \/ meta_msg(g) \in messages[h]
-          \/ Blacklisted(g, h)
-
-ConnectionsBetweenGoodNodesAreEventuallyBidirectionalOrClosed == \A g, h \in GOOD_NODES :
-    \/ g \in connections[h]
-    \/ h \in connections[g]
-    ~> \/ Connected(g, h)
-       \/ [](g \notin connections[h] /\ h \notin connections[g])
-
-Liveness ==
-    /\ OnceConnectedAlwaysConnected
-    /\ OnceBlacklistedAlwaysBlacklisted
-    /\ PeerSaturationIsMonotonicIncreasing
-    /\ GoodNodesEventuallyExceedMinConnections
-    /\ GoodNodesAlwaysRespondToAckMessagesOrBlacklist
-    /\ GoodNodesAlwaysRespondToMetaMessagesOrBlacklist
-    /\ GoodNodesAlwaysRespondToConnectionMessagesOrBlacklist
-    /\ ConnectionsBetweenGoodNodesAreEventuallyBidirectionalOrClosed
 
 ===================================================
