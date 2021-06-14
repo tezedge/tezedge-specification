@@ -3,22 +3,22 @@
 EXTENDS FiniteSets, Naturals
 
 CONSTANTS
-    BAD_NODES,
-    GOOD_NODES,
-    MIN,
-    MAX
+    BAD_NODES,      \* byzantine nodes
+    GOOD_NODES,     \* nodes who follow the protocol
+    MIN,            \* minimum desired connections
+    MAX             \* maximum desired connections
 
 VARIABLES
-    blacklist,
-    connections,
-    messages,
-    recv_ack,
-    recv_conn,
-    recv_meta,
-    sent_ack,
-    sent_conn,
-    sent_meta,
-    in_progress
+    blacklist,      \* each node's set of blacklisted peers
+    connections,    \* each node's set of connections
+    messages,       \* each node's set of messages
+    recv_ack,       \* each node's set of peers from whom they have received an ack message
+    recv_conn,      \* each node's set of peers from whom they have received a connection message
+    recv_meta,      \* each node's set of peers from whom they have received a metadata message
+    sent_ack,       \* each node's set of peers to whom they have sent an ack message
+    sent_conn,      \* each node's set of peers to whom they have sent a connection message
+    sent_meta,      \* each node's set of peers to whom they have sent a metadata message
+    in_progress     \* each node's set of peers with whom they are actively establishing a connection
 
 vars == <<blacklist, connections, messages, recv_ack, recv_conn, recv_meta, sent_ack, sent_conn, sent_meta, in_progress>>
 
@@ -396,7 +396,7 @@ ConnectionsBetweenGoodNodesAreEventuallyBidirectionalOrClosed == \A g, h \in GOO
     \/ g \in connections[h]
     \/ h \in connections[g]
     ~> \/ Connected(g, h)
-        \/ [](g \notin connections[h] /\ h \notin connections[g])
+       \/ [](g \notin connections[h] /\ h \notin connections[g])
 
 Liveness ==
     /\ OnceConnectedAlwaysConnected

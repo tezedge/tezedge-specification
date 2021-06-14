@@ -341,7 +341,8 @@ IfPossibleGoodNodesWillEventuallyExceedMinConnections ==
 ConnectionsBetweenGoodNodesAreEventuallyBidirectionalOrClosed ==
     \A m, n \in GOOD_NODES :
         \/ m \in connections[n]
-        \/ n \in connections[m] ~> [](\/ m \in connections[n] /\ n \in connections[m]
-                                      \/ m \notin connections[n] /\ n \notin connections[m])
+        \/ n \in connections[m]
+        ~> [](\/ m \in connections[n] /\ n \in connections[m]
+              \/ m \notin connections[n] /\ n \notin connections[m])
 
 ========================================

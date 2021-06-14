@@ -1,33 +1,79 @@
-# Handshaking
+# Handshaking (blacklist_timeouts)
 
-## Assumptions/Simplifications
+This is the second iteration of the handshaking specification. Please see the [attributes](./README.md#specification-attributes) section for spec details.
+
+The final iteration can be found in `nack_peers`.
+
+## Verifying the specification's properties
+
+### Safety
+
+To verify the spec's safety properties for a model with 1 bad node and 2 good nodes, one can invoke TLC via
+
+```
+$ tlc MC_safety.tla deadlock -worker 4096
+```
+
+The expected output can be found in `MC_safety.out`.
+
+Note: in general, TLC produces a large number of explicit states which are stored on disk. Thus, we prefer to use TLC on a remote server or instead, use Apalache. Verification of large models using TLC is generally infeasible.
+
+Alternatively, to verify the safety properties for larger models (e.g. 5 bad nodes and 5 good nodes), one can verify that the conjunction of all safety properties, `IndInv`, consitutes an inductive invariant by using Apalache. To do this, go to the `apalache` directory and choose any of the supplied configurations. Within your directory of choice (e.g. `5good_5bad`), use the command
+
+```
+$ apalache check --init=Init --inv=IndInv --length=0 MC_safety_5good_5bad.tla 
+```
+
+to verify that the initial state, `Init`, satisfies the property `IndInv` (i.e. `--init=Init --inv=IndInv --length=0`). Then, to verify that for any state satisfying the property, any successor state must also satisfy the property, we do
+
+```
+$ apalache check --init=IndInv --inv=IndInv --length=1 MC_safety_5good_5bad.tla 
+```
+
+This will check that for any state satisfying the property (i.e. `--init=IndInv`), the successor state also satisfies the property (i.e. `--inv=IndInv --length=1`). Likewise, the expected output can be found in `MC_5good_5bad.out`.
+
+Once we have verified both of these claims, by the *principle of induction*, we have verified that `IndInv` is satisfied in all states of the model.
+
+### Liveness
+
+`MC_liveness.cfg` is the configuration used to verify all liveness properties and `MC_liveness.tla` is the corresponding model file. The easiest way to verify the liveness properties is to run TLC on `MC_liveness.tla` by doing
+
+```
+tlc MC_liveness.tla -deadlock -workers 4096
+```
+
+See `MC_liveness.out` for expected output.
+
+## Specification attributes
+
+### Assumptions/Simplifications
 
 - no communication with DNS
 - there are good nodes and bad nodes
   - good nodes follow the protocol
   - bad nodes behave arbitrarily
-- metadata is not exchanged
 - every node can communicate with every other node (arbitrary network topologies can be enforced easily)
 - good nodes try to make connections whenever they can
-- good nodes can only be `nack` a `conn_msg` if they have >= `MIN` connections
+- good nodes can only `nack` a `conn` message if they have >= `MIN` connections
+- peers are not exchanged with `nack` messages
+- no disconnection messages
 
-## Communication model
+### Communication model
 
-There are *three* message types sent by good nodes
+There are *four* message types sent by good nodes:
 
-- `conn_req`
+- `conn`
+- `meta`
 - `ack`
 - `nack`
 
-The order in which good nodes send messages is enforced by the enabling conditions for the corresponding actions
+The order in which good nodes send messages is enforced by the enabling conditions for the corresponding actions.
 
-Additionally, bad nodes can send `bad` messages and any messages in any order
-
-## Specification attributes
+Additionally, bad nodes can send `bad` messages and any messages in any order. For this reason, and to reduce the size of the state space, messages sent to bad nodes are not kept in a message queue.
 
 ### Constants
 
-- `NODES` - the set of node (ids) in the network
+- `BAD_NODES` - the set of byzantine node (ids) in the network
 - `GOOD_NODES` - set of nodes which follow the protocol, bad nodes can act arbitrarily
 - `MIN` - minimum number of connections
 - `MAX` - maximum number of connections
@@ -36,119 +82,11 @@ Additionally, bad nodes can send `bad` messages and any messages in any order
 
 - `blacklist` - tuple of each node's blacklisted peers
 - `connections` - tuple of each node's accepted connections
-- `handshaking` - tuple of each node's in-progress handshake
 - `messages` - tuple of each node's incoming messages
-- `received_conn_msg` - tuple of each node's peers who have sent a conn_msg
-
-### Actions
-
-#### `SendConnectionMessage`
-
-A good node `g` sends another node `n` a `conn_msg`, `g`'s `conn_attempts` with `n` increment, and `g` is now handshaking with `n`.
-
-Enabling conditions:
-
-- `g` and `n` are distinct
-- `g` has fewer than `MAX` connections
-- `g` has not exceeded the maximum number of connection attempts
-- `g` has not blacklisted `n`
-- `g` is not already connected to `n`
-- `g` is not already handshaking `n`
-- `g` has not received a `conn_msg` from `n` (if `g` has, they will do `HandleConnectionMessage` instead)
-- `g` does not currently have a nack from `n`
-
-#### `HandleConnectionMessage`
-
-TODO
-
-Enabling conditions:
-
-#### `Ack`
-
-TODO
-
-Enabling conditions:
-
-#### `HandleAck`
-
-TODO
-
-Enabling conditions:
-
-#### `Nack`
-
-TODO
-
-Enabling conditions:
-
-#### `HandleNack`
-
-TODO
-
-Enabling conditions:
-
-#### `HandleBad`
-
-TODO
-
-Enabling conditions:
-
-#### `HandleBadAckNack`
-
-TODO
-
-Enabling conditions:
-
-#### `Timeout_handshaking(n)`
-
-TODO
-
-Enabling conditions:
-
-#### `Timeout_connection(n)`
-
-TODO
-
-Enabling conditions:
-
-## Invariants/Safety
-
-#### `TypeOK`
-
-TODO
-
-#### `NoSelfInteractions`
-
-TODO
-
-#### `GoodNodesDoNotExceedMaxConnections`
-
-TODO
-
-#### `GoodNodesDoNotHandshakeTheirConnections`
-
-TODO
-
-#### `GoodNodesOnlyReceiveConnectionMessagesWhenHandshaking`
-
-TODO
-
-## Properties/Liveness
-
-#### `GoodNodesAlwaysRespondToConnectionMessagesWithAckOrNack`
-
-TODO
-
-#### `IfPossibleGoodNodesWillEventuallyExceedMinConnections`
-
-TODO
-
-#### `ConnectionsBetweenGoodNodesAreEventuallyBidirectionalOrClosed`
-
-TODO
-
-## State machine
-
-TODO
-
-![](./state_machine.dot.svg)
+- `recv_ack` - tuple of each node's peers who have sent an `ack` message
+- `recv_conn` - tuple of each node's peers who have sent a `conn` message
+- `recv_meta` - tuple of each node's peers who have sent a `meta` message
+- `sent_ack` - tuple of each node's peers to whom they have sent an `ack` message
+- `sent_conn` - tuple of each node's peers to whom they have sent a `conn` message
+- `sent_meta` - tuple of each node's peers to whom they have sent a `meta` message
+- `in_progress` - tuple of each node's peers with whom they are currently exchanging handshaking messages
