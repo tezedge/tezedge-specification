@@ -375,14 +375,14 @@ Next ==
 Fairness ==
     /\ WF_vars(InitPeers)
     /\ SF_vars(InitiateConnection)
-    /\ WF_vars(RespondToConnectionMessage)
-    /\ WF_vars(ExchangeMeta)
-    /\ WF_vars(ExchangeAck)
+    /\ SF_vars(RespondToConnectionMessage)
+    /\ SF_vars(ExchangeMeta)
+    /\ SF_vars(ExchangeAck)
     /\ WF_vars(Nack)
     /\ WF_vars(HandleNack)
     /\ WF_vars(Disconnect)
     /\ WF_vars(HandleDisconnect)
-    /\ WF_vars(HandleBad)
+    /\ SF_vars(HandleBad)
     /\ WF_vars(BadNodeSendsGoodNodeMessage)
     /\ WF_vars(Timeout)
 
