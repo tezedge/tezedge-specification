@@ -31,13 +31,13 @@ Alternatively, to verify the safety properties for larger models (e.g. 1 bad nod
 $ apalache check --init=Init --inv=IndInv --length=0 MC_safety_4good_1bad.tla 
 ```
 
-to verify that the initial state, `Init`, satisfies the property `IndInv` (i.e. `--init=Init --inv=IndInv --length=0`). Then, to verify that for any state satisfying the property, any successor state must also satisfy the property, we do
+to verify that the initial state, [`Init`](./Handshaking_nack_peers.tla#L348), satisfies the property [`IndInv`](./Handshaking_nack_peers.tla#L455) (i.e. `--init=Init --inv=IndInv --length=0`). Then, to verify that for any state satisfying the property, any successor state must also satisfy the property, we do
 
 ```
 $ apalache check --init=IndInv --inv=IndInv --length=1 MC_safety_4good_ bad.tla 
 ```
 
-This will check that for any state satisfying the property (i.e. `--init=IndInv`), the successor state also satisfies the property (i.e. `--inv=IndInv --length=1`). Likewise, the expected output can be found in [`MC_safety_4good_1bad.out`](./apalache/MC_safety_4good_1bad.out).
+This will check that for any state satisfying the property (i.e. `--init=IndInv`), the successor state also satisfies the property (i.e. `--inv=IndInv --length=1`). Likewise, the expected output can be found in [`MC_safety_4good_1bad.out`](./apalache/4good_1bad/MC_safety_4good_1bad.out).
 
 Once we have verified both of these claims, by the *principle of induction*, we have verified that `IndInv` is satisfied in all states of the model.
 
