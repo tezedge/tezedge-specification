@@ -8,13 +8,15 @@ Part of the formal verification process focuses on the design we intend to imple
 
 Formal specification and model checking give us assurance and verification that our algorithms have the intended properties and no undesirable behavior. Formal specification is, of course, not a replacement for testing, but a necessary companion and counterpart. TLA+ gives one the ability to exhaustively check all possible behaviors of a system.
 
-## The tools we use
+See [project navigation](./README.md#project-navigation) for a brief description of each directory's contents.
+
+## Quick start
 
 ### TLA+
 
-[TLA+](https://lamport.azurewebsites.net/tla/tla.html) is our chosen specification language. It enables one to encode the specification of a state machine, as well as its safety and liveness properties, in the language of [temporal logic of actions](https://lamport.azurewebsites.net/pubs/lamport-actions.pdf). TLA+ comes with an explicit state model checker, [TLC](https://github.com/tlaplus/tlaplus), which exhaustively checks all behaviors of the specified state machine, verifies its properties, and provides counterexamples to violated properties.
+Download and install the latest release of the [TLA+ toolbox](https://github.com/tlaplus/tlaplus/releases/tag/v1.7.1).
 
-The latest release of the TLA+ toolbox can be found [here](https://github.com/tlaplus/tlaplus/releases/tag/v1.7.1).
+[TLA+](https://lamport.azurewebsites.net/tla/tla.html) is our chosen specification language. It enables one to encode the specification of a state machine, as well as its safety and liveness properties, in the language of [temporal logic of actions](https://lamport.azurewebsites.net/pubs/lamport-actions.pdf). TLA+ comes with an explicit state model checker, [TLC](https://github.com/tlaplus/tlaplus), which exhaustively checks all behaviors of the specified state machine, verifies its properties, and provides counterexamples to violated properties.
 
 ### Apalache
 
@@ -46,7 +48,7 @@ Specific instructions to verify inductive invariants are provided in the corresp
 
 ### TLA+ command line tool
 
-The default way to write TLA+ specs and run the model checker (TLC) is through the (graphical) toolbox. However, for the ease of running TLC on a remote server, one may be interested in also getting the TLA+ command line tool [tla-bin](https://github.com/pmer/tla-bin).
+The default way to write TLA+ specs and run the model checker (TLC) is through the (graphical) toolbox. However, for the ease of running TLC on a remote server, one may be interested in also getting the TLA+ command line tool [tla-bin](https://github.com/pmer/tla-bin). Installation instructions are provided in that repo.
 
 ### TLA+ VSCode extension
 
@@ -60,8 +62,10 @@ There are three main objects of focus for our specifications, corresponding to t
 
 This project contains specifications and models related to the p2p overlay network:
 
-- hanshaking
+- [hanshaking](./p2p/handshaking)
 - I/O resource management
+  - counter
+  - scheduler
 
 ### shell
 

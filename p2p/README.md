@@ -4,7 +4,7 @@ This directory contains all the specifications and models related to the p2p ove
 
 ## handshaking
 
-This project contains specifications and models of the handshaking protocol (see [P2p_socket](https://gitlab.com/tezos/tezos/-/blob/master/src/lib_p2p/p2p_socket.ml)).
+This project contains a specification and models of the handshaking protocol (see [P2p_socket](https://gitlab.com/tezos/tezos/-/blob/master/src/lib_p2p/p2p_socket.ml)).
 
 ## counter
 
