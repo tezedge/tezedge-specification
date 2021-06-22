@@ -1,4 +1,4 @@
----------- MODULE Handshaking_nack_peers ----------
+---------- MODULE Handshaking ----------
 
 EXTENDS FiniteSets, Naturals
 
@@ -142,6 +142,7 @@ exit_handshaking_with_peers(g, n, ps) ==
 
 \* @type: (Int, Int) => Bool;
 disconnect(g, n) ==
+    /\ blacklist'   = [ blacklist   EXCEPT ![g] = @ \cup {n}]
     /\ connections' = [ connections EXCEPT ![g] = @ \ {n} ]
     /\ recv_conn'   = [ recv_conn   EXCEPT ![g] = @ \ {n} ]
     /\ sent_conn'   = [ sent_conn   EXCEPT ![g] = @ \ {n} ]
@@ -150,14 +151,18 @@ disconnect(g, n) ==
     /\ recv_ack'    = [ recv_ack    EXCEPT ![g] = @ \ {n} ]
     /\ sent_ack'    = [ sent_ack    EXCEPT ![g] = @ \ {n} ]
     /\ in_progress' = [ in_progress EXCEPT ![g] = @ \ {n} ]
-    /\ UNCHANGED <<blacklist, peers>> \* messages intentionally missing
+    /\ UNCHANGED peers \* messages intentionally missing
 
 \* connection messages
 
+BadOrAdd(g, n, msgs, msg) ==
+    IF Bad(n) \/ Blacklisted(n, g) THEN msgs
+    ELSE msgs \cup {msg}
+
 \* @type: (Int, Int) => Bool;
 send_conn_msg(g, n) ==
-    /\ messages' = [ messages EXCEPT ![n] = IF Bad(n) \/ Blacklisted(n, g) THEN @ ELSE @ \cup {conn_msg(g)} ]
-    /\ sent_conn' = [ sent_conn EXCEPT ![g] = @ \cup {n} ]
+    /\ messages'    = [ messages    EXCEPT ![n] = BadOrAdd(g, n, @, conn_msg(g)) ]
+    /\ sent_conn'   = [ sent_conn   EXCEPT ![g] = @ \cup {n} ]
     /\ in_progress' = [ in_progress EXCEPT ![g] = @ \cup {n} ]
     /\ UNCHANGED <<blacklist, connections, peers, recv_ack, recv_conn, recv_meta, sent_ack, sent_meta>>
 
@@ -185,7 +190,7 @@ RespondToConnectionMessage == \E g \in GOOD_NODES :
         /\ CASE n \notin sent_conn[g] \cup recv_conn[g] ->
                     /\ messages' = [ messages EXCEPT
                                         ![g] = @ \ {msg},
-                                        ![n] = IF Bad(n) \/ Blacklisted(n, g) THEN @ ELSE @ \cup {conn_msg(g)} ]
+                                        ![n] = BadOrAdd(g, n, @, conn_msg(g)) ]
                     /\ peers' = [ peers EXCEPT ![g] = @ \cup {n} ]
                     /\ recv_conn' = [ recv_conn EXCEPT ![g] = @ \cup {n} ]
                     /\ sent_conn' = [ sent_conn EXCEPT ![g] = @ \cup {n} ]
@@ -194,7 +199,7 @@ RespondToConnectionMessage == \E g \in GOOD_NODES :
              [] n \in sent_conn[g] /\ n \notin recv_conn[g] ->
                     /\ messages' = [ messages EXCEPT
                                         ![g] = @ \ {msg},
-                                        ![n] = IF Bad(n) \/ Blacklisted(n, g) THEN @ ELSE @ \cup {meta_msg(g)} ]
+                                        ![n] = BadOrAdd(g, n, @, meta_msg(g)) ]
                     /\ peers' = [ peers EXCEPT ![g] = @ \cup {n} ]
                     /\ recv_conn' = [ recv_conn EXCEPT ![g] = @ \cup {n} ]
                     /\ sent_meta' = [ sent_meta EXCEPT ![g] = @ \cup {n} ]
@@ -209,13 +214,13 @@ exchange_meta(g, n, msg) ==
     IF n \in sent_meta[g]
     THEN /\ messages' = [ messages EXCEPT
                             ![g] = @ \ {msg},
-                            ![n] = IF Bad(n) \/ Blacklisted(n, g) THEN @ ELSE @ \cup {ack_msg(g)} ]
+                            ![n] = BadOrAdd(g, n, @, ack_msg(g)) ]
          /\ recv_meta' = [ sent_meta EXCEPT ![g] = @ \cup {n} ]
          /\ sent_ack' = [ sent_ack EXCEPT ![g] = @ \cup {n} ]
          /\ UNCHANGED <<blacklist, connections, peers, recv_ack, recv_conn, sent_conn, sent_meta, in_progress>>
     ELSE /\ messages' = [ messages EXCEPT
                             ![g] = @ \ {msg},
-                            ![n] = IF Bad(n) \/ Blacklisted(n, g) THEN @ ELSE @ \cup {meta_msg(g)} ]
+                            ![n] = BadOrAdd(g, n, @, meta_msg(g)) ]
          /\ recv_meta' = [ recv_meta EXCEPT ![g] = @ \cup {n} ]
          /\ sent_meta' = [ sent_meta EXCEPT ![g] = @ \cup {n} ]
          /\ UNCHANGED <<blacklist, connections, peers, recv_ack, recv_conn, sent_ack, sent_conn, in_progress>>
@@ -247,7 +252,7 @@ exchange_ack(g, n, msg) ==
     ELSE /\ connections' = [ connections EXCEPT ![g] = @ \cup {n} ]
          /\ messages' = [ messages EXCEPT
                             ![g] = @ \ {msg},
-                            ![n] = IF Bad(n) \/ Blacklisted(n, g) THEN @ ELSE @ \cup {ack_msg(g)} ]
+                            ![n] = BadOrAdd(g, n, @, ack_msg(g)) ]
          /\ recv_ack' = [ recv_ack EXCEPT ![g] = @ \cup {n} ]
          /\ sent_ack' = [ sent_ack EXCEPT ![g] = @ \cup {n} ]
          /\ in_progress' = [ in_progress EXCEPT ![g] = @ \ {n} ]
@@ -272,7 +277,7 @@ nack_peers(g, n, msg, ps) ==
     /\ connections' = [ connections EXCEPT ![g] = @ \ {n} ]
     /\ messages' = [ messages EXCEPT
                         ![g] = { m \in @ : m.from /= n },
-                        ![n] = IF Bad(n) \/ Blacklisted(n, g) THEN @ ELSE @ \cup {nack_peers_msg(g, ps)} ]
+                        ![n] = BadOrAdd(g, n, @, nack_peers_msg(g, ps)) ]
     /\ recv_conn' = [ recv_conn EXCEPT ![g] = @ \ {n} ]
     /\ sent_conn' = [ sent_conn EXCEPT ![g] = @ \ {n} ]
     /\ recv_meta' = [ recv_meta EXCEPT ![g] = @ \ {n} ]
@@ -303,9 +308,7 @@ HandleNack == \E g \in GOOD_NODES :
         /\ n \in peers[g]
         /\ n \in sent_conn[g]
         /\ n \in recv_conn[g]
-        /\ IF ps = {}
-           THEN exit_handshaking(g, n)
-           ELSE exit_handshaking_with_peers(g, n, ps)
+        /\ exit_handshaking_with_peers(g, n, ps)
 
 HandleBad == \E g \in GOOD_NODES :
     \/ \E msg \in { m \in messages[g] : m.type = "bad" } :
@@ -340,7 +343,7 @@ HandleBad == \E g \in GOOD_NODES :
 
 \* @type: (Int, Int) => Bool;
 send_disconnect_msg(g, n) ==
-    messages' = [ messages EXCEPT ![n] = IF Bad(n) \/ Blacklisted(n, g) THEN @ ELSE @ \cup {disconnect_msg(g)} ]
+    messages' = [ messages EXCEPT ![n] = BadOrAdd(g, n, @, disconnect_msg(g)) ]
 
 \* [g] decides to disconnect from [n] and sends diconnect message
 Disconnect == \E g \in GOOD_NODES, n \in Nodes :
@@ -481,4 +484,4 @@ Safety ==
 \* inductive invariant
 IndInv == TypeOK /\ Safety
 
-===================================================
+========================================
