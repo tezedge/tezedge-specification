@@ -2,11 +2,13 @@
 
 EXTENDS Tenderbake
 
-Faulty_bakers == 0..0
+Correct_procs == 1..4
 
-Correct_bakers == 1..3
+Faulty_procs == 0..0
 
-Max_level == 3
+Committee_size == 4
+
+Committee[ l \in Levels ] == RandomElement(Committees)
 
 Proposer[ l \in Levels ] == [ r \in Rounds |-> (l + r) % n ]
 
