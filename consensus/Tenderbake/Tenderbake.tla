@@ -26,15 +26,19 @@ VARIABLES
 
 \* variable collections
 
-vars_no_phase       == <<messages, blockchain, head_cert, level, round, locked_value, locked_round, endorsable_value, endorsable_round, preendorsement_qc, events>>
-vars_no_phase_event == <<messages, blockchain, head_cert, level, round, locked_value, locked_round, endorsable_value, endorsable_round, preendorsement_qc>>
-vars_handle_event   == <<level, round, locked_value, locked_round>>
-vars_endorse        == <<messages, blockchain, head_cert, level, round>>
-vars_handle_msg     == <<blockchain, head_cert, locked_value, locked_round, endorsable_value, endorsable_round, preendorsement_qc>>
-vars_advance        == <<blockchain, head_cert, level, locked_value, locked_round, endorsable_value, endorsable_round, preendorsement_qc, events>>
-vars_no_events      == <<messages, blockchain, head_cert, level, round, phase, locked_value, locked_round, endorsable_value, endorsable_round, preendorsement_qc>>
+\* inclusion vars
+comm_vars       == <<messages, events>>
+state_vars      == <<level, round, phase>>
+chain_vars      == <<blockchain, head_cert>>
+endorsable_vars == <<endorsable_round, endorsable_value, preendorsement_qc>>
+locked_vars     == <<locked_round, locked_value>>
 
-vars == <<messages, blockchain, head_cert, level, round, phase, locked_value, locked_round, endorsable_value, endorsable_round, preendorsement_qc, events>>
+\* exclusion vars
+vars_no_phase       == <<messages, chain_vars, level, round, locked_vars, endorsable_vars, events>>
+vars_no_phase_event == <<messages, chain_vars, level, round, locked_vars, endorsable_vars>>
+vars_handle_msg     == <<chain_vars, locked_vars, endorsable_vars>>
+
+vars == <<comm_vars, state_vars, chain_vars, endorsable_vars, locked_vars>>
 
 \* Definitions
 
@@ -292,6 +296,7 @@ get_pQC(msg) ==
     LET t == msg.type IN
     CASE t = "Propose" -> msg.payload[4]
       [] t = "Preendorsements" -> msg.payload
+      [] t = "Endorse" -> msg.payload
 
 \* converts propose message to block
 block_of_propose_msg(msg) ==
@@ -301,17 +306,17 @@ block_of_propose_msg(msg) ==
 
 \* Events
 
-EventKinds == { "NewChain", "NewMessage", "Preendorsements" }
+EventKinds == { "NewChain", "NewMessage", "pQC" }
 
 Event(kind, data) == [ kind |-> kind, data |-> data ]
 
-ChainEvents == [ kind : {"NewChain"}, data : Seq(Blocks) \X EQCs ]
+ChainEvents == [ kind : {"NewChain"}, data : Seq(Blocks) \X (EQCs \cup SUBSET ProposeMsgs) ]
 
 MessageEvents == [ kind : {"NewMessage"}, data : Messages ]
 
-PreendorsementEvents == [ kind : {"Preendorsements"}, data : SUBSET PreendorseMsgs ]
+PQCEvents == [ kind : {"pQC"}, data : PQCs ]
 
-Events == ChainEvents \cup MessageEvents \cup PreendorsementEvents
+Events == ChainEvents \cup MessageEvents \cup PQCEvents
 
 \* Helper operators
 
@@ -481,12 +486,17 @@ broadcast(evnts, rcvrs, ev) ==
 \* Good actions
 \* The following actions are taken by correct processes
 
-\* if the chain agrees with what [p] has seen thus far, [p] updates their blockchain and head_cert
+\* if the chain agrees with what [p] has seen thus far,
+\* [p] updates their blockchain, head_cert, level, and round
 updateState(p, chain, cert) ==
     IF isPrefix(tl(blockchain[p]), chain) THEN
+        /\ level'      = [ level      EXCEPT ![p] = Len(chain) ]
+        /\ round'      = [ round      EXCEPT ![p] = 1 ]
         /\ blockchain' = [ blockchain EXCEPT ![p] = chain ]
         /\ head_cert'  = [ head_cert  EXCEPT ![p] = cert ]
-    ELSE UNCHANGED <<blockchain, head_cert>>
+    ELSE
+        /\ round' = [ round EXCEPT ![p] = @ + 1 ]
+        /\ UNCHANGED <<chain_vars, level>>
 
 \* aggregates chains and certificates from a set of bakers [Q]
 chain_and_certs(Q) ==
@@ -523,26 +533,37 @@ get_certificate(propOrCert) ==
 \* then they update their endorsable_value, endorsable_round, and preendorsement_qc
 \* if [p] is handling an Endorse message in the ENDORSE phase, they lock on the value and round
 updateEndorsable(p, msg) ==
-    LET pre == preendorse_msgs_for_pQC(p) IN
-    /\ IF card(pre) >= 2 * f + 1 THEN
+    LET t    == msg.type
+        r    == msg.round
+        pmfp == preendorse_msgs_for_pQC(p)
+        pre  == \* count incoming message
+            IF r = round[p] THEN
+                CASE t = "Preendorse" -> pmfp \cup {msg}
+                  [] t = "Endorse" -> pmfp \cup msg.payload
+                  [] OTHER -> pmfp
+            ELSE pmfp
+    IN
+    IF r = round[p] THEN
+        IF card(pre) >= 2 * f + 1 THEN
             LET pl == Pick(pre).payload IN
             /\ endorsable_value'  = [ endorsable_value  EXCEPT ![p] = pl ]
             /\ endorsable_round'  = [ endorsable_round  EXCEPT ![p] = round[p] ]
-            /\ preendorsement_qc' = [ preendorsement_qc EXCEPT ![p] =
-                    IF msg.type = "Endorse" THEN pre \cup msg.payload ELSE pre ]
-       ELSE
-            IF msg.type \in { "Propose", "Preendorsements" } THEN
+            /\ preendorsement_qc' = [ preendorsement_qc EXCEPT ![p] = pre ]
+            /\ IF t = "Endorse" /\ phase[p] \in {"E", "E_"} THEN
+                    /\ locked_value' = [ locked_value EXCEPT ![p] = pl ]
+                    /\ locked_round' = [ locked_round EXCEPT ![p] = round[p] ]
+               ELSE UNCHANGED locked_vars
+        ELSE
+            IF t \in { "Propose", "Preendorsements" } THEN
                 LET pQC == get_pQC(msg) IN
                 IF roundQC(pQC) > endorsable_round[p] THEN
                     /\ endorsable_value'  = [ endorsable_value  EXCEPT ![p] = valueQC(pQC) ]
                     /\ endorsable_round'  = [ endorsable_round  EXCEPT ![p] = roundQC(pQC) ]
                     /\ preendorsement_qc' = [ preendorsement_qc EXCEPT ![p] = pQC ]
-                ELSE UNCHANGED <<endorsable_value, endorsable_round, preendorsement_qc>>
-            ELSE UNCHANGED <<endorsable_value, endorsable_round, preendorsement_qc>>
-    /\ IF msg.type = "Endorse" /\ phase[p] \in {"E", "E_"} THEN
-            /\ locked_value' = [ locked_value EXCEPT ![p] = Pick(msg.payload).payload ]
-            /\ locked_round' = [ locked_round EXCEPT ![p] = round[p] ]
-       ELSE UNCHANGED <<locked_round, locked_value>>
+                    /\ UNCHANGED locked_vars
+                ELSE UNCHANGED <<endorsable_vars, locked_vars>>
+            ELSE UNCHANGED <<endorsable_vars, locked_vars>>
+    ELSE UNCHANGED <<endorsable_vars, locked_vars>>
 
 \* delete messages that don't correspond to round [r]
 filterMessages(p, l, r) ==
@@ -555,11 +576,12 @@ filterEvents(p, l) ==
             \/ e.kind = "NewChain"
             \/ /\ e.kind = "NewMessage"
                /\ e.data.level > l
-            \/ /\ e.kind = "Preendorsements"
+            \/ /\ e.kind = "pQC"
                /\ Pick(e.data).level > l }
     ]
 
 \* which head is better, [p]'s or the head of chain?
+\* boolean expression
 better_head(p, chain, propOrCert) ==
     IF propOrCert = {} THEN FALSE
     ELSE
@@ -607,6 +629,7 @@ isValidValue(b, prev_b) ==
           /\ card(eQC) >= 2 * f + 1
 
 \* check cert justifies head of chain
+\* boolean valued
 validChain(chain, _cert) ==
     LET cert == eQC_of_msgs(_cert)
         l == cert[1]
@@ -632,7 +655,7 @@ advance(p, decisionOpt) ==
             \* a value has not been decided for this level
             /\ round' = [ round EXCEPT ![p] = @ + 1 ]
             /\ filterMessages(p, level[p], round'[p])
-            /\ UNCHANGED vars_advance
+            /\ UNCHANGED <<chain_vars, level, locked_vars, endorsable_vars, events>>
         ELSE
             LET blk  == decisionOpt[1]
                 cert == decisionOpt[2]
@@ -640,12 +663,10 @@ advance(p, decisionOpt) ==
             \* go to the next level
             \* - a value has been decided for the current level
             \* - reset endorsable/locked round and value
-            /\ level' = [ level EXCEPT ![p] = @ + 1 ]
-            /\ round' = [ round EXCEPT ![p] = 1 ]
             /\ reset(p)
+            /\ updateState(p, cons(blk, blockchain[p]), cert)
             /\ filterMessages(p, level'[p], round'[p])
             /\ filterEvents(p, level[p])
-            /\ updateState(p, cons(blk, blockchain[p]), cert)
     /\ phase' = [ phase EXCEPT ![p] = IF p = PROPOSER[level'[p]][round'[p]] THEN "P" ELSE "P_" ]
 
 \* if [p] has decided (i.e. has seen an eQC in the ENDORSE phase), this returns the decided value at their level
@@ -668,12 +689,14 @@ HandleNewChain(p, data) ==
         cert  == get_certificate(pOrC)
     IN
     /\ validChain(chain, cert)
-    /\ CASE Len(chain) > level[p] -> updateState(p, chain, cert)
+    /\ CASE Len(chain) > level[p] ->
+            /\ updateState(p, chain, cert)
+            /\ UNCHANGED <<messages, endorsable_vars>>
          [] Len(chain) = level[p] ->
             /\ better_head(p, chain, cert)
             /\ updateState(p, chain, cert)
-         [] OTHER -> UNCHANGED <<blockchain, head_cert>>
-    /\ UNCHANGED <<messages, endorsable_value, endorsable_round>>
+            /\ UNCHANGED <<messages, endorsable_vars>>
+         [] OTHER -> UNCHANGED <<messages, endorsable_vars, level, round, chain_vars>>
 
 HandleConsensusMessage(p, ev) ==
     LET msg == ev.data
@@ -692,7 +715,7 @@ HandleConsensusMessage(p, ev) ==
         /\ IF isValidMessage(p, msg) THEN
                 /\ updateEndorsable(p, msg)
                 /\ messages' = [ messages EXCEPT ![p] = @ \cup {msg} ]
-                /\ UNCHANGED <<blockchain, head_cert>>
+                /\ UNCHANGED chain_vars
             ELSE UNCHANGED <<vars_handle_msg, messages>>
         /\ events' = [ events EXCEPT ![p] = @ \ {ev} ]
     ELSE
@@ -709,23 +732,24 @@ HandleConsensusMessage(p, ev) ==
 
 \* these messages have already been validated, they are Preendorse messages which are being re-broadcasted
 \* now they're being passed as a quorum certificate
-HandleConsensusMessages(p, msgs) ==
+HandlePQCMessage(p, msgs) ==
     /\ messages' = [ messages EXCEPT ![p] = @ \cup msgs ]
     /\ UNCHANGED vars_handle_msg
 
 \* [p] handles one event
 HandleEvent(p, ev) ==
     LET k == ev.kind IN
-    /\ CASE k = "NewChain" ->
-                /\ HandleNewChain(p, ev.data)
-                /\ events' = [ events EXCEPT ![p] = @ \ {ev} ]
-                /\ UNCHANGED <<locked_round, locked_value>>
-         [] k = "NewMessage" -> HandleConsensusMessage(p, ev)
-         [] k = "Preendorsements" ->
-                /\ HandleConsensusMessages(p, ev.data)
-                /\ events' = [ events EXCEPT ![p] = @ \ {ev} ]
-                /\ UNCHANGED <<locked_round, locked_value>>
-    /\ UNCHANGED <<level, round>>
+    CASE k = "NewChain" ->
+            /\ HandleNewChain(p, ev.data)
+            /\ events' = [ events EXCEPT ![p] = @ \ {ev} ]
+            /\ UNCHANGED locked_vars
+      [] k = "NewMessage" ->
+            /\ HandleConsensusMessage(p, ev)
+            /\ UNCHANGED <<level, round>>
+      [] k = "pQC" ->
+            /\ HandlePQCMessage(p, ev.data)
+            /\ events' = [ events EXCEPT ![p] = @ \ {ev} ]
+            /\ UNCHANGED <<level, round>>
 
 \* PROPOSE - committee member
 \* the proposer of a round proposes a value
@@ -805,7 +829,7 @@ Preendorse_handle(p) == \E ev \in events[p], np \in {"PE_", "E"} :
 Preendorse_(p) ==
     /\ p \in COMMITTEE[level[p]]
     /\ phase[p] \in {"PE", "PE_"}
-    /\ phase' = [ phase EXCEPT ![p] = "E" ]
+    /\ phase' = [ phase EXCEPT ![p] = "E" ] 
     /\ UNCHANGED vars_no_phase
 
 \* ENDORSE - committee member
@@ -823,18 +847,18 @@ Endorse(p) == \E msg \in preendorse_msgs_for_pQC(p) :
                 r == round[p]
                 h == hash(head(p))
             IN
-            /\ endorsable_value'  = [ endorsable_value  EXCEPT ![p] = u ]
             /\ locked_value'      = [ locked_value      EXCEPT ![p] = u ]
-            /\ endorsable_round'  = [ endorsable_round  EXCEPT ![p] = r ]
             /\ locked_round'      = [ locked_round      EXCEPT ![p] = r ]
+            /\ endorsable_value'  = [ endorsable_value  EXCEPT ![p] = u ]
+            /\ endorsable_round'  = [ endorsable_round  EXCEPT ![p] = r ]
             /\ preendorsement_qc' = [ preendorsement_qc EXCEPT ![p] = pre ]
             /\ events' = broadcast(
                 broadcast(events, Procs, Event("NewMessage", endorse_msg(p, l, r, h, pre))),
                 Procs,
-                Event("Preendorsements", pre)
+                Event("pQC", pre)
                )
-        ELSE UNCHANGED <<endorsable_round, endorsable_value, locked_round, locked_value, preendorsement_qc, events>>
-    /\ UNCHANGED vars_endorse
+            /\ UNCHANGED <<messages, chain_vars, level, round>>
+        ELSE UNCHANGED <<comm_vars, chain_vars, endorsable_vars, locked_vars, level, round>>
 
 \* [p] is in the ENDORSE phase, has events to handle, and handles one
 \* [p] stays in the ENDORSE phase until they advance
@@ -892,15 +916,9 @@ ObservePE_E(p) ==
 \* ENDORSE - observer
 ObserveE(p) == \E ev \in events[p] :
     /\ p \notin COMMITTEE[level[p]]
-    /\ phase[p] = "E"
-    /\ HandleEvent(p, ev)
-    /\ UNCHANGED phase
-
-ObserveE_handle_advance(p) == \E ev \in events[p] :
-    /\ p \notin COMMITTEE[level[p]]
     /\ phase[p] = "E_"
+    /\ phase' = [ phase EXCEPT ![p] = "E_" ]
     /\ HandleEvent(p, ev)
-    /\ advance(p, get_decision(p))
 
 ObserveE_advance(p) ==
     /\ p \notin COMMITTEE[level[p]]
@@ -909,7 +927,7 @@ ObserveE_advance(p) ==
 
 OnTimeoutPullChain(p) ==
     /\ pullChain(p, events[p], Procs)
-    /\ UNCHANGED vars_no_events
+    /\ UNCHANGED <<messages, chain_vars, state_vars, locked_vars, endorsable_vars>>
 
 \* Faulty process actions
 \* TODO
@@ -949,7 +967,6 @@ Next ==
         \/ ObservePE_E_handle(p)
         \/ ObservePE_E(p)
         \/ ObserveE(p)
-        \/ ObserveE_handle_advance(p)
         \/ ObserveE_advance(p)
         \/ OnTimeoutPullChain(p)
     \* faulty node actions
@@ -990,13 +1007,6 @@ CorrectLevels == \A p \in CORRECT_PROCS : level[p] = Len(blockchain[p])
 
 BoundedMessageBuffers == \A p \in CORRECT_PROCS : card(messages[p]) <= 4 * n + 2
 
-PreendorsementQCs == \A p \in CORRECT_PROCS :
-    LET pQC == preendorsement_qc[p] IN
-    pQC /= {} <=>
-        /\ card(pQC) >= 2 * f + 1
-        /\ endorsable_round[p] /= 0
-        /\ endorsable_value[p] /= NULL
-
 \* Preendorsement quorum certificates are collections of messages with a common:
 \* - level
 \* - round
@@ -1008,6 +1018,13 @@ consistentPQC(pQC) ==
     /\ card({ pmsg.round   : pmsg \in pQC }) = 1 \* common round
     /\ card({ pmsg.pred    : pmsg \in pQC }) = 1 \* common predecessor
     /\ card({ pmsg.payload : pmsg \in pQC }) = 1 \* common value
+
+PreendorsementQCs == \A p \in CORRECT_PROCS :
+    LET pQC == preendorsement_qc[p] IN
+    pQC /= {} <=>
+        /\ consistentPQC(pQC)
+        /\ endorsable_round[p] > 0
+        /\ endorsable_value[p] /= NULL
 
 \* Endorsement quorum certificates are collections of messages with a common:
 \* - level
@@ -1028,12 +1045,30 @@ HeadCerts == \A p \in CORRECT_PROCS : level[p] > 1 =>
     /\ consistentEQC(head_cert[p])
     /\ head_cert[p] = head(p).header.eQC
 
-\* Endorsable rounds and values are set/reset simultaneously
+\* Endorsable values/rounds are set/reset simultaneously
 Endorsables == \A p \in CORRECT_PROCS :
     \/ /\ endorsable_round[p] = 0
        /\ endorsable_value[p] = NULL
     \/ /\ endorsable_round[p] > 0
        /\ endorsable_value[p] /= NULL
+
+\* Locked values/rounds are set/reset simultaneously
+LockedValuesRounds == \A p \in CORRECT_PROCS :
+    \/ /\ locked_round[p] = 0
+       /\ locked_value[p] = NULL
+    \/ /\ locked_round[p] > 0
+       /\ locked_value[p] /= NULL
+
+\* A value/round is locked iff it also an endorsable value/round
+LockedIffEndorsable == \A p \in CORRECT_PROCS :
+    \* no endorsable value/round => no lockedvalue/round
+    /\ endorsable_round[p] = 0 =>
+        /\ endorsable_round[p] = locked_round[p]
+        /\ endorsable_value[p] = locked_value[p]
+    \* locked value/round must be the same as endorsable value/round
+    /\ locked_round[p] > 0 =>
+        /\ endorsable_round[p] = locked_round[p]
+        /\ endorsable_value[p] = locked_value[p]
 
 \* Liveness
 Progress == \A p \in CORRECT_PROCS : []<><< Len(blockchain'[p]) > Len(blockchain[p]) >>_vars
