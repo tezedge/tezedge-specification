@@ -34,7 +34,7 @@ endorsable_vars == <<endorsable_round, endorsable_value, preendorsement_qc>>
 locked_vars     == <<locked_round, locked_value>>
 
 \* exclusion vars
-vars_no_phase       == <<messages, chain_vars, level, round, locked_vars, endorsable_vars, events>>
+vars_no_phase       == <<comm_vars, chain_vars, level, round, locked_vars, endorsable_vars>>
 vars_no_phase_event == <<messages, chain_vars, level, round, locked_vars, endorsable_vars>>
 vars_handle_msg     == <<chain_vars, locked_vars, endorsable_vars>>
 
@@ -68,11 +68,13 @@ Committees == { bs \in SUBSET Procs : card(bs) = n /\ card(bs) >= 3 * card(bs \c
 (* Assumptions *)
 (***************)
 
+\* TODO improve assumptions
+
 ASSUME \A l \in 1..10, r \in 1..10 : PROPOSER[l][r] \in COMMITTEE[l]
 
 ASSUME \A l \in 1..10: COMMITTEE[l] \in Committees
 
-\* 
+\* helpers
 
 Pick(set) == CHOOSE x \in set : TRUE
 
@@ -108,7 +110,10 @@ QuorumsOf(comm) == { bs \in SUBSET comm : card(bs) >= 2 * card(bs \cap FAULTY_PR
 
 Quorums == UNION { QuorumsOf(COMMITTEE[l]) : l \in Levels }
 
-Phases == { "P", "P_", "PE", "PE_", "E", "E_" } \* P = PROPOSE, PE = PREENDORSE, E = ENDORSE
+\* {P, P_} = PROPOSE
+\* {PE, PE_} = PREENDORSE
+\* {E, E_} = ENDORSE
+Phases == { "P", "P_", "PE", "PE_", "E", "E_" }
 
 (************)
 (* Messages *)
@@ -206,10 +211,12 @@ preendorse_msgs(p) == { msg \in messages[p] : msg.type = "Preendorse" }
 preendorsements_msgs(p) == { msg \in messages[p] : msg.type = "Preendorsements" }
 endorse_msgs(p) == { msg \in messages[p] : msg.type = "Endorse" }
 
+\* 
 preendorse_msgs_for_pQC(p) ==
     LET ps == preendorse_msgs(p)
         hs == { msg.pred    : msg \in ps }
         us == { msg.payload : msg \in ps }
+        \* preendorsement messages with given predecessor and value
         pe_msgs_with(h, u) ==
             { msg \in ps :
                 /\ msg.level = level[p]
@@ -611,24 +618,26 @@ justify(b, cert) ==
     IN
     /\ isValidEQC(l, r, h, u, cert)
     /\ card(cert) >= 2 * f + 1
+    /\ b.header.eQC = cert
 
 \* given [prev_b] is a valid block, we check whether [b] is valid
 isValidValue(b, prev_b) ==
     LET bh  == b.header
         l   == bh.level
+        r   == bh.round
         eQC == bh.eQC
-        ph  == prev_b.header
     IN
-    \* consistency = hash linked to [prev_b]
+    \* consistency = blocks are hash-linked
     /\ bh.pred = hash(prev_b)
     \* legitimacy = correct proposer & correct endorsement quorum certificate
-    /\ bh.proposer = PROPOSER[l][bh.round]
-    /\ LET pl == ph.level IN
-       \/ pl = 0
-       \/ /\ eQC \subseteq COMMITTEE[pl][ph.round]
-          /\ card(eQC) >= 2 * f + 1
+    /\ bh.proposer = PROPOSER[l][r]
+    /\ LET pl == prev_b.header.level IN
+        /\ { eqc.from : eqc \in eQC } \subseteq COMMITTEE[pl] \* eQC messages are from committee members
+        /\ Pick({ eqc.level : eqc \in eQC }) = l \* eQC messages are for the correct level
+        /\ Pick({ eqc.round : eqc \in eQC }) = r \* eQC messages are for the correct round
+        /\ card(eQC) >= 2 * f + 1
 
-\* check cert justifies head of chain
+\* check cert justifies head of chain & chain is valid
 \* boolean valued
 validChain(chain, _cert) ==
     LET cert == eQC_of_msgs(_cert)
@@ -691,11 +700,15 @@ HandleNewChain(p, data) ==
     /\ validChain(chain, cert)
     /\ CASE Len(chain) > level[p] ->
             /\ updateState(p, chain, cert)
-            /\ UNCHANGED <<messages, endorsable_vars>>
+            /\ filterMessages(p, level'[p], round'[p])
+            /\ filterEvents(p, level[p])
+            /\ UNCHANGED endorsable_vars
          [] Len(chain) = level[p] ->
             /\ better_head(p, chain, cert)
             /\ updateState(p, chain, cert)
-            /\ UNCHANGED <<messages, endorsable_vars>>
+            /\ filterMessages(p, level'[p], round'[p])
+            /\ filterEvents(p, level[p])
+            /\ UNCHANGED endorsable_vars
          [] OTHER -> UNCHANGED <<messages, endorsable_vars, level, round, chain_vars>>
 
 HandleConsensusMessage(p, ev) ==
