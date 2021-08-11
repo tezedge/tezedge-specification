@@ -1,4 +1,4 @@
----- MODULE Bootstrap_pipeline ----
+---- MODULE Bootstrap ----
 
 EXTENDS FiniteSets, Naturals, Sequences, TLC
 
@@ -1450,4 +1450,4 @@ Liveness ==
     /\ EventuallyApply
     /\ IfLocalMajorBranchExistsThenBootstrapppingWillHearAboutIt
 
-===================================
+==========================
