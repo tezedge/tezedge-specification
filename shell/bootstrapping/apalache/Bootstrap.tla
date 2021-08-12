@@ -1,54 +1,131 @@
 ---- MODULE Bootstrap ----
 
-EXTENDS FiniteSets, Naturals, Sequences, TLC, Hash, Samples
+EXTENDS FiniteSets, Naturals, Sequences, TLC
 
 CONSTANTS
+    \* @typeAlias: NODE = Int;
+    \* @type: NODE;
     BAD_NODES,          \* nodes who behave arbitrarily
+    \* @type: NODE;
     GOOD_NODES,         \* nodes who follow the protocol
+    \* @type: NODE;
     BAD_BOOTSTRAPPING,  \* bootstrapping nodes who behave arbitrarily
+    \* @type: NODE;
     GOOD_BOOTSTRAPPING, \* bootstrapping nodes who follow the protocol
+    \* @type: Int;
     MIN_PEERS,          \* minimum number of peers
+    \* @type: Int;
     MAX_PEERS,          \* maximum number of peers
+    \* @typeAlias: LEVEL = Int;
+    \* @type: LEVEL;
     MAX_LEVEL,          \* maximum level of a block
+    \* @type: Int;
     MAX_OPS,            \* maximum number of operations per block
+    \* @typeAlias: BLOCK_HASH = Int;
+    \* @typeAlias: HEADER = [ level: LEVEL, predecessor: BLOCK_HASH, branch: Int, ops_hash: Int ];
+    \* @type: NODE -> HEADER;
     CURRENT_HEAD,       \* each good node's current head
+    \* @typeAlias: OPERATION = [ block_hash: BLOCK_HASH, op: Int ];
+    \* @typeAlias: BLOCK = [ header: HEADER, ops: Set(OPERATION) ];
+    \* @type: NODE -> Set(BLOCK);
     BLOCKS,             \* each good node's blocks
-    VALIDATOR           \* each block's validity status
+    \* @type: BLOCK -> Str;
+    VALIDATOR,          \* each block's validity status
+    \* @type: (NODE, NODE) -> Seq(LEVEL);
+    SAMPLES             \* GOOD_NODES \X Bootstrapping_nodes -> Seq_hd(BlockHashes)
 
 VARIABLES
-    b_blacklist,        \* each good bootstrapping node's set of blacklisted peers
-    b_messages,         \* each good bootstrapping node's set of messages
-    n_blacklist,        \* each good node's set of blacklisted peers
-    n_messages          \* each good node's set of messages
+    \* each good bootstrapping node's set of blacklisted peers
+    \* @type: NODE -> Set(NODE);
+    b_blacklist,
+    \* each good bootstrapping node's set of messages
+    \* @type: NODE -> Set(MSG);
+    b_messages,
+    \* each good node's set of blacklisted peers
+    \* @type: NODE -> Set(NODE);
+    n_blacklist,
+    \* each good node's set of messages
+    \* @type: NODE -> Set(MSG);
+    n_messages
 
 messages  == <<b_messages, n_messages>>
 blacklist == <<b_blacklist, n_blacklist>>
 
 \* bootstrapping variables
 VARIABLES
-    phase,              \* each good bootstrapping node's phase
-    connections,        \* each good and bad bootstrapping node's set of connections
-    current_head,       \* each good bootstrapping node's current head
-    fittest_head,       \* each good bootstrapping node's peer's current heads
-    header_pipe,        \* each good bootstrapping node's queue of fetched headers
-    operation_pipe,     \* each good bootstrapping node's queue of fetched operations
-    validated_blocks,   \* each good bootstrapping node's set of validated blocks
-    prevalidated_hds,   \* each good bootstrapping node's set of prevalidated headers
-    prevalidated_ops,   \* each good bootstrapping node's set of prevalidated operations
-    sent_get_branch,    \* each good bootstrapping node's set of peers to whom they have sent a Get_current_branch message
-    sent_get_headers,   \* each good bootstrapping node's function from peers to whom they have sent a Get_block_headers message to the requested headers
-    sent_get_ops,       \* each good bootstrapping node's function from peers to whom they have sent a Get_operations message to the requested operations
-    recv_branch,        \* each good bootstrapping node's set of peers from whom they have received a Current_branch message
-    recv_header,        \* each good bootstrapping node's function from peers from whom they have received a Block_header message to set of headers received
-    recv_operation      \* each good bootstrapping node's function from peers from whom they have received a Operation message to set of operations received
+    \* @typeAlias: PHASE = <<Str, Int>>;
+    \* @type: NODE -> PHASE;
+    phase,
+    \* each good bootstrapping node's phase
+
+    \* @type: NODE -> Set(NODE);
+    connections,
+    \* each good and bad bootstrapping node's set of connections
+
+    \* @type: NODE -> HEADER;
+    current_head,
+    \* each good bootstrapping node's current head
+
+    \* @type: NODE -> NODE -> LEVEL;
+    fittest_head,
+    \* each good bootstrapping node's peer's current heads
+
+    \* @type: NODE -> Seq(HEADER);
+    header_pipe,
+    \* each good bootstrapping node's queue of fetched headers
+
+    \* @type: NODE -> Seq(Sety(<<HASH, OPERATION>>));
+    operation_pipe,
+    \* each good bootstrapping node's queue of fetched operations
+
+    \* @type: NODE -> Set(BLOCK);
+    validated_blocks,
+    \* each good bootstrapping node's set of validated blocks
+
+    \* @type: NODE -> Set(HEADER);
+    prevalidated_hds,
+    \* each good bootstrapping node's set of prevalidated headers
+
+    \* @type: NODE -> Set(<<BLOCK_HASH, Set(OPERATION)>>)
+    prevalidated_ops,
+    \* each good bootstrapping node's set of prevalidated operations
+
+    \* @type: NODE -> Set(NODE);
+    sent_get_branch,
+    \* each good bootstrapping node's set of peers to whom they have sent a Get_current_branch message
+
+    \* @type: NODE -> NODE -> Set(<<LEVEL, BLOCK_HASH>>);
+    sent_get_headers,
+    \* each good bootstrapping node's function from peers to whom they have sent a Get_block_headers message to the requested headers
+
+    \* @type: NODE -> NODE -> Set(<<BLOCK_HASH, OPERATION>>);
+    sent_get_ops,
+    \* each good bootstrapping node's function from peers to whom they have sent a Get_operations message to the requested operations
+
+    \* @type: NODE -> NODE -> Set(<<LEVEL, BLOCK_HASH>>);
+    recv_branch,
+    \* each good bootstrapping node's set of peers from whom they have received a Current_branch message
+
+    \* @type: NODE -> NODE -> Set(HEADER);
+    recv_header,
+    \* each good bootstrapping node's function from peers from whom they have received a Block_header message to set of headers received
+
+    \* @type: NODE -> NODE -> Set(<<BLOCK_HASH, OPERATION>>);
+    recv_operation
+    \* each good bootstrapping node's function from peers from whom they have received a Operation message to set of operations received
 
 \* trace variables
 VARIABLES
-    phase_trace         \* each good bootstrapping node's phase trace
+    \* @type: NODE -> Seq(PHASE);
+    phase_trace
+    \* each good bootstrapping node's phase trace
 
 \* memory variables
 VARIABLES
-    mem_size            \* each good bootstrapping node's estimated memory usage
+    \* @typeAlias: MEM = Int;
+    \* @type: NODE -> NODE -> MEM;
+    mem_size
+    \* each good bootstrapping node's estimated memory used
 
 \* inclusive bootstrapping variables
 pipe_vars   == <<validated_blocks, header_pipe, operation_pipe>>
@@ -66,23 +143,46 @@ b_non_op_vars     == <<phase, connections, current_head, pipe_vars, valid_vars, 
 b_non_pipe_vars   == <<phase, connections, current_head, valid_vars, b_sent_vars, b_recv_vars, trace_vars, mem_vars>>
 b_non_recv_vars   == <<phase, connections, current_head, pipe_vars, valid_vars, b_sent_vars, trace_vars, mem_vars>>
 b_non_node_vars   == <<phase, connections, current_head, pipe_vars, valid_vars, b_sent_vars, b_recv_vars, trace_vars, mem_vars>>
-b_non_trace_vars  == <<connections, pipe_vars, valid_vars, b_sent_vars, b_recv_vars, mem_vars>>
+b_non_phase_vars  == <<connections, pipe_vars, valid_vars, b_sent_vars, b_recv_vars, mem_vars>>
 b_non_hd_q_vars   == <<phase, connections, current_head, validated_blocks, operation_pipe, prevalidated_ops, b_sent_vars, b_recv_vars, trace_vars, mem_vars>>
 b_non_op_q_vars   == <<phase, connections, current_head, validated_blocks, header_pipe, prevalidated_hds, b_sent_vars, b_recv_vars, trace_vars, mem_vars>>
 
 \* all bootstrapping variables
-bootstrapping_vars == <<phase, connections, current_head, fittest_head, pipe_vars, valid_vars, b_sent_vars, b_recv_vars, trace_vars, mem_vars>>
+bootstrapping_vars == <<phase, connections, current_head, pipe_vars, valid_vars, b_sent_vars, b_recv_vars, trace_vars, mem_vars>>
 
 \* node variables
 VARIABLES
-    sent_branch,        \* each good node's set of peers to whom they have sent a Current_branch message
-    sent_headers,       \* each good node's function from peers to whom they have sent a Block_header message to the set of headers sent
-    sent_ops,           \* each good node's function from peers to whom they have sent a Operation message to the set of operations sent
-    recv_get_branch,    \* each good node's set of peers from whom they have received a Get_current_branch message
-    recv_get_headers,   \* each good node's set of peers from whom they have received a Get_block_headers message
-    recv_get_ops,       \* each good node's set of peers from whom they have received a Get_operations message
-    serving_headers,    \* each good node's function from peers from whom they have received a Get_block_headers message to the header hashes they requested
-    serving_ops         \* each good node's function from peers from whom they have received a Get_operations message to the operation hashes they requested
+    \* @type: NODE -> NODE -> Set(<<LEVEL, BLOCK_HASH>>);
+    sent_branch,
+    \* each good node's set of peers to whom they have sent a Current_branch message
+
+    \* @type: NODE -> NODE -> Set(<<BLOCK_HASH, HEADER>>);
+    sent_headers,
+    \* each good node's function from peers to whom they have sent a Block_header message to the set of headers sent
+
+    \* @type: NODE -> NODE -> Set(<<BLOCK_HASH, OPERATION>>);
+    sent_ops,
+    \* each good node's function from peers to whom they have sent a Operation message to the set of operations sent
+
+    \* @type: NODE -> Set(<<NODE, Seq(LEVEL)>>);
+    recv_get_branch,
+    \* each good node's set of peers from whom they have received a Get_current_branch message
+
+    \* @type: NODE -> NODE -> Set(<<LEVEL, BLOCK_HASH>>);
+    recv_get_headers,
+    \* each good node's set of peers from whom they have received a Get_block_headers message
+
+    \* @type: NODE -> NODE -> Set(OPERATION_HASH);
+    recv_get_ops,
+    \* each good node's set of peers from whom they have received a Get_operations message
+
+    \* @type: NODE -> NODE -> Seq(BLOCK_HASH);
+    serving_headers,
+    \* each good node's function from peers from whom they have received a Get_block_headers message to the header hashes they requested
+
+    \* @type: NODE -> NODE -> BLOCK_HASH -> Set(OPERATION);
+    serving_ops
+    \* each good node's function from peers from whom they have received a Get_operations message to the operation hashes they requested
 
 \* inclusive node variables
 n_sent_vars  == <<sent_branch, sent_headers, sent_ops>>
@@ -99,9 +199,9 @@ n_non_serving_vars == <<sent_branch, sent_headers, sent_ops, recv_get_branch, re
 \* all node variables
 node_vars == <<n_sent_vars, n_recv_vars, serving_vars>>
 
-non_phase_vars == <<messages, blacklist, node_vars, b_non_trace_vars>>
-
 \* all variables
+non_phase_vars == <<messages, blacklist, node_vars, b_non_phase_vars>>
+
 vars == <<messages, blacklist, bootstrapping_vars, node_vars>>
 
 ----
@@ -112,32 +212,46 @@ vars == <<messages, blacklist, bootstrapping_vars, node_vars>>
 
 \* [1] General helpers
 
+\* @type: Set(a) => Int;
 Card(s) == Cardinality(s)
 
+\* @type: Set(a) => Set(Set(a));
 Set_n(s) == { ss \in SUBSET s : Card(ss) <= MAX_LEVEL }
 
+\* @type: Set(a) => Set(Set(a));
 Set_hd(s) == { ss \in SUBSET s : Card(ss) <= MAX_LEVEL \div 2 }
 
+\* @type: Set(a) => Set(Set(a));
 Set_op(s) == { ss \in SUBSET s : Card(ss) <= MAX_OPS }
 
+\* @type: Set(a) => Set(Set(a));
 NESet_hd(s) == Set_hd(s) \ {{}}
 
+\* @type: Set(a) => Set(Set(a));
 NESet_op(s) == Set_op(s) \ {{}}
 
+\* @type: (Set(a), Int) => Set(Seq(a));
 BSeq(s, n) == { seq \in Seq(s) : Len(s) <= n }
 
+\* @type: Set(a) => Set(Seq(a));
 Seq_n(s) == BSeq(s, MAX_LEVEL)
 
+\* @type: Set(a) => Set(Seq(a));
 Seq_hd(s) == { seq \in Seq(s) : Len(s) <= MAX_LEVEL \div 2 }
 
+\* @type: Set(a) => Set(Seq(a));
 NESeq_n(s) == Seq_n(s) \ {<<>>}
 
+\* @type: Set(a) => Set(Seq(a));
 NESeq_hd(s) == Seq_hd(s) \ {<<>>}
 
+\* @type: Set(a) => a;
 Pick(s) == CHOOSE x \in s : TRUE
 
+\* @type: (a, Seq(a)) => Seq(a);
 Cons(x, seq) == <<x>> \o seq
 
+\* @type: (a => b, Seq(a), Seq(b)) => Seq(b);
 RECURSIVE map(_, _, _)
 map(f(_), seq, acc) ==
     IF seq = <<>> THEN acc
@@ -145,6 +259,7 @@ map(f(_), seq, acc) ==
         LET x == Head(seq) IN
         map(f, Tail(seq), Append(acc, f(x)))
 
+\* @type: (a => b, Seq(a)) => Seq(b);
 Map(f(_), seq) == map(f, seq, <<>>)
 
 RECURSIVE map_set(_, _, _)
@@ -156,8 +271,10 @@ map_set(f(_), s, acc) ==
 
 Map_set(f(_), s) == map_set(f, s, {})
 
+\* @type: Seq(a) => Set(a);
 ToSet(seq) == { seq[i] : i \in DOMAIN seq }
 
+\* @type: (Set(a), Seq(a)) => Seq(a);
 RECURSIVE seq_of_set(_, _)
 seq_of_set(s, acc) ==
     IF s = {} THEN acc
@@ -166,8 +283,10 @@ seq_of_set(s, acc) ==
             t == s \ {x}
         IN seq_of_set(t, Append(acc, x))
 
+\* @type: Set(a) => Seq(a);
 SetToSeq(s) == seq_of_set(s, <<>>)
 
+\* @type: (a, Seq(a), Int) => Int;
 RECURSIVE index(_, _, _)
 index(x, seq, i) ==
     IF seq = <<>> THEN 0
@@ -175,29 +294,38 @@ index(x, seq, i) ==
         IF x = Head(seq) THEN i + 1
         ELSE index(x, Tail(seq), i + 1)
 
+\* @type: (a, Seq(a)) => Int;
 Index(x, seq) == index(x, seq, 0)
 
 \* header level comparison
+\* @type: (HEADER, HEADER) => Bool;
 min_level_cmp(h1, h2) == h1.level <= h2.level
 
+\* @type: (HEADER, HEADER) => Bool;
 max_level_cmp(h1, h2) == min_level_cmp(h2, h1)
 
+\* @type: Seq(HEADER) => HEADER;
 Min_level_seq(seq) ==
     CASE seq /= <<>> -> Head(SortSeq(seq, min_level_cmp))
 
+\* @type: Set(HEADER) => HEADER;
 Min_level_set(s) == Min_level_seq(SetToSeq(s))
 
+\* @type: Seq(HEADER) => HEADER;
 Max_level_seq(seq) ==
     CASE seq /= <<>> -> Head(SortSeq(seq, max_level_cmp))
 
+\* @type: Set(HEADER) => HEADER;
 Max_level_set(s) == Max_level_seq(SetToSeq(s))
 
+\*
 Max_hd_set(s) ==
     LET max_fit_hds  == { x \in s : \A y \in s : x.fitness >= y.fitness }
         max_fit_lvls == { x \in max_fit_hds : \A y \in max_fit_hds : x.level >= y.level }
     IN
     Pick(max_fit_lvls)
 
+\* @type: Set(Int) => Int;
 Max_set(s) == Pick({ x \in s : \A y \in s : x >= y })
 
 
@@ -247,23 +375,40 @@ PossibleHeaders  == [
 
 Ops == 0..MAX_OPS
 
+\* @type: (LEVEL, BLOCK_HASH, HASH, FITNESS, HASH) => HEADER;
 header(l, pred, ctx, fit, op) ==
     [ level |-> l, predecessor |-> pred, context |-> ctx, fitness |-> fit, ops_hash |-> op ]
 
+\* @type: (BLOCK_HASH, Int) => OPERATION;
 operation(bh, op) == [ block_hash |-> bh, op |-> op ]
 
+\* @type: (BLOCK_HASH, Set(Int)) => Set(OPERATION);
 operations(bh, ops) == [ block_hash : {bh}, op : ops ]
 
+\* @type: (HEADER, Set(OPERATION), FITNESS, HASH) => BLOCK;
 block(hdr, ops) == [ header |-> hdr, ops |-> ops ]
 
-hash(hd) == Hash(hd)
+\* genesis
+\* @type: HEADER;
+gen_header == header(0, 0, 0, 0, 0)
 
-gen_header == header(0, 0, hash({}), 0, hash({}))
-gen_operations == operations(hash(gen_header), {})
+\* block/header hash
+\* @type: HEADER => BLOCK_HASH;
+hash(hd) ==
+    IF hd = gen_header THEN 0
+    ELSE Index(hd, SetToSeq(PossibleHeaders))
+
+\* @type: Set(OPERATION);
+gen_operations == operations(0, {})
+
+\* @type: BLOCK;
 genesis == block(gen_header, gen_operations)
 
-\* headers
+\* @type: BLOCK_HASH;
+gen_hash == hash(gen_header)
 
+\* headers
+\* @type: LEVEL -> Set(HEADER);
 headers_at_level[ l \in Levels0 ] ==
     IF l > 0 THEN
         LET prev_hashes == { hash(hd) : hd \in headers_at_level[l - 1] } IN
@@ -276,57 +421,66 @@ headers_at_level[ l \in Levels0 ] ==
         ]
     ELSE { gen_header }
 
+\* @type: Set(HEADER);
 Headers == UNION { headers_at_level[l] : l \in Levels0 }
 
-hashes_at_level[ l \in Levels0 ] ==
-    IF l = 0 THEN {0}
-    ELSE { hash(hd) : hd \in headers_at_level[l] }
+\* @type: LEVEL -> Set(BLOCK_HASH);
+hashes_at_level[ l \in Levels0 ] == { hash(hd) : hd \in headers_at_level[l] }
 
 BlockHashes == UNION { hashes_at_level[l] : l \in Levels0 }
 
 \* operations
-
+\* @type: LEVEL -> Set(OPERATION);
 operations_at_level[ l \in Levels0 ] ==
-    IF l > 0 THEN [ block_hash : hashes_at_level[l], op : Ops ]
-    ELSE gen_operations
+    IF l > 0 THEN [ block_hash : hashes_at_level[l], ops : Ops ]
+    ELSE {gen_operations}
 
+\* @type: Set(OPERATION);
 Operations == UNION { operations_at_level[l] : l \in Levels0 }
 
 Fitness[ n \in GOOD_NODES, l \in Levels0 ] ==
-    IF l \notin DOMAIN BLOCKS[n] THEN {0}
+    IF l \notin DOMAIN BLOCKS[n] THEN { 0 }
     ELSE
         LET min == Max_set({ b.fitness : b \in { bb \in BLOCKS[n] : bb.header.level = l } }) IN
         min..Max_fitness
 
 \* blocks
-
+\* @type: LEVEL -> Set(BLOCK);
 blocks_at_level[ l \in Levels0 ] ==
-    IF l = 0 THEN {genesis}
-    ELSE
-        LET bs == { block(hd, ops) : hd \in headers_at_level[l], ops \in SUBSET operations_at_level[l] }
-            ops_block_hashes(b) == { op.block_hash : op \in b.ops }
-        IN
-        { b \in bs : hash(b.header) \in ops_block_hashes(b) }
+    LET bs == {
+            block(hd, ops) :
+                hd \in headers_at_level[l],
+                ops \in SUBSET operations_at_level[l]
+        }
+        ops_block_hashes(b) == { op.block_hash : op \in b.ops }
+    IN
+    { b \in bs : hash(b.header) \in ops_block_hashes(b) }
 
+\* @type: Set(BLOCK);
 Blocks == UNION { blocks_at_level[l] : l \in Levels0 }
 
-AllBlocks == [ headers : PossibleHeaders, ops : Operations ]
-
+\* @type: Seq(Block_HASH);
 History == Seq_hd(Levels \X BlockHashes)
 
+\* @typeAlias: LOCATOR = [ current_head: HEADER, history: Seq(BLOCK_HASH) ];
+\* @type: Set(LOCATOR);
 Locators == [ current_head : Headers, history : History ]
 
 \* operation hash
-
+\* @typeAlias: OPERATION_HASH = <<BLOCK_HASH, Int>>;
+\* @type: OPERATION -> OPERATION_HASH;
 op_hash[ op \in Operations ] == <<op.block_hash, op.op>>
 
+\* @type: Set(OPERATION_HASH);
 OperationHashes == { op_hash[op] : op \in Operations }
 
 \* all bootstrapping nodes have connections
 All_bootstrapping_initialized == \A bn \in Bootstrapping_nodes : phase[bn] /= init_phase
 
+\* @type: (NODE, NODE, BLOCK_HASH) => Set(OPERATION);
 received_operations_block_hash(bn, n, bh) == { op \in recv_operation[bn][n] : op.block_hash = bh }
 
+\* @type: (NODE, BLOCK_HASH) => Set(OPERATION);
 all_recv_operations_block_hash(bn, bh) == UNION { received_operations_block_hash(bn, n, bh) : n \in Nodes }
 
 \* all fetched data
@@ -339,7 +493,7 @@ fetched_headers(bn)    == UNION { fetched_headers_node(bn, n) : n \in Nodes }
 fetched_operations(bn) == UNION { recv_operation[bn][n] : n \in Nodes }
 
 validated_headers(bn)    == { b.header : b \in validated_blocks[bn] }
-validated_operations(bn) == UNION { b.ops    : b \in validated_blocks[bn] }
+validated_operations(bn) == { b.ops    : b \in validated_blocks[bn] }
 
 remaining_headers(bn)      == fetched_headers(bn) \ (ToSet(header_pipe[bn]) \cup validated_headers(bn))
 remaining_operations(bn)   == fetched_operations(bn) \ (ToSet(operation_pipe[bn]) \cup validated_operations(bn))
@@ -350,22 +504,31 @@ num_fetched_ops_block_hash(bn, bh) == Card(fetched_ops_block_hash(bn, bh))
 
 \* node data
 
+\* @type: NODE => Set(HEADER);
 node_headers(n) == { b.header : b \in BLOCKS[n] }
 
+\* @type: NODE => Set(BLOCK_HASH);
 node_hashes(n) == { hash(hd) : hd \in node_headers(n) }
 
+\* @type: NODE => Set(OPERATION);
 node_operations(n) == { b.operation : b \in BLOCKS[n] }
 
+\* @type: NODE => Set(OPERATION_HASH);
 node_op_hashes(n) == { op_hash[op] : op \in node_operations(n) }
 
+\* @type: (NODE, NODE) => LEVEL;
 chain_levels(bn, n) == fittest_head[bn][n].level
 
+\* @type: NODE => Set(NODE);
 num_peers(bn) == Card(connections[bn] \cup b_blacklist[bn])
 
+\* @type: (NODE, LEVEL) => Set(NODE);
 peers_at_level(bn, l) == { n \in Nodes : chain_levels(bn, n) = l }
 
+\* @type: (NODE, LEVEL) => Set(NODE);
 peers_at_or_above_level(bn, l) == { n \in Nodes : chain_levels(bn, n) >= l }
 
+\* @type: NODE => LEVEL;
 highest_major_level(bn) ==
     LET major_levels == { l \in Levels :
         \* #(peers of [bn] at or above level [l]) / #peers > 1/2
@@ -399,12 +562,31 @@ hash_bound == Card(BlockHashes)
 
 HashPairs == LET Hs == 0..hash_bound IN Hs \X Hs
 
+hash_nums(m, n) == Index(<<m, n>>, SetToSeq(HashPairs))
+
 Hashes == 0..Card(HashPairs)
 
+RECURSIVE __hash_list(_, _, _)
+__hash_list(h(_, _), l, acc) ==
+    CASE Len(l) = 0 -> acc
+      [] Len(l) = 1 -> IF acc = 0 THEN Head(l) ELSE h(Head(l), acc)
+      [] Len(l) > 1 -> __hash_list(h, Tail(l), h(Head(l), acc))
+
+_hash_list(l, acc) == __hash_list(hash_nums, l, acc)
+
+\* hash a list
+hash_list(l) == __hash_list(hash_nums, l, 0)
+
+\* hash a list of lists
+hash_list_list(ll) == __hash_list(_hash_list, ll, 0)
+
+\* @type: (NODE, BLOCK_HASH) => Set(HEADER);
 headers_with_hash(bn, bh) == { p \in all_header_data(bn) : p[1] = bh }
 
+\* @type: (NODE, BLOCK_HASH) => HEADER;
 lookup_block_hash(bn, bh) == Pick(headers_with_hash(bn, bh))
 
+\* @type: (NODE, HEADER, HEADER) => Bool;
 RECURSIVE descendant(_, _, _)
 descendant(bn, hd1, hd2) ==
     CASE hd1.fitness = hd2.fitness -> hd1 = hd2
@@ -413,6 +595,7 @@ descendant(bn, hd1, hd2) ==
         \/ bh = hd1.predecessor
         \/ \E hd \in headers_with_hash(bn, bh): descendant(bn, hd, hd2)
 
+\* @type: (NODE, HEADER) => Bool;
 prevalidate_header(bn, hd) ==
     LET pvhds == prevalidated_hds[bn] IN
     pvhds /= {} =>
@@ -429,30 +612,30 @@ prevalidate_header(bn, hd) ==
 (* Assumptions *)
 (***************)
 
-\* \* [0] Node assumptions
-\* \* different sets of nodes are disjoint
-\* ASSUME
-\*     /\ BAD_NODES \cap GOOD_NODES = {}
-\*     /\ BAD_BOOTSTRAPPING \cap GOOD_BOOTSTRAPPING = {}
-\*     /\ Bootstrapping_nodes \cap Nodes = {}
+\* [0] Node assumptions
+\* different sets of nodes are disjoint
+ASSUME
+    /\ BAD_NODES \cap GOOD_NODES = {}
+    /\ BAD_BOOTSTRAPPING \cap GOOD_BOOTSTRAPPING = {}
+    /\ Bootstrapping_nodes \cap Nodes = {}
 
-\* \* [1] Peer assumptions
-\* ASSUME MIN_PEERS > 0 /\ MAX_PEERS >= MIN_PEERS
+\* [1] Peer assumptions
+ASSUME MIN_PEERS > 0 /\ MAX_PEERS >= MIN_PEERS
 
-\* \* [2] Block assumptions
-\* \* blocks are contiguous and hash-linked
-\* ASSUME
-\*     \A n \in GOOD_NODES :
-\*         /\ \A b \in BLOCKS[n] : \E pb \in BLOCKS[n] \ {b}, l \in Levels :
-\*             /\ pb.header.level = l - 1
-\*             /\ hash(pb.header) = b.header.predecessor
-\*         /\ genesis = Pick({ b \in BLOCKS[n] : b.header.level = 0 })
+\* [2] Block assumptions
+\* blocks are contiguous and hash-linked
+ASSUME
+    \A n \in GOOD_NODES :
+        /\ \A b \in BLOCKS[n] : \E pb \in BLOCKS[n] \ {b}, l \in Levels :
+            /\ pb.header.level = l - 1
+            /\ hash(pb.header) = b.header.predecessor
+        /\ genesis = Pick({ b \in BLOCKS[n] : b.header.level = 0 })
 
-\* \* Structure assumptions
-\* ASSUME CURRENT_HEAD \in [ GOOD_NODES -> Headers ]
-\* ASSUME BLOCKS \in [ GOOD_NODES -> SUBSET Blocks ]
-\* ASSUME \E bs \in SUBSET Blocks : VALIDATOR \in [ bs -> { "known_valid", "known_invalid", "unknown" } ]
-\* ASSUME \A b \in DOMAIN VALIDATOR : \E n \in GOOD_NODES : b \in BLOCKS[n] => VALIDATOR[b] = "known_valid"
+\* Structure assumptions
+ASSUME CURRENT_HEAD \in [ GOOD_NODES -> Headers ]
+ASSUME BLOCKS \in [ GOOD_NODES -> SUBSET Blocks ]
+ASSUME \E bs \in SUBSET Blocks : VALIDATOR \in [ bs -> { "known_valid", "known_invalid", "unknown" } ]
+ASSUME \A b \in DOMAIN VALIDATOR : \E n \in GOOD_NODES : b \in BLOCKS[n] => VALIDATOR[b] = "known_valid"
 
 ----
 
@@ -462,10 +645,19 @@ prevalidate_header(bn, hd) ==
 
 \* [1] Requests
 \* [1.1] Good requests
+\* @typeAlias: GET_BRANCH_MSG = [ type: Str, from: NODE, sample: Seq(LEVEL)];
+\* @type: Set(GET_BRANCH_MSG);
 GetCurrentBranchMessages == [ type : {"Get_current_branch"}, from : GOOD_BOOTSTRAPPING ]
-GetBlockHeadersMessages  == [ type : {"Get_block_headers"},  from : GOOD_BOOTSTRAPPING, hashes : NESet_hd(Levels \X BlockHashes) ]
-GetOperationsMessages    == [ type : {"Get_operations"},     from : GOOD_BOOTSTRAPPING, op_hashes : NESet_op(OperationHashes) ]
-GoodGetMessages          == GetCurrentBranchMessages \cup GetBlockHeadersMessages \cup GetOperationsMessages
+
+\* @typeAlias: GET_HEADERS_MSG = [ type: Str, from: NODE, hashes: Set(BLOCK_HASH) ];
+\* @type: Set(GET_HEADERS_MSG);
+GetBlockHeadersMessages == [ type : {"Get_block_headers"}, from : GOOD_BOOTSTRAPPING, hashes : NESet_hd(Levels \X BlockHashes) ]
+
+\* @typeAlias: GET_OPERATIONS_MSG = [ type: Str, from: NODE, op_hashes: Set(OPERATION_HASH) ];
+\* @type: Set(GET_OPERATIONS_MSG);
+GetOperationsMessages == [ type : {"Get_operations"}, from : GOOD_BOOTSTRAPPING, op_hashes : NESet_op(OperationHashes) ]
+
+GoodGetMessages == GetCurrentBranchMessages \cup GetBlockHeadersMessages \cup GetOperationsMessages
 
 \* [1.2] Bad requests
 BadGetMessages ==
@@ -501,9 +693,17 @@ has_received_branch(bn, n)    == recv_branch[bn][n] /= {}
 has_received_header(bn, n)    == recv_header[bn][n] /= {}
 has_received_operation(bn, n) == recv_operation[bn][n] /= {}
 
+\* has_received_merkle_hash(bn, n, l) == merkle_hashes[bn][n][l] /= <<>>
+\* has_received_level_from(bn, n)     == \E l \in Levels : has_received_merkle_hash(bn, n, l)
+
+\* @type: NODE => Set(NODE);
 received_branch_from(bn) == { n \in Nodes : has_received_branch(bn, n) }
+
+\* @type: NODE => Set(NODE);
 received_header_from(bn) == { n \in Nodes : has_received_header(bn, n) }
-received_op_from(bn)     == { n \in Nodes : has_received_operation(bn, n) }
+
+\* @type: NODE => Set(NODE);
+received_op_from(bn) == { n \in Nodes : has_received_operation(bn, n) }
 
 \* [2] Responses
 \* [2.1] Good responses
@@ -564,9 +764,13 @@ AllOperationMessages == { msg \in Messages : msg.type = "Operation" }
 
 \* [0] Action helpers
 
+\* @type: (NODE, NODE) => Bool;
 Send_n(n, msg) == n_messages' = [ n_messages EXCEPT ![n] = @ \cup {msg} ]
+\* @type: (NODE, NODE) => Bool;
 Send_b(b, msg) == b_messages' = [ b_messages EXCEPT ![b] = @ \cup {msg} ]
+\* @type: (NODE, NODE) => Bool;
 Drop_n(n, msg) == n_messages' = [ n_messages EXCEPT ![n] = @ \ {msg} ]
+\* @type: (NODE, NODE) => Bool;
 Drop_b(b, msg) == b_messages' = [ b_messages EXCEPT ![b] = @ \ {msg} ]
 
 \* [1] Request actions <- good bootstrapping nodes
@@ -608,7 +812,7 @@ SendGetOperations == \E bn \in GOOD_BOOTSTRAPPING :
 HandleGetCurrentBranch == \E n \in GOOD_NODES :
     \E msg \in get_current_branch_msgs(n) :
         LET bn  == msg.from
-            hist == Samples(n, bn, Map(hash, BLOCKS[n]))
+            hist == SAMPLES[n, bn]
             curr_branch_msg == current_branch_msg(n, [ current_head |-> CURRENT_HEAD[n], history |-> hist ])
         IN
         /\ Drop_n(n, msg)
@@ -645,8 +849,11 @@ HandleGetOperations == \E n \in GOOD_NODES :
 
 HandleCurrentBranch == \E bn \in GOOD_BOOTSTRAPPING :
     \E msg \in current_branch_msgs(bn) :
-        LET n       == msg.from
-            hist    == msg.locator.history
+        LET \* @type: NODE;
+            n == msg.from
+            \* @type: Seq(<<LEVEL, BLOCK_HASH>>);
+            hist == msg.locator.history
+            \* @type: HEADER;
             curr_hd == msg.locator.current_head
         IN
         /\ phase[bn] \in Phase_search \cup Phase_major
@@ -861,7 +1068,7 @@ BootstrapBlacklist == \E bn \in GOOD_BOOTSTRAPPING :
                     /\ hd.ops_hash < op.op
              [] t = "bad" -> TRUE
         /\ b_blacklist_node(bn, n)
-    \/ FALSE \* TODO fails cross validation
+    \/ FALSE \* fails cross validation
 
 \* [8] Phase transitions
 
@@ -951,9 +1158,10 @@ BootstrappingInit ==
     /\ fittest_head       = [ n \in GOOD_BOOTSTRAPPING  |-> gen_header ]
     /\ header_pipe        = [ n \in GOOD_BOOTSTRAPPING  |-> <<>> ]
     /\ operation_pipe     = [ n \in GOOD_BOOTSTRAPPING  |-> <<>> ]
-    /\ validated_blocks   = [ n \in GOOD_BOOTSTRAPPING  |-> {genesis} ]
+    /\ validated_blocks   = [ n \in GOOD_BOOTSTRAPPING  |-> {} ]
     /\ prevalidated_hds   = [ n \in GOOD_BOOTSTRAPPING  |-> {} ]
     /\ prevalidated_ops   = [ n \in GOOD_BOOTSTRAPPING  |-> {} ]
+
     /\ sent_get_branch    = [ n \in GOOD_BOOTSTRAPPING  |-> {} ]
     /\ sent_get_headers   = [ n \in GOOD_BOOTSTRAPPING  |-> [ m \in Nodes |-> {} ] ]
     /\ sent_get_ops       = [ n \in GOOD_BOOTSTRAPPING  |-> [ m \in Nodes |-> {} ] ]
@@ -964,6 +1172,7 @@ BootstrappingInit ==
 NodeInit ==
     /\ serving_headers    = [ n \in GOOD_NODES |-> [ m \in Bootstrapping_nodes |-> {} ] ]
     /\ serving_ops        = [ p \in GOOD_NODES |-> [ m \in Bootstrapping_nodes |-> {} ] ]
+
     /\ recv_get_branch    = [ n \in GOOD_NODES |-> {} ]
     /\ recv_get_headers   = [ n \in GOOD_NODES |-> [ m \in Bootstrapping_nodes |-> {} ] ]
     /\ recv_get_ops       = [ n \in GOOD_NODES |-> [ m \in Bootstrapping_nodes |-> {} ] ]
@@ -973,12 +1182,9 @@ NodeInit ==
 
 TraceInit == phase_trace  = [ n \in GOOD_BOOTSTRAPPING |-> <<init_phase>> ]
 
-MemInit == mem_size       = [ n \in GOOD_BOOTSTRAPPING |-> 0 ]
-
 Init ==
     /\ NodeInit
     /\ TraceInit
-    /\ MemInit
     /\ MessagesInit
     /\ BlacklistInit
     /\ BootstrappingInit
@@ -1051,37 +1257,36 @@ MessagesOK ==
 BootstrappingOK ==
     /\ phase             \in [ GOOD_BOOTSTRAPPING  -> Phases ]
     /\ connections       \in [ Bootstrapping_nodes -> SUBSET Nodes ]
-    /\ current_head      \in [ GOOD_BOOTSTRAPPING  -> Blocks ]
+    /\ current_head      \in [ GOOD_BOOTSTRAPPING  -> Headers ]
     /\ fittest_head      \in [ GOOD_BOOTSTRAPPING  -> [ Nodes -> Headers ] ]
-    /\ validated_blocks  \in [ GOOD_BOOTSTRAPPING  -> SUBSET Blocks ]
-    /\ header_pipe       \in [ GOOD_BOOTSTRAPPING  -> Seq(Headers) ]
-    /\ operation_pipe    \in [ GOOD_BOOTSTRAPPING  -> Seq(SUBSET Operations) ]
-    /\ prevalidated_hds  \in [ GOOD_BOOTSTRAPPING  -> SUBSET Headers ]
-    /\ prevalidated_ops  \in [ GOOD_BOOTSTRAPPING  -> SUBSET (Levels \X SUBSET Operations) ]
+    /\ validated_blocks  \in [ GOOD_BOOTSTRAPPING  -> Set_n(Blocks) ]
+    /\ header_pipe       \in [ GOOD_BOOTSTRAPPING  -> Seq_n(Headers) ]
+    /\ operation_pipe    \in [ GOOD_BOOTSTRAPPING  -> Seq_n(Set_op(Operations)) ]
+    /\ prevalidated_hds  \in [ GOOD_BOOTSTRAPPING  -> Set_n(Headers) ]
+    /\ prevalidated_ops  \in [ GOOD_BOOTSTRAPPING  -> Set_n(Levels \X Set_op(Operations)) ]
+
     /\ sent_get_branch   \in [ GOOD_BOOTSTRAPPING  -> SUBSET Nodes ]
-    /\ sent_get_headers  \in [ GOOD_BOOTSTRAPPING  -> [ Nodes -> SUBSET (Levels \X BlockHashes) ] ]
-    /\ sent_get_ops      \in [ GOOD_BOOTSTRAPPING  -> [ Nodes -> SUBSET (BlockHashes \X OperationHashes) ] ]
-    /\ recv_branch       \in [ GOOD_BOOTSTRAPPING  -> [ Nodes -> SUBSET (Levels \X BlockHashes) ] ]
-    /\ recv_header       \in [ GOOD_BOOTSTRAPPING  -> [ Nodes -> SUBSET (BlockHashes \X Headers) ] ]
-    /\ recv_operation    \in [ GOOD_BOOTSTRAPPING  -> [ Nodes -> SUBSET (BlockHashes \X SUBSET Operations) ] ]
+    /\ sent_get_headers  \in [ GOOD_BOOTSTRAPPING  -> [ Nodes -> Set_n(Levels \X BlockHashes) ] ]
+    /\ sent_get_ops      \in [ GOOD_BOOTSTRAPPING  -> [ Nodes -> Set_n(BlockHashes \X OperationHashes) ] ]
+    /\ recv_branch       \in [ GOOD_BOOTSTRAPPING  -> [ Nodes -> Set_n(Levels \X BlockHashes) ] ]
+    /\ recv_header       \in [ GOOD_BOOTSTRAPPING  -> [ Nodes -> Set_n(BlockHashes \X Headers) ] ]
+    /\ recv_operation    \in [ GOOD_BOOTSTRAPPING  -> [ Nodes -> Set_n(BlockHashes \X Set_op(Operations)) ] ]
 
-TraceOK == phase_trace   \in [ GOOD_BOOTSTRAPPING  -> Seq(Phases) ]
-
-MemOK == mem_size        \in [ GOOD_BOOTSTRAPPING  -> Int ]
+TraceOK == phase_trace   \in [ GOOD_BOOTSTRAPPING  -> Seq_n(Phases) ]
 
 NodesOK ==
-    /\ serving_headers   \in [ GOOD_NODES -> [ Bootstrapping_nodes -> SUBSET BlockHashes ] ]
-    /\ serving_ops       \in [ GOOD_NODES -> [ Bootstrapping_nodes -> SUBSET (BlockHashes \X Ops) ] ]
-    /\ sent_branch       \in [ GOOD_NODES -> [ Bootstrapping_nodes -> SUBSET (Levels \X BlockHashes) ] ]
-    /\ sent_headers      \in [ GOOD_NODES -> [ Bootstrapping_nodes -> SUBSET Headers ] ]
-    /\ sent_ops          \in [ GOOD_NODES -> [ Bootstrapping_nodes -> SUBSET Operations ] ]
+    /\ serving_headers   \in [ GOOD_NODES -> [ Bootstrapping_nodes -> Set_n(BlockHashes) ] ]
+    /\ serving_ops       \in [ GOOD_NODES -> [ Bootstrapping_nodes -> Set_n(BlockHashes \X Ops) ] ]
+
+    /\ sent_branch       \in [ GOOD_NODES -> [ Bootstrapping_nodes -> Set_n(Levels \X BlockHashes) ] ]
+    /\ sent_headers      \in [ GOOD_NODES -> [ Bootstrapping_nodes -> Set_n(Headers) ] ]
+    /\ sent_ops          \in [ GOOD_NODES -> [ Bootstrapping_nodes -> Set_n(Operations) ] ]
     /\ recv_get_branch   \in [ GOOD_NODES -> SUBSET Bootstrapping_nodes ]
-    /\ recv_get_headers  \in [ GOOD_NODES -> [ Bootstrapping_nodes -> SUBSET (Levels \X BlockHashes) ] ]
-    /\ recv_get_ops      \in [ GOOD_NODES -> [ Bootstrapping_nodes -> SUBSET OperationHashes ] ]
+    /\ recv_get_headers  \in [ GOOD_NODES -> [ Bootstrapping_nodes -> Set_n(Levels \X BlockHashes) ] ]
+    /\ recv_get_ops      \in [ GOOD_NODES -> [ Bootstrapping_nodes -> Set_n(OperationHashes) ] ]
 
 TypeOK ==
     /\ TraceOK
-    /\ MemOK
     /\ NodesOK
     /\ MessagesOK
     /\ BlacklistOK
