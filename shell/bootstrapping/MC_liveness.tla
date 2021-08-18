@@ -1,6 +1,6 @@
 ---- MODULE MC_liveness ----
 
-EXTENDS Bootstrap_pipeline, TLC
+EXTENDS Bootstrap, TLC
 
 Bad_nodes == 0..0
 
