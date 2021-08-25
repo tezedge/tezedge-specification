@@ -4,10 +4,12 @@
 
 The general idea for the bootstrapping algorithm is as follows:
 - query every peer's current branch
-- attempt to find a short sequence (*segment*) of the blocks which is supported by a quorum of peers with which to extend the node's chain
+- attempt to find a short sequence (*segment* or *range*) of the blocks which are supported by a quorum of peers with which to extend the node's chain
+  - the segment starts at the block above the node's current head and ends at the latest, earliest peer block (see notes for step 3)
   - first, get all the headers in this sequence
   - then, get the operations only for the blocks with a quorum of support
-- continue extending by short segments until our current head has a timestamp within the threshold to be considered `Synced`
+- continue extending the node's chain by short segments until our current head has a timestamp within the threshold to be considered `Synced`
+- the only caveat is that the node's header retention strategy may have to change once we've gotten within 8 cycles of our peer's current heads
 
 ### Initial conditions
 
@@ -55,53 +57,83 @@ pub type PendingOperations = HashMap<Level, HashSet<Vec<Operation>>>
 
 ### Steps
 
-1. Request `Get_current_branch` from each peer (unless the peer has already advertised its current branch)
-2. For each received `Current_branch` message:
-  1. determine the *earliest* (lowest level) hash above the node's current head and add this hash to a global, mutable set `earliest_hashes`
-  2. validate all hashes that correspond to a block with level at or below the node's current head's level
-    - also check that none of these hashes is known to be invalid
+1. Request `GetCurrentBranch` from each peer (unless the peer has already advertised its current branch)
+2. For each received `CurrentBranchMessage` (see notes):
+  - determine the *earliest* (lowest level) hash above the node's current head and add this hash to a global, mutable set `earliest_hashes`
+  - validate all hashes that correspond to a block with level at or below the node's current head's level
     - disconnect from each peer which does not pass this validation step (their branch deviates from what the node takes as a given)
-  3. adjust the peer's current head if the supplied header has a higher level or fitness
-    - this is all the node does when handling `Current_head` messages while `Unsynced`
-3. Request all headers corresponding to the hashes in `earliest_hashes` from each responsive peer by sending a `Get_block_headers` message
-  - as the node receives more and more `Current_branch` messages, the collection of `earliest_hashes` grows
+  - adjust the peer's current head if the supplied header has a higher level or fitness
+    - this is all the node does when handling `CurrentHeadMessage`s while `Unsynced`
+3. Request all headers corresponding to the hashes in `earliest_hashes` from each responsive peer by sending a `GetBlockHeaders` message
+  - as the node receives more and more `CurrentBranchMessage`s, the collection of `earliest_hashes` grows
     - the node just uses whatever value it reads from `earliest_hashes` to make the list of headers it requests from each peer, initially
     - the node keeps track of which hashes have been requested from each peer and as we receive more earliest hashes, we make the corresponding block header requests from all peers whom we have not requested it
       - when new hashes are added to `earliest_hashes`, the node requests all these headers from the sender and the not-yet-requested ones from all other peers
     - ultimately, the node should request all received headers from each peer (well, not quite, see notes)
-4. For each `Block_header` response:
-  1. check hash of received header was actually requested from this peer
-    - if the header wasn't requested, then should penalize the peer
-  2. add header data to `pending_headers`
+4. For each received `BlockHeaderMessage`:
+  - check hash of received header was actually requested from this peer
+    - if the header wasn't requested, then we should penalize the peer
+  - add header data to `pending_headers`
     - this requires calculating implied support for any known (i.e. pending) ancestors and support from children (see notes)
-  3. check if any headers have a quorum of support
+  - check if any headers have a quorum of support
     - if not, the node continues requesting and handling block headers
     - else, prune the `pending_headers`
       - for each level, if there is a header with a quorum of support, remove the rest
       - any peer supporting a header other than the one with quorum support at any level should be penalized
-  4. if it's not the case that all remaining headers in `pending_headers` have quorum support, then the node continues requesting and handling headers as before
+  - if it's not the case that all remaining headers in `pending_headers` have quorum support, then the node continues requesting and handling headers as before
     - effectively, the node goes back to step 3
     - else, continue to step 5
 5. The node requests all operations for each block with a header in `pending_headers` from any peer it still has a connection with
-  1. start with the operations for the earliest block and move to the latest, adding the operations to `pending_operations` upon receipt
-  2. once the node has all operations for the earliest block, they apply it
-  3. update current head accordingly
-  4. repeat for all remaining pending blocks
+  - start with the operations for the earliest block and move to the latest, adding the operations to `pending_operations` upon receipt
+  - once the node has all operations for the earliest block, they apply it
+  - update current head accordingly
+  - repeat for all remaining pending blocks
 6. After applying all blocks in the segment, clear the `earliest_hashes`, `pending_headers`, and `pending_operations` variables
-  1. populate `earliest_hashes` with each of the peer's next earliest hash
-  2. go back to requesting headers (step 3)
+  - populate `earliest_hashes` with each of the peer's next earliest hash
+  - go back to requesting headers (step 3)
 
 #### Notes on algorithm steps
 
 1. These requests are made concurrently, order is irrelevant as long as the node makes a request to all peers
-  - the node only needs to check if they already have a `Current_branch` message from the peer before sending a request
-2. Each `Get_current_branch` message can be handled concurrently
+  - the node only needs to check if they already have a `CurrentBranchMessage` from the peer before sending a request
+  - all messages carry a `chain_id` parameter, this spec assumes all messages are for the same `chain_id`
+2. All `CurrentBranchMessage`s can be handled concurrently
   - the individual steps in 2. are performed sequentially for a given message/peer
+  - [`CurrentBranchMessage`](https://github.com/tezedge/tezedge/blob/master/tezos/messages/src/p2p/encoding/current_branch.rs)s have two fields: `chain_id` and `current_branch`
+    - `current_branch` has two fields: `current_head` and `history`
+      - `current_head` is the header of the sender's current head
+      - `history` is a vector of `BlockHash`es which are determined by `Step`s
+        - these `Step`s are deterministically generated from a `Seed` which depends only on the `CryptoBoxPublicKeyHash`es of the sender and receiver
+          - [Step](https://github.com/tezedge/tezedge/blob/master/crypto/src/seeded_step.rs#L35-L89)
+          - [Seed](https://github.com/tezedge/tezedge/blob/master/crypto/src/seeded_step.rs#L15)
+          - [CryptoBoxPublicKeyHash](https://github.com/tezedge/tezedge/blob/master/crypto/src/hash.rs#L176)
+        - the `Step`s basically tell us the "distance" between blocks in the `history`
+        - starting from the supplied head's level, we can successively subtract the `Step` values from this number to produce the levels of each of the hashes in the `history`
+```rust
+// for example
+// since we want to reconstruct the levels of the hashes sent to us, we generate the seed the same way the peer did
+// current_head refers to the header provided by the peer in the CurrentBranchMessage
+// hist_len is the length of the history vector
+fn reconstruct_history_levels(node_id: &CryptoBoxPublicKeyHash, peer_id: &CryptoBoxPublicKeyHash, current_head: &BlockHeader, hist_len: i32) -> Vec<Level> {
+    // peer is the sender, node is the receiver
+    let seed = Seed::new(peer_id, node_id);
+    let mut step = Step::init(&seed, current_head.message_hash()?.try_into()?.as_ref()); // we want a ref to the hash of current_head
+    let mut l = current_head.level;
+    let mut ls: Vec<Level> = Vec::new();
+    let mut i: i32 = 0;
+    // compute a vector of all the levels corresponding to the hashes in history
+    while (i < hist_len) {
+        step.next();
+        ls.push(l - step);
+        l -= step;
+        i += 1;
+    }
+    ls
+}
+```
   - whether `earliest_hashes` is implemented as a set or list without duplicates is irrelevant
-  - the node uses the same technique for generating locators to determine the corresponding levels for the supplied hashes
-    - the levels corresponding to the locator hashes can be generated from the node's and peer's ids and the level of the supplied head
   - obviously, we will need to have a locking mechanism for `earliest_hashes` since it will be read and written to by several threads
-  - the node disregards the mempool portion of `Current_branch` messages while `Unsynced`
+  - the node disregards the mempool portion of `CurrentHeadMessage`s while `Unsynced`
 3. The order in which the node requests block headers from the responsive peers (those who have sent a `Current_branch` message) is not important as long as the node eventually sees a quorum of support for some of the requested block headers
   - these initial requests can be made concurrently
   - upon handling a `Current_branch` message, the node can immediately add the earliest hash from that peer to `earliest_hashes`
