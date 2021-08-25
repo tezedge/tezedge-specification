@@ -19,9 +19,9 @@ The node begins the bootstrapping process with:
 - an `Unsynced` synchronization status
 - all peers with maximum `peer_score`
 - all peers having the genesis block as their current head
-- an `earliest_hashes` variable instantiated by an empty set
-- a `pending_headers` variable instantiated by an empty map
-- a `pending_operations` variable instantiated by an empty map
+- a global `earliest_hashes` variable instantiated by an empty set
+- a global `pending_headers` variable instantiated by an empty map
+- a global `pending_operations` variable instantiated by an empty map
 
 The `earliest_hashes` variable is used as a kind of temporary target to meet before applying blocks. This variable has a type like:
 
@@ -53,7 +53,7 @@ and `pending_operations` has a type like:
 pub type PendingOperations = HashMap<Level, HashSet<Vec<Operation>>>
 ```
 
-(these types are meant to be taken literally, just to give an idea)
+(these types are *not* meant to be taken literally, just to give an idea)
 
 ### Steps
 
@@ -104,8 +104,8 @@ pub type PendingOperations = HashMap<Level, HashSet<Vec<Operation>>>
       - `current_head` is the header of the sender's current head
       - `history` is a vector of `BlockHash`es which are determined by `Step`s
         - these `Step`s are deterministically generated from a `Seed` which depends only on the `CryptoBoxPublicKeyHash`es of the sender and receiver
-          - [Step](https://github.com/tezedge/tezedge/blob/master/crypto/src/seeded_step.rs#L35-L89)
           - [Seed](https://github.com/tezedge/tezedge/blob/master/crypto/src/seeded_step.rs#L15)
+          - [Step](https://github.com/tezedge/tezedge/blob/master/crypto/src/seeded_step.rs#L35-L89)
           - [CryptoBoxPublicKeyHash](https://github.com/tezedge/tezedge/blob/master/crypto/src/hash.rs#L176)
         - the `Step`s basically tell us the "distance" between blocks in the `history`
         - starting from the supplied head's level, we can successively subtract the `Step` values from this number to produce the levels of each of the hashes in the `history`
@@ -134,9 +134,9 @@ fn reconstruct_history_levels(node_id: &CryptoBoxPublicKeyHash, peer_id: &Crypto
   - whether `earliest_hashes` is implemented as a set or list without duplicates is irrelevant
   - obviously, we will need to have a locking mechanism for `earliest_hashes` since it will be read and written to by several threads
   - the node disregards the mempool portion of `CurrentHeadMessage`s while `Unsynced`
-3. The order in which the node requests block headers from the responsive peers (those who have sent a `Current_branch` message) is not important as long as the node eventually sees a quorum of support for some of the requested block headers
+3. The order in which the node requests block headers from the responsive peers (those who have sent a `CurrentBranchMessage`) is not important as long as the node eventually sees a quorum of support for some of the requested block headers
   - these initial requests can be made concurrently
-  - upon handling a `Current_branch` message, the node can immediately add the earliest hash from that peer to `earliest_hashes`
+  - upon handling a `CurrentBranchMessage`, the node can immediately add the earliest hash from that peer to `earliest_hashes`
   - the later requests can also be made concurrently
     - it probably makes the most sense to have one worker per peer/connection which runs every so often, checks for new earliest hashes, and makes the corresponding requests
     - the frequency at which this worker performs these tasks should be proportional to the peer's score
@@ -150,6 +150,48 @@ fn reconstruct_history_levels(node_id: &CryptoBoxPublicKeyHash, peer_id: &Crypto
     - if the header of the predecessor is already in `pending_headers`, `p` also supports this header implicitly
     - similarly for other ancestors of `hd`
     - in the opposite direction, if `pending_headers` contains headers above `hd` which have `hd` as an ancestor, then all supporters of these headers must also support `hd`
-  - headers can be requested strictly by `Get_block_headers` requests
-    - once Octez supports `Get_predecessor_header` messages, these can speed up this process
+  - headers can be requested strictly by `GetBlockHeaders` requests
+    - once Octez supports `GetPredecessorHeaderMessage`s, these can speed up this process
 5. The operation requests should be spread out among as many reliable peers as possible to parallelize the task
+  - we do not need redundancy here since we've already established consensus on the headers in the segment and we can check hashes to verify the operations
+
+## More notes and questions
+
+### Requesting blocks headers
+
+Is it worse to request too many or too few?
+
+The above algorithm says to request all of the `earliest_hashes` for each peer. This may lead to getting a lot of duplicate responses from different peers.
+
+The other obvious way to go with this is to only request the `earliest_hash` that the peer provided. This may lead to not getting enough responses and require us to make several requests after waiting for and processes responses.
+
+### Handling disconnects
+
+- we want to stay within a specified range of connections, between `min` and `max`
+- we may need to have a reconnection counter and threshold
+  - when disconnected from a peer unexpectedly, increment the counter and if less than threshold, attempt to reconnect again
+  - this counter should take a very long time to reset, on the order of a day or week
+- we may also need to set a threshold (dependent on `max`, e.g. `t ~ 0.1 * max`) such that when the number of our connections becomes less than `max - t`, the node prioritizes establishing connections over requesting header and operation data
+  - we try to connect with peers we already know, but have been disconnected from
+  - request peers from our high-scoring peers via `Swap_request`
+  - send advertise messages
+
+### Handling timeouts
+
+Each message has an associated timer:
+- No response to `GetCurrentBranch`
+  - decrease `peer_score` and request again
+  - when `peer_score = 0`, disconnect form this peer
+- We can't penalize a peer for not responding to `GetBlockHeaders` or `GetOpertions` in the same way
+  - Octez node doesn't respond when a peer requests block or operation hash they don't know
+    - [implementation](https://gitlab.com/tezos/tezos/-/blob/master/src/lib_shell/p2p_reader.ml#L250-262)
+    - this doesn't make a lot of sense...
+  - we may need to use a request counter instead
+    - each time we make a `GetBlockHeaders` or `GetOperations` request from a peer, we increment the count for the requested hashes
+      - if we don't receive response in the allotted time, increment the count and request again
+      - if we receive a response to one of these hashes, we can remove it from the collection
+      - once the counter gets to a certain threshold, we can move the corresponding hash to a collection of "do not ask" hashes we no longer request from this peer
+      - ask another high-scoring peer for the hash and repeat this process until a peer responds or the hash is moved to sufficiently many peers' "do not ask" collections
+        - it may make sense to penalize the peer who gave us this hash at this point
+  - unexpected responses are still penalized
+  - expected responses still increase the peer's score
