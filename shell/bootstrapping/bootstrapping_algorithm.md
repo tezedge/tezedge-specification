@@ -4,12 +4,20 @@
 
 The general idea for the bootstrapping algorithm is as follows:
 - query every peer's current branch
-- attempt to find a short sequence (*segment* or *range*) of the blocks which are supported by a quorum of peers with which to extend the node's chain
+- attempt to find a short sequence, call it a *segment*, of blocks which are supported by a quorum of peers with which to extend the node's chain
   - the segment starts at the block above the node's current head and ends at the latest, earliest peer block (see notes for step 3)
   - first, get all the headers in this sequence
   - then, get the operations only for the blocks with a quorum of support
 - continue extending the node's chain by short segments until our current head has a timestamp within the threshold to be considered `Synced`
-- the only caveat is that the node's header retention strategy may have to change once we've gotten within 8 cycles of our peer's current heads
+- the only caveat is that the node's header retention strategy may have to change once we've gotten within 8 cycles of our peer's current heads to hedge against reorgs
+
+### General remarks
+
+This algorithm is not optimized. We may be sending more (or less) messages than is actually necessary. The current focus is safety and correctness. Once this is achieved, we can shift our focus to performance. I don't claim to have even made all "obvious" optimizations in this doc.
+
+All messages sent by the node should have a timer associated with them in order to have a clearly defined notion of when the node has not received a response. Not receiving a response, unfortunately, cannot always be penalized (see [more notes](./bootstrapping_algorithm.md#handling-timeouts)). However, receiving a valid response to a request should always increase the peer's score, if not already at the max value (here, valid simply means the response has the correct type and if we requested a header or operation, it has the expected hash, it isn't a duplicate, etc).
+
+*Quorum* always means > 2/3 of the node's current peers
 
 ### Initial conditions
 
@@ -57,8 +65,9 @@ pub type PendingOperations = HashMap<Level, HashSet<Vec<Operation>>>
 
 ### Steps
 
-1. Request `GetCurrentBranch` from each peer (unless the peer has already advertised its current branch)
-2. For each received `CurrentBranchMessage` (see notes):
+1. Request `GetCurrentBranch` from each peer
+  - if the peer has already advertised its current branch, we don't need to request it
+2. For each received `CurrentBranchMessage` (see [notes](./bootstrapping_algorithm.md#notes-on-algorithm-steps)):
   - determine the *earliest* (lowest level) hash above the node's current head and add this hash to a global, mutable set `earliest_hashes`
   - validate all hashes that correspond to a block with level at or below the node's current head's level
     - disconnect from each peer which does not pass this validation step (their branch deviates from what the node takes as a given)
@@ -73,12 +82,13 @@ pub type PendingOperations = HashMap<Level, HashSet<Vec<Operation>>>
 4. For each received `BlockHeaderMessage`:
   - check hash of received header was actually requested from this peer
     - if the header wasn't requested, then we should penalize the peer
-  - add header data to `pending_headers`
-    - this requires calculating implied support for any known (i.e. pending) ancestors and support from children (see notes)
+  - add header data to `pending_headers` and update
+    - this requires calculating implied support for any known (i.e. pending) ancestors and support from children (see [notes](./bootstrapping_algorithm.md#notes-on-algorithm-steps))
   - check if any headers have a quorum of support
     - if not, the node continues requesting and handling block headers
     - else, prune the `pending_headers`
-      - for each level, if there is a header with a quorum of support, remove the rest
+      - for each level, if there is a header with a quorum of support, remove the rest at that level
+        - if there is a quorum of support for a header, then all ancestors also have a quorum of support
       - any peer supporting a header other than the one with quorum support at any level should be penalized
   - if it's not the case that all remaining headers in `pending_headers` have quorum support, then the node continues requesting and handling headers as before
     - effectively, the node goes back to step 3
@@ -89,7 +99,7 @@ pub type PendingOperations = HashMap<Level, HashSet<Vec<Operation>>>
   - update current head accordingly
   - repeat for all remaining pending blocks
 6. After applying all blocks in the segment, clear the `earliest_hashes`, `pending_headers`, and `pending_operations` variables
-  - populate `earliest_hashes` with each of the peer's next earliest hash
+  - populate `earliest_hashes` with each peer's next earliest hash, if any exist
   - go back to requesting headers (step 3)
 
 #### Notes on algorithm steps
@@ -144,14 +154,24 @@ fn reconstruct_history_levels(node_id: &CryptoBoxPublicKeyHash, peer_id: &Crypto
     - the goal here is to find a quorum of peers supporting one segment
       - the segment being from the block above the node's current head to the latest, earliest block
       - it is probably confusing to read a phase like "latest, earliest block"... all we mean here, is the latest (highest level) out of the earliest blocks
-4. The node can handle `Block_header` messages concurrently
+4. The node can handle `BlockHeaderMessage`s concurrently
   - a penalty can either be a decrease to the peer's score or {grey, black}listing them
-  - for example, if a peer `p` sends the node a header `hd`, they support this header explicitly
-    - if the header of the predecessor is already in `pending_headers`, `p` also supports this header implicitly
-    - similarly for other ancestors of `hd`
-    - in the opposite direction, if `pending_headers` contains headers above `hd` which have `hd` as an ancestor, then all supporters of these headers must also support `hd`
-  - headers can be requested strictly by `GetBlockHeaders` requests
-    - once Octez supports `GetPredecessorHeaderMessage`s, these can speed up this process
+  - updating support for a header:
+    - `pending_headers` is really a directed acyclic graph and in general, it is not connected
+    - [daggy](https://github.com/mitchmindtree/daggy) may be useful in implementing this
+      - it's not necessarily connected because headers can arrive in any order
+      - edges are directed from higher-level (child) to lower-level (parent) headers
+      - edges only exist between a parent and a child
+    - for example, if a peer `p` sends the node a header `hd`, they support this header explicitly
+      - if `hd` has already been included in `pending_headers`, we add `p` to the set of supporters
+      - else, we add `hd` to `pending_headers` with `p` as the only supporter
+      - now update the support for all headers in `pending_headers`:
+        - starting at the tip (header with no child) of each branch, traverse the branch down to the base (header with no parent)
+        - the supporters of the tip is unchanged
+        - for each non-tip header in the branch, add the child's supporters to its set of of supporters
+  - at the moment, headers can only be requested by `GetBlockHeadersMessage`
+    - once Octez supports `GetPredecessorHeaderMessage`s, the header acquisition process can be sped up
+      - this will enable us to request blocks based on level instead of hashes
 5. The operation requests should be spread out among as many reliable peers as possible to parallelize the task
   - we do not need redundancy here since we've already established consensus on the headers in the segment and we can check hashes to verify the operations
 
@@ -168,30 +188,56 @@ The other obvious way to go with this is to only request the `earliest_hash` tha
 ### Handling disconnects
 
 - we want to stay within a specified range of connections, between `min` and `max`
-- we may need to have a reconnection counter and threshold
-  - when disconnected from a peer unexpectedly, increment the counter and if less than threshold, attempt to reconnect again
-  - this counter should take a very long time to reset, on the order of a day or week
-- we may also need to set a threshold (dependent on `max`, e.g. `t ~ 0.1 * max`) such that when the number of our connections becomes less than `max - t`, the node prioritizes establishing connections over requesting header and operation data
-  - we try to connect with peers we already know, but have been disconnected from
-  - request peers from our high-scoring peers via `Swap_request`
-  - send advertise messages
+- we may need to implement a mutable `reconnection_counter` and choose a threshold `t`
+  - when disconnected from a peer unexpectedly,  and if less than threshold, attempt to reconnect again
+    - increment the counter: `reconnection_counter += 1`
+    - if `reconnection_threshold < t` then attempt to connect with the peer again
+    - else blacklist or ban peer
+  - `reconnection_counter` should take a very long time to reset, on the order of a day or week (not sure what timescale makes the most sense)
+- we may also need to set a threshold `tt` (dependent on `max`, e.g. `tt ~ 0.1 * max`) such that when the number of our connections becomes less than `max - tt`, the node prioritizes establishing connections over requesting header and operation data
+  - we should first try to connect with peers we already know, but have been disconnected from
+  - then we should try to request peers from our highest scoring peers via `SwapRequest`
 
 ### Handling timeouts
 
 Each message has an associated timer:
-- No response to `GetCurrentBranch`
-  - decrease `peer_score` and request again
-  - when `peer_score = 0`, disconnect form this peer
-- We can't penalize a peer for not responding to `GetBlockHeaders` or `GetOpertions` in the same way
-  - Octez node doesn't respond when a peer requests block or operation hash they don't know
+- No response to `GetCurrentBranchMessage`
+  - decrease `peer_score`
+  - if `peer_score > 0` then request again
+  - else disconnect from this peer
+- We can't penalize a peer for not responding to header or operation requests in the same way
+  - Octez node doesn't respond when a peer requests a block or operation hash it doesn't know about
     - [implementation](https://gitlab.com/tezos/tezos/-/blob/master/src/lib_shell/p2p_reader.ml#L250-262)
-    - this doesn't make a lot of sense...
-  - we may need to use a request counter instead
-    - each time we make a `GetBlockHeaders` or `GetOperations` request from a peer, we increment the count for the requested hashes
-      - if we don't receive response in the allotted time, increment the count and request again
+    - I'm not convinced this is a good thing...
+  - we may need to use a request counter for each requested hash for each peer instead
+    - each time we send a `GetBlockHeadersMessage` or `GetOperationsMessage` to a peer, we increment the counters for each requested hash
+      - if we don't receive response in the allotted time, increment the counter(s) and request hash(es) again
       - if we receive a response to one of these hashes, we can remove it from the collection
       - once the counter gets to a certain threshold, we can move the corresponding hash to a collection of "do not ask" hashes we no longer request from this peer
-      - ask another high-scoring peer for the hash and repeat this process until a peer responds or the hash is moved to sufficiently many peers' "do not ask" collections
+      - ask another high-scoring peer for the hash and repeat this process until a peer responds or the hash is moved to a quorum of peers' "do not ask" collections
         - it may make sense to penalize the peer who gave us this hash at this point
   - unexpected responses are still penalized
   - expected responses still increase the peer's score
+
+### Reorgs
+
+In the case of a reorg, we want to minimize the number of blocks which the node needs to download from peers at that time. There are at least two strategies we can employ to deal with reorgs:
+
+1. the node keeps all blocks (headers + operations) from the latest 8 cycles (or whatever the correct number is) in a cached structure similar to `pending_headers`
+  - with this strategy, in the event of a reorg, once the node discovers the new main branch, they can apply the corresponding blocks starting from the correct context
+  - the trade-offs being:
+    - pro: we don't have to apply *all* blocks we receive and maintain several active branches; we only apply the necessary blocks
+    - con: once we learn about a reorg, there will be a delay while we apply the necessary blocks to our context before we are caught up
+2. the node not only keeps all blocks from the last 8 cycles, but also applies them as they're accumulated and manages several separate branches
+  - with this strategy, in the event of a reorg, once the node discovers the new main branch, they can immediately switch to that branch
+  - the trade-offs being:
+    - pro: we can immediately switch to the new min branch with no delay
+    - con: we may end up applying many unnecessary blocks during the course of maintaining the branches
+
+#### Questions
+
+How many blocks/cycles do we realistically need to keep as a hedge against reorgs?
+
+Can we leverage a similar quorum support idea here as well?
+- we may be able to set a threshold of support needed to maintain a branch
+- for example, if we've seen blocks at all levels from, say, 70% of our peers and there is only, say, 10% support for a particular branch, is it safe to stop maintaining that branch?
