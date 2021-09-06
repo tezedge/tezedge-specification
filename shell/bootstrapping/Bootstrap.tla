@@ -3,18 +3,19 @@
 EXTENDS FiniteSets, Naturals, Sequences, TLC, Hash, Samples
 
 CONSTANTS
-    NODES,              \* set og node ids
+    NODES,              \* set of node ids
     MIN_PEERS,          \* minimum number of peers
     MAX_PEERS,          \* maximum number of peers
     MAX_OPS,            \* maximum number of operations per block
     MAX_SCORE           \* maximum peer score
 
 VARIABLES
+    banned,             \* set of banned peers
     greylist,           \* the node's set of greylisted peers
     messages,           \* the node's set of messages
     chain,              \* the node's local chain
     connections,        \* the node's set of connections
-    current_head,       \* the node's current head
+    current_head,       \* the node's current head (header with hash)
     peer_head,          \* the node's peers' current heads
     peer_score,         \* metric for peer reliability
     earliest_hashes,    \* TODO
@@ -25,33 +26,35 @@ VARIABLES
     sent_get_ops,       \* the node's function from peers to whom they have sent a Get_operations message to the requested operations
     recv_branch,        \* the node's set of peers from whom they have received a Current_branch message
     recv_head,          \* TODO
-    recv_header,        \* the node's function from peers to the set of headers & hashes received
+    recv_header,        \* the node's function from peers to the set of headers with hashes received
     recv_operation      \* the node's function from peers to set of operations received
 
 VARIABLES
-    trace,              \* TODO
+    trace,              \* node's history
     mem_size            \* each good bootstrapping node's estimated memory usage
 
 \* inclusive variables
 sent_vars    == <<sent_get_branch, sent_get_headers, sent_get_ops>>
 recv_vars    == <<recv_branch, recv_head, recv_header, recv_operation>>
+local_vars   == <<banned, greylist, messages, chain, connections, current_head>>
+peer_vars    == <<peer_head, peer_score, earliest_hashes>>
 pending_vars == <<pending_headers, pending_operations>>
 
 \* exclusive variables
-non_conn_vars   == <<current_head, sent_vars, recv_vars>>
-non_branch_vars == <<connections, current_head, sent_get_headers, sent_get_ops, recv_header, recv_operation>>
-non_header_vars == <<connections, current_head, sent_get_branch, sent_get_ops, recv_branch, recv_operation>>
-non_op_vars     == <<connections, current_head, sent_get_branch, sent_get_headers, recv_branch, recv_header>>
-non_pipe_vars   == <<connections, current_head, recv_vars>>
-non_recv_vars   == <<connections, current_head, sent_vars>>
-non_node_vars   == <<connections, current_head, sent_vars, recv_vars>>
-non_trace_vars  == <<connections, sent_vars, recv_vars>>
-non_hd_q_vars   == <<connections, current_head, sent_vars, recv_vars>>
-non_op_q_vars   == <<connections, current_head, sent_vars, recv_vars>>
-non_phase_vars  == <<messages, greylist, non_trace_vars>>
+\* TODO
+non_conn_vars    == <<greylist, messages, chain, current_head, peer_vars, pending_vars, sent_vars, recv_vars>>
+non_branch_vars  == <<local_vars, peer_vars, pending_vars, sent_get_headers, sent_get_ops, recv_header, recv_operation>>
+non_header_vars  == <<local_vars, peer_vars, pending_vars, sent_get_branch, sent_get_ops, recv_branch, recv_operation>>
+non_op_vars      == <<local_vars, peer_vars, pending_vars, sent_get_branch, sent_get_headers, recv_branch, recv_header>>
+non_recv_vars    == <<local_vars, peer_vars, pending_vars, sent_vars>>
+non_trace_vars   == <<connections, sent_vars, recv_vars>>
+non_hd_q_vars    == <<connections, current_head, sent_vars, recv_vars>>
+non_op_q_vars    == <<connections, current_head, sent_vars, recv_vars>>
+non_phase_vars   == <<messages, greylist, non_trace_vars>>
+non_pending_vars == <<local_vars, peer_vars, sent_vars, recv_vars, trace, mem_size>>
 
 \* all variables
-vars == <<greylist, messages, chain, connections, current_head, peer_head, peer_score, earliest_hashes, pending_vars, sent_vars, recv_vars>>
+vars == <<local_vars, peer_vars, pending_vars, sent_vars, recv_vars, trace, mem_size>>
 
 (********)
 (* Note *)
@@ -109,6 +112,7 @@ AppendAll(seq1, seq2) ==
     IF seq2 = <<>> THEN seq1
     ELSE AppendAll(Append(seq1, Head(seq2)), Tail(seq2))
 
+\* remove the first occurence of [elem] from [seq]
 \* [seq] is a sequence of sets
 RECURSIVE remove(_, _, _)
 remove(elem, seq, acc) ==
@@ -152,6 +156,9 @@ Max_hd_set(s) ==
     Pick(max_fit_lvls)
 
 Max_set(s) == Pick({ x \in s : \A y \in s : x >= y })
+
+Min(a, b) == IF a <= b THEN a ELSE b
+Max(a, b) == IF a >= b THEN a ELSE b
 
 
 \* [2] Spec-specific helpers
@@ -255,8 +262,8 @@ peers_at_or_above_level(l) == { n \in NODES : chain_levels(n) >= l }
 
 highest_major_level ==
     LET major_levels == { l \in Levels :
-        \* #(peers of  at or above level [l]) / #peers > 1/2
-        (2 * Card(peers_at_or_above_level(l))) > num_peers
+        \* #(peers of  at or above level [l]) / #peers > 2/3
+        3 * Card(peers_at_or_above_level(l)) > 2 * num_peers
     } IN
     IF major_levels = {} THEN 0
     ELSE Max_set(major_levels)
@@ -309,7 +316,6 @@ descendant(hd1, hd2) ==
 (************)
 
 \* TODO messages
-\* - Bootstrap
 \* - Advertise
 \* - Swap_request???
 
@@ -318,21 +324,20 @@ descendant(hd1, hd2) ==
 GetCurrentBranchMessages == [ type : {"Get_current_branch"} ]
 GetBlockHeadersMessages  == [ type : {"Get_block_headers"}, hashes : NESet(Levels \X Hashes) ]
 GetOperationsMessages    == [ type : {"Get_operations"},    op_hashes : NESet(OperationHashes) ]
-GoodGetMessages          == GetCurrentBranchMessages \cup GetBlockHeadersMessages \cup GetOperationsMessages
 
-GetMessages == GoodGetMessages
+GetMessages == GetCurrentBranchMessages \cup GetBlockHeadersMessages \cup GetOperationsMessages
 
-\* [1.4] Request constructors
+\* [1.2] Request constructors
 get_current_branch_msg    == [ type |-> "Get_current_branch" ]
 get_block_headers_msg(hs) == [ type |-> "Get_block_headers", hashes    |-> hs ]
 get_operations_msg(ohs)   == [ type |-> "Get_operations",    op_hashes |-> ohs ]
 
-\* [1.5] Sets of request types
+\* [1.3] Sets of request types
 current_branch_msgs(n) == { msg \in messages[n] : msg.type = "Current_branch" }
 block_header_msgs(n)   == { msg \in messages[n] : msg.type = "Block_header" }
 operation_msgs(n)      == { msg \in messages[n] : msg.type = "Operation" }
 
-\* [1.6] Request predicates
+\* [1.4] Request predicates
 has_requested_branch_from(n)  == n \in sent_get_branch
 has_requested_headers_from(n) == sent_get_headers[n] /= {}
 has_requested_ops_from(n)     == sent_get_ops[n] /= {}
@@ -353,17 +358,34 @@ received_op_from     == { n \in NODES : has_received_operation(n) }
 CurrentBranchMessages == [ type : {"Current_branch"}, from : NODES, locator : Locators ]
 BlockHeaderMessages   == [ type : {"Block_header"},   from : NODES, header : Headers ]
 OperationsMessages    == [ type : {"Operation"},      from : NODES, operation : Operations ]
-ResponseMessages  == CurrentBranchMessages \cup BlockHeaderMessages \cup OperationsMessages
+
+ResponseMessages == CurrentBranchMessages \cup BlockHeaderMessages \cup OperationsMessages
 
 current_branch_msg(n, l) == [ type |-> "Current_branch", from |-> n, locator   |-> l ]
 block_header_msg(n, hd)  == [ type |-> "Block_header",   from |-> n, header    |-> hd ]
 operation_msg(n, op)     == [ type |-> "Operation",      from |-> n, operation |-> op ]
 
-\* [3] All messages
-Messages             == GetMessages \cup ResponseMessages
-AllBranchMessages    == { msg \in Messages : msg.type = "Current_branch" }
-AllHeaderMessages    == { msg \in Messages : msg.type = "Block_header" }
-AllOperationMessages == { msg \in Messages : msg.type = "Operation" }
+\* [3] P2p messages
+AdvertiseMessages   == [ type : {"Advertise"},    from : NODES, peers : NESet(NODES) ]
+DisconnectMessages  == [ type : {"Disconnect"},   from : NODES ]
+SwapRequestMessages == [ type : {"Swap_request"}, from : NODES, peer : NODES ]
+SwapAckMessages     == [ type : {"Swap_ack"},     from : NODES ]
+
+advertise_msgs(n)  == { msg \in messages[n] : msg.type = "Advertise" }
+disconnect_msgs(n) == { msg \in messages[n] : msg.type = "Disconnect" }
+swap_req_msgs(n)   == { msg \in messages[n] : msg.type = "Swap_request" }
+swap_ack_msgs(n)   == { msg \in messages[n] : msg.type = "Swap_ack" }
+
+advertise_msg(n, ps) == [ type |-> "Advertise",    from |-> n, peers |-> ps ]
+disconnect_msg(n)    == [ type |-> "Disconnect",   from |-> n ]
+swap_req_msg(n, p)   == [ type |-> "Swap_request", from |-> n, peer |-> p ]
+swap_ack_msg(n)      == [ type |-> "Swap_ack",     from |-> n ]
+
+\* [4] All messages
+Messages          == GetMessages \cup ResponseMessages
+BranchMessages    == { msg \in Messages : msg.type = "Current_branch" }
+HeaderMessages    == { msg \in Messages : msg.type = "Block_header" }
+OperationMessages == { msg \in Messages : msg.type = "Operation" }
 
 ----
 
@@ -375,10 +397,14 @@ AllOperationMessages == { msg \in Messages : msg.type = "Operation" }
 \* incr_score(peer) == peer_score' = [ peer_score EXCEPT ![peer] = min(@ + incr_amt, max_score) ]
 \* decr_score(peer) == peer_score' = [ peer_score EXCEPT ![peer] = max(@ - decr_amt, 0) ]
 
-\* header_data : [ header : HeadersWithHash, supporters : SUBSET Peers ]
-
-header_datum(peer, hdwh) == [ header |-> hdwh.header, hash |-> hdwh.hash, supporters |-> {peer} ]
+\* header_datum : [ header : HeadersWithHash, supporters : SUBSET Peers ]
+new_datum(peer, hdwh) == [ header |-> hdwh.header, hash |-> hdwh.hash, supporters |-> {peer} ]
 update_datum(peer, hdwh, sp) == [ header |-> hdwh.header, hash |-> hdwh.hash, supporters |-> sp \cup {peer} ]
+
+\* datum must be present otherwise this will trhow an error
+get_datum(hdwh, pending_hds) ==
+    LET phds == pending_hds[hdwh.header.level] IN
+    Pick({ phd \in phds : phd.hash = hdwh.hash })
 
 pending_header_hashes(phs) == { ph.hash : ph \in phs }
 
@@ -393,20 +419,24 @@ add_support_to_datum(peers, datum, phds) ==
 
 \* add a peer's support to a pending header
 add_support(peer, hdwh, pending_hds) ==
-    LET l == hdwh.header.level IN
-    IF hdwh \notin pending_hds[l] THEN
-        [ pending_hds EXCEPT ![l] = @ \cup {header_datum(peer, hdwh)} ]
+    LET l == hdwh.header.level
+        phds == { phd \in pending_hds[l] : phd.hash = hdwh.hash }
+        phdwhs == { header_with_hash(phd.header, phd.hash) : phd \in phds }
+    IN
+    IF hdwh \notin phdwhs THEN
+        [ pending_hds EXCEPT ![l] = @ \cup {new_datum(peer, hdwh)} ]
     ELSE
         [ pending_hds EXCEPT ![l] = add_support_to_datum(peer, hdwh, @) ]
 
 \* add a pending header to the collection
-add_pending_header(peer, hdwh) ==
+add_pending_header(peer, hdwh, pending_hds) ==
     LET l == hdwh.header.level IN
-    IF l \notin DOMAIN pending_headers THEN
-        pending_headers @@ l :> {header_datum(peer, hdwh)}
-    ELSE add_support(peer, hdwh, pending_headers)
+    IF l \notin DOMAIN pending_hds THEN
+        \* if no other headers at this level, increase the domain
+        pending_hds @@ l :> {new_datum(peer, hdwh)}
+    ELSE add_support(peer, hdwh, pending_hds)
 
-\* TODO
+\* update supporters after adding a pending header
 RECURSIVE update_support(_, _)
 update_support(datum, pending_hds) ==
     LET l == datum.header.level - 1 IN
@@ -418,14 +448,20 @@ update_support(datum, pending_hds) ==
         IN
         IF pred_hash \notin phashes THEN pending_hds
         ELSE
-            LET pdatum      == Pick({ h \in phds : h.hash = pred_hash }) \* pending predecessor header
-                supps       == datum.supporters                          \* child supporters
-                new_pdatum  == [ pdatum EXCEPT !.supporters = @ \cup supps ]
-                new_phds    == add_support_to_datum(supps, pdatum, phds) \* add child supporters to parent
+            LET pdatum      == Pick({ h \in phds : h.hash = pred_hash })     \* pending predecessor header
+                supps       == datum.supporters                              \* child supporters
+                new_pdatum  == [ pdatum EXCEPT !.supporters = @ \cup supps ] \* update supporters
+                new_phds    == add_support_to_datum(supps, pdatum, phds)     \* add child supporters to parent
                 new_pending == [ pending_hds EXCEPT ![l] = new_phds ]
             IN
             update_support(new_pdatum, new_pending)
 
+\* add datum to [pending_hds] and update support
+add_to_pending(peer, hdwh, pending_hds) ==
+    LET phds  == add_pending_header({peer}, hdwh, pending_hds)
+        datum == get_datum(hdwh, phds)
+    IN
+    update_support(datum, phds)
 
 (***********)
 (* Actions *)
@@ -440,7 +476,11 @@ Drop(msg) ==
     LET n == msg.from IN
     messages' = [ messages EXCEPT ![n] = @ \ {msg} ]
 
-\* [1] Request actions <- good bootstrapping nodes
+update_connections(ps)    == connections' = ps
+update_current_head(hdwh) == current_head' = hdwh
+log_transition(a)         == trace' = Cons(a, trace)
+
+\* [1] Request actions
 
 SendGetCurrentBranch ==
     \E n \in connections :
@@ -467,9 +507,26 @@ SendGetOperations ==
         /\ sent_get_ops' = [ sent_get_ops EXCEPT ![n] = @ \cup ohs ]
         /\ UNCHANGED <<messages, greylist, non_op_vars, recv_operation>>
 
-\* [3] Bootstrapping nodes handle responses
+\* [3] Bootstrapping node handles responses
 
-HandleCurrentBranch == \E n \in NODES :
+HandleAdvertise == \E n \in connections :
+    \E msg \in advertise_msgs(n) :
+        \E ps \in NESet(msg.peers) :
+            /\ connections' = connections \cup ps
+            /\ UNCHANGED non_conn_vars
+
+\* TODO is this correct?
+HandleSwapRequest == \E n \in connections :
+    \E msg \in swap_req_msgs(n) :
+        /\ connections' = connections \ {msg.peer}
+        /\ UNCHANGED non_conn_vars
+
+HandleSwapAck == \E n \in connections :
+    \E msg \in swap_ack_msgs(n) :
+        /\ connections' = connections \ {n}
+        /\ UNCHANGED non_conn_vars
+
+HandleCurrentBranch == \E n \in connections :
     \E msg \in current_branch_msgs(n) :
         LET hist    == msg.locator.history
             curr_hd == msg.locator.current_head
@@ -487,7 +544,7 @@ HandleCurrentBranch == \E n \in NODES :
         /\ UNCHANGED <<greylist, connections, current_head, sent_vars, recv_header, recv_operation>>
 
 \* bootstrapping node receives a Block_header message
-HandleBlockHeader == \E n \in NODES :
+HandleBlockHeader == \E n \in connections :
     \E msg \in block_header_msgs(n) :
         LET hd == msg.header
             h  == hash(hd)
@@ -500,7 +557,7 @@ HandleBlockHeader == \E n \in NODES :
         /\ UNCHANGED <<greylist, non_recv_vars, recv_operation>>
 
 \* bootstrapping node receives an Operation message
-HandleOperation == \E n \in NODES :
+HandleOperation == \E n \in connections :
     \E msg \in operation_msgs(n) :
         LET op == msg.operation
             bh == op.block_hash
@@ -547,7 +604,7 @@ apply_block(hd, ops) ==
     /\ pending_headers'    = Tail(pending_headers)
     /\ pending_operations' = Tail(pending_operations)
     /\ chain'              = Cons(b, chain)
-    /\ UNCHANGED <<messages, greylist, non_pipe_vars>>
+    /\ UNCHANGED non_pending_vars
 
 ApplyBlock ==
     LET hds == Extract(pending_headers)
@@ -629,15 +686,11 @@ Greylist ==
         /\ greylist_node(n)
     \/ FALSE \* TODO fails cross validation
 
-\* [8] Phase transitions
-
-update_connections(ps)  == connections' = ps
-update_current_head(hd) == current_head' = hd
-log_transition(a)       == trace' = Cons(a, trace)
-
-\* TODO
-
-BanNode == FALSE
+\* ban a peer
+BanNode == \E n \in connections :
+    /\ banned' = banned \cup {n}
+    /\ update_connections(connections \ {n})
+    \* TODO drop messages and data
 
 ----
 
@@ -742,78 +795,52 @@ TypeOK ==
 
 \* [2] General safety properties
 
-good_conns  == connections \cap NODES
-good_headers(n) == {} \* b.header : b \in BLOCKS[n] }
-
 ConnectionSafety ==
     /\ num_peers <= MAX_PEERS
     /\ greylist \cap connections = {}
 
-\* A majority of good peers agree with a bootstrapping node's current head
+MessageSafety == \A n \in NODES :
+    \/ n \in connections
+    \/ messages[n] = {}
+
+\* A majority of peers agree with a bootstrapping node's current head
 CurrentHeadIsAlwaysMajor ==
-    3 * Card({ n \in good_conns : current_head \in good_headers(n) }) > 2 * Card(good_conns)
+    3 * Card({ n \in connections : current_head \in recv_header[n] }) > 2 * Card(connections)
 
-\* Without a major branch, bootstrapping nodes do not change their head
-HeadDoesNotChangeWithoutMajoritySupport ==
-    highest_major_level = 0 => current_head = gen_header
-
-\* TODO only enqueue headers and operations which correspond to our current branch
-\* OnlyEnqueueCurrentBranchHeaders ==
-\*     \A hd \in ToSet(header_pipe) : descendant(hd, current_head)
-
-\* TODO only prevalidated headers and operations in the respective pipe
+\* TODO properties
 
 Safety ==
     /\ TypeOK
     /\ ConnectionSafety
     /\ CurrentHeadIsAlwaysMajor
-    /\ HeadDoesNotChangeWithoutMajoritySupport
 
 (**************)
 (* Properties *)
 (**************)
 
-\* Safety properties of transitions
-
-PeerConservation ==
-    [][ IF \/ connections /= {}
-           \/ greylist /= {}
-        THEN connections \cup greylist = connections' \cup greylist'
-        ELSE connections \cup greylist \subseteq connections' \cup greylist' ]_vars
+\* PeerConservation ==
+\*     [][ IF \/ connections /= {}
+\*            \/ greylist /= {}
+\*         THEN connections \cup greylist = connections' \cup greylist'
+\*         ELSE connections \cup greylist \subseteq connections' \cup greylist' ]_vars
 
 \* fitness always increases
 MonotonicFitness ==
     LET old_head  == current_head
         new_head  == current_head'
     IN
-    [][ old_head /= new_head => old_head.fitness < new_head.fitness ]_vars
+    [][ old_head /= new_head => old_head.header.fitness < new_head.header.fitness ]_vars
 
 \* Liveness
 
-\* Bootstrapping nodes always learn about local major branches
+\* Bootstrapping node always learns about local major branches
 IfLocalMajorBranchExistsThenBootstrapppingWillHearAboutIt ==
     LET curr_hd == current_head IN
     \E hd \in major_headers :
         <>( \/ hd = curr_hd
             \/ hd.fitness < curr_hd.fitness )
 
-\* \* Every good bootstrapping node eventually enters the search phase
-\* EventuallySearch == <>(phase \in Phase_search)
-
-\* \* Every good bootstrapping node eventually greylists a majority of their peers or enters the major phase
-\* EventuallyMajor ==
-\*     <>( \/ 2 * Card(greylist) >= num_peers
-\*         \/ phase \in Phase_major )
-
-\* \* Every good bootstrapping node eventually greylists a majority of their peers or enters the apply phase
-\* EventuallyApply ==
-\*     <>( \/ 2 * Card(greylist) >= num_peers
-\*         \/ phase \in Phase_apply )
-
 Liveness ==
-    \* /\ EventuallySearch
-    \* /\ EventuallyMajor
-    \* /\ EventuallyApply
     /\ IfLocalMajorBranchExistsThenBootstrapppingWillHearAboutIt
 
 ==========================
