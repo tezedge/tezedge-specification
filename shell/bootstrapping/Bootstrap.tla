@@ -18,19 +18,20 @@ VARIABLES
     current_head,       \* the node's current head (header with hash)
     peer_head,          \* the node's peers' current heads
     peer_score,         \* metric for peer reliability
-    earliest_hashes,    \* TODO
-    pending_headers,    \* TODO
-    pending_operations, \* TODO
+    earliest_hashes,    \* the earliest non-fetched hashes supplied by peers' current branches
+    target_hash,        \* the block hash we build our segment up to
+    target_level,       \* the level of the block we're building our segemtn to
+    pending_headers,    \* the segment of headers retrieved up to the current checkpoint
+    pending_operations, \* the corresponding operations for the pending headers
     sent_get_branch,    \* the node's set of peers to whom they have sent a Get_current_branch message
     sent_get_headers,   \* the node's function from peers to whom they have sent a Get_block_headers message to the requested headers
     sent_get_ops,       \* the node's function from peers to whom they have sent a Get_operations message to the requested operations
     recv_branch,        \* the node's set of peers from whom they have received a Current_branch message
-    recv_head,          \* TODO
+    recv_head,          \* the node's set of received peer heads
     recv_header,        \* the node's function from peers to the set of headers with hashes received
     recv_operation      \* the node's function from peers to set of operations received
 
 VARIABLES
-    trace,              \* node's history
     mem_size            \* each good bootstrapping node's estimated memory usage
 
 \* inclusive variables
@@ -41,7 +42,6 @@ peer_vars    == <<peer_head, peer_score, earliest_hashes>>
 pending_vars == <<pending_headers, pending_operations>>
 
 \* exclusive variables
-\* TODO
 non_conn_vars    == <<greylist, messages, chain, current_head, peer_vars, pending_vars, sent_vars, recv_vars>>
 non_branch_vars  == <<local_vars, peer_vars, pending_vars, sent_get_headers, sent_get_ops, recv_header, recv_operation>>
 non_header_vars  == <<local_vars, peer_vars, pending_vars, sent_get_branch, sent_get_ops, recv_branch, recv_operation>>
@@ -51,10 +51,10 @@ non_trace_vars   == <<connections, sent_vars, recv_vars>>
 non_hd_q_vars    == <<connections, current_head, sent_vars, recv_vars>>
 non_op_q_vars    == <<connections, current_head, sent_vars, recv_vars>>
 non_phase_vars   == <<messages, greylist, non_trace_vars>>
-non_pending_vars == <<local_vars, peer_vars, sent_vars, recv_vars, trace, mem_size>>
+non_pending_vars == <<local_vars, peer_vars, sent_vars, recv_vars, mem_size>>
 
 \* all variables
-vars == <<local_vars, peer_vars, pending_vars, sent_vars, recv_vars, trace, mem_size>>
+vars == <<local_vars, peer_vars, pending_vars, sent_vars, recv_vars, mem_size>>
 
 (********)
 (* Note *)
@@ -105,7 +105,8 @@ Extract(seq) ==
     CASE seq = <<>> -> <<>>
       [] Forall(LAMBDA s : Card(s) = 1, seq) -> Map(Pick, seq)
 
-ToSet(seq) == { seq[i] : i \in DOMAIN seq }
+ToSet(seq)    == { seq[i] : i \in DOMAIN seq }
+DagToSet(dag) == UNION { dag[i] : i \in DOMAIN dag }
 
 RECURSIVE AppendAll(_, _)
 AppendAll(seq1, seq2) ==
@@ -172,19 +173,6 @@ ConnectionSets == { ps \in SUBSET NODES : Card(ps) >= MIN_PEERS /\ Card(ps) <= M
 Levels  == Nat \ {0}
 Levels0 == Nat
 
-\* phases
-init_phase      == <<"init", {}>>
-search_phase    == <<"searching_for_major_branch", {}>>
-major_phase(ls) == <<"gathering_evidence", ls>>
-apply_phase(ls) == <<"building_blocks", ls>>
-
-Phase_init   == { init_phase }
-Phase_search == { search_phase }
-Phase_major  == { major_phase(ls) : ls \in SUBSET Levels }
-Phase_apply  == { apply_phase(ls) : ls \in SUBSET Levels }
-
-Phases == Phase_init \cup Phase_search \cup Phase_major \cup Phase_apply
-
 \* fitness
 Fitness == Nat
 
@@ -202,7 +190,7 @@ header_with_hash(hd, h) == [ header |-> hd, hash |-> h ]
 
 operation(bh, op) == [ block_hash |-> bh, op |-> op ]
 operations(bh, ops) == [ block_hash : {bh}, op : ops ]
-block(hdr, ops) == [ header |-> hdr, ops |-> ops ]
+block(hdr, ops) == [ header |-> hdr, ops |-> { op.op : op \in ops } ]
 hash(hd) == Hash(hd)
 
 gen_header == header(0, 0, hash({}), 0, hash({}))
@@ -218,6 +206,7 @@ Headers  == [
     ops_hash    : OpHashes
 ]
 
+HashLevels == [ hash : Hashes, level : Levels ]
 HeadersWithHash == [ header : Headers, hash : Hashes ]
 
 \* operations
@@ -227,6 +216,7 @@ OperationHashes == Int
 
 \* blocks
 Blocks == [ header : Headers, ops : SUBSET Ops ]
+BlockOpHashes == [ block_hash : Hashes, op_hash : OperationHashes ]
 
 \* history
 History == Seq(Levels \X Hashes)
@@ -239,8 +229,8 @@ received_operations_block_hash(n, bh) == { op \in recv_operation[n] : op.block_h
 all_recv_operations_block_hash(bh) == UNION { received_operations_block_hash(n, bh) : n \in NODES }
 
 \* all fetched data
-fetched_hashes_node(n)  == { p[1] : p \in recv_header[n] }
-fetched_headers_node(n) == { p[2] : p \in recv_header[n] }
+fetched_hashes_node(n)  == { h.hash : h \in recv_header[n] }
+fetched_headers_node(n) == { h.header : h \in recv_header[n] }
 
 all_header_data    == UNION ToSet(pending_headers)
 fetched_hashes     == UNION { fetched_hashes_node(n) : n \in NODES }
@@ -260,38 +250,7 @@ peers_at_level(l) == { n \in NODES : chain_levels(n) = l }
 
 peers_at_or_above_level(l) == { n \in NODES : chain_levels(n) >= l }
 
-highest_major_level ==
-    LET major_levels == { l \in Levels :
-        \* #(peers of  at or above level [l]) / #peers > 2/3
-        3 * Card(peers_at_or_above_level(l)) > 2 * num_peers
-    } IN
-    IF major_levels = {} THEN 0
-    ELSE Max_set(major_levels)
-
-recv_hashes[ n \in NODES ] ==
-    LET fit_hash == { hash(peer_head[n]) }
-        br_hs    == ToSet(recv_branch[n])
-        bh_hs    == { hash(hd) : hd \in fetched_headers }
-    IN
-    fit_hash \cup br_hs \cup bh_hs
-
-all_recv_hashes == UNION { recv_hashes[n] : n \in NODES }
-
-major_hashes == { fh \in all_recv_hashes :
-    \* majority of peers agree with [fh]
-    LET seen_agreeing == { n \in NODES : fh \in recv_branch[n] } IN
-    (2 * Card(seen_agreeing)) > num_peers }
-
-has_major_hashes == major_hashes /= {}
-
-major_headers == { hd \in fetched_headers :
-    \* majority of peers agree with [hd]
-    LET seen_agreeing == { n \in NODES : hd \in recv_header[n] } IN
-    (2 * Card(seen_agreeing)) > num_peers }
-
-headers_with_hash(bh) == { p \in all_header_data : p[1] = bh }
-
-lookup_block_hash(bh) == Pick(headers_with_hash(bh))
+headers_with_hash(bh) == { p \in all_header_data : p.header = bh }
 
 RECURSIVE descendant(_, _)
 descendant(hd1, hd2) ==
@@ -300,6 +259,24 @@ descendant(hd1, hd2) ==
         LET bh == hash(hd2) IN
         \/ bh = hd1.predecessor
         \/ \E hd \in headers_with_hash(bh): descendant(hd, hd2)
+
+\* only applied to sequences of headers and sets of operations of the same length
+\* checks that hash of header matches the block hash in the operations and
+\* that the hash of the operations matches the operations hash in the header
+RECURSIVE Check(_, _)
+Check(hds, ops) ==
+    IF hds = <<>> THEN TRUE
+    ELSE
+        LET hd == Head(hds)
+            op == Head(ops)
+            check(h, o) ==
+                \* header ops_hash matches hash of ops
+                /\ h.ops_hash = hash(o.op)
+                \* operations block_hash matches hash of block
+                /\ hash(h) = o.block_hash
+        IN
+        /\ check(hd, op)
+        /\ Check(Tail(hds), Tail(ops))
 
 ----
 
@@ -315,14 +292,10 @@ descendant(hd1, hd2) ==
 (* Messages *)
 (************)
 
-\* TODO messages
-\* - Advertise
-\* - Swap_request???
-
 \* [1] Requests
 \* [1.1] Good requests
 GetCurrentBranchMessages == [ type : {"Get_current_branch"} ]
-GetBlockHeadersMessages  == [ type : {"Get_block_headers"}, hashes : NESet(Levels \X Hashes) ]
+GetBlockHeadersMessages  == [ type : {"Get_block_headers"}, hashes : NESet(HashLevels) ]
 GetOperationsMessages    == [ type : {"Get_operations"},    op_hashes : NESet(OperationHashes) ]
 
 GetMessages == GetCurrentBranchMessages \cup GetBlockHeadersMessages \cup GetOperationsMessages
@@ -371,6 +344,8 @@ DisconnectMessages  == [ type : {"Disconnect"},   from : NODES ]
 SwapRequestMessages == [ type : {"Swap_request"}, from : NODES, peer : NODES ]
 SwapAckMessages     == [ type : {"Swap_ack"},     from : NODES ]
 
+P2pMessages == AdvertiseMessages \cup DisconnectMessages \cup SwapRequestMessages \cup SwapAckMessages
+
 advertise_msgs(n)  == { msg \in messages[n] : msg.type = "Advertise" }
 disconnect_msgs(n) == { msg \in messages[n] : msg.type = "Disconnect" }
 swap_req_msgs(n)   == { msg \in messages[n] : msg.type = "Swap_request" }
@@ -382,7 +357,7 @@ swap_req_msg(n, p)   == [ type |-> "Swap_request", from |-> n, peer |-> p ]
 swap_ack_msg(n)      == [ type |-> "Swap_ack",     from |-> n ]
 
 \* [4] All messages
-Messages          == GetMessages \cup ResponseMessages
+Messages          == GetMessages \cup ResponseMessages \cup P2pMessages
 BranchMessages    == { msg \in Messages : msg.type = "Current_branch" }
 HeaderMessages    == { msg \in Messages : msg.type = "Block_header" }
 OperationMessages == { msg \in Messages : msg.type = "Operation" }
@@ -478,7 +453,6 @@ Drop(msg) ==
 
 update_connections(ps)    == connections' = ps
 update_current_head(hdwh) == current_head' = hdwh
-log_transition(a)         == trace' = Cons(a, trace)
 
 \* [1] Request actions
 
@@ -531,7 +505,6 @@ HandleCurrentBranch == \E n \in connections :
         LET hist    == msg.locator.history
             curr_hd == msg.locator.current_head
         IN
-        /\ has_requested_branch_from(n)
         /\ Drop(msg)
         /\ peer_head' = [ peer_head EXCEPT ![n] =
                 CASE curr_hd.level < @.level -> @
@@ -552,7 +525,7 @@ HandleBlockHeader == \E n \in connections :
         /\ h \in sent_get_headers[n]
         /\ hd \notin fetched_headers
         /\ Drop(msg)
-        /\ recv_header' = [ recv_header EXCEPT ![n] = @ \cup {<<h, hd>>} ]
+        /\ recv_header' = [ recv_header EXCEPT ![n] = @ \cup {header_with_hash(hd, h)} ]
         /\ recv_branch' = [ recv_branch EXCEPT ![n] = @ \cup {h} ]
         /\ UNCHANGED <<greylist, non_recv_vars, recv_operation>>
 
@@ -569,34 +542,9 @@ HandleOperation == \E n \in connections :
             /\ recv_operation' = [ recv_operation EXCEPT ![n] = @ \cup {op} ]
             /\ UNCHANGED <<greylist, non_recv_vars, recv_branch, recv_header>>
 
-\* TODO prevalidation actions
-\* When in the major phase, once  has the header and operations for a block, they can must check that the operations are correct for that block
-\* and move the header and set of operations to the corresponding prevalidated sets.
+\* [5] Block validation
 
-\* [4] Pipe enqueuing actions
-
-\* move header from fetched_headers to header_pipe
-EnqueueHeader ==
-    LET phds == pending_headers IN
-    /\ phds /= <<>>
-    /\ LET hd == Max_level_set(phds) IN
-        /\ pending_headers' = Remove(hd, pending_headers)
-        \* /\ header_pipe'     = Cons(hd, header_pipe)
-        /\ UNCHANGED <<messages, greylist, non_hd_q_vars>>
-
-\* move operation from fetched_operations to operation_pipe
-EnqueueOperations ==
-    LET pops == pending_operations IN
-    /\ pops /= <<>>
-    /\ LET max  == Max_set({ op[1] : op \in pops })
-           pair == Pick({ op \in pops : op[1] = max })
-           ops  == pair[2]
-       IN
-        \* /\ pending_operations' = Remove(pending_operations)
-        \* /\ operation_pipe'   = Cons(ops, operation_pipe)
-        /\ UNCHANGED <<messages, greylist, non_op_q_vars>>
-
-\* [6] Block validation
+\* TODO segment validation before application
 
 \* nodes form blocks from fetched headers and operations that have been enqueued in their respective pipes
 apply_block(hd, ops) ==
@@ -622,11 +570,7 @@ ApplyBlock ==
 
 \* [7.1] Byzantine actions
 
-\* BadNodeSendsGoodBootstrapArbitraryMessage == \E n \in NODES :
-\*     \E msg \in { m \in BadResponseMessages : m.from = n } :
-\*         /\ n \in connections
-\*         /\ Send(msg)
-\*         /\ UNCHANGED <<n_messages, greylist, node_vars, bootstrapping_vars>>
+\* TODO
 
 \* [7.2] Timeout actions
 
@@ -699,6 +643,7 @@ BanNode == \E n \in connections :
 (*********************)
 
 BootstrappingInit ==
+    /\ banned             = {}
     /\ greylist           = {}
     /\ messages           = [ n \in NODES |-> {} ]
     /\ chain              = <<genesis>>
@@ -717,13 +662,10 @@ BootstrappingInit ==
     /\ recv_header        = [ n \in NODES |-> {} ]
     /\ recv_operation     = [ n \in NODES |-> {} ]
 
-TraceInit == trace = <<init_phase>>
-
 MemInit == mem_size = 0
 
 Init ==
     /\ MemInit
-    /\ TraceInit
     /\ BootstrappingInit
 
 (****************)
@@ -739,9 +681,7 @@ Next ==
     \/ HandleBlockHeader
     \/ HandleOperation
 
-    \* Pipe maintanence
-    \/ EnqueueHeader
-    \/ EnqueueOperations
+    \* Block application
     \/ ApplyBlock
 
     \* Timeouts
@@ -766,31 +706,29 @@ Spec == Init /\ [][Next]_vars /\ WF_vars(Next)
 \* [1] TypeOK - type safety
 
 BootstrappingOK ==
+    /\ banned             \in SUBSET NODES
     /\ greylist           \in SUBSET NODES
     /\ messages           \in [ NODES -> SUBSET ResponseMessages ]
     /\ chain              \in Seq(Blocks)
     /\ connections        \in SUBSET NODES
-    /\ current_head       \in Blocks
+    /\ current_head       \in Headers
     /\ peer_head          \in [ NODES -> Headers ]
     /\ peer_score         \in [ NODES -> Nat ]
     /\ earliest_hashes    \in SUBSET Hashes
-    /\ pending_headers    \in Seq(SUBSET HeadersWithHash) 
+    /\ pending_headers    \in Seq(HeadersWithHash)
     /\ pending_operations \in Seq(Operations)
     /\ sent_get_branch    \in SUBSET NODES
-    /\ sent_get_headers   \in [ NODES -> SUBSET (Levels \X Hashes) ]
-    /\ sent_get_ops       \in [ NODES -> SUBSET (Hashes \X OperationHashes) ]
-    /\ recv_branch        \in [ NODES -> SUBSET (Levels \X Hashes) ]
+    /\ sent_get_headers   \in [ NODES -> SUBSET HashLevels ]
+    /\ sent_get_ops       \in [ NODES -> SUBSET BlockOpHashes ]
+    /\ recv_branch        \in [ NODES -> SUBSET HashLevels ]
     /\ recv_head          \in [ NODES -> SUBSET Headers ]
-    /\ recv_header        \in [ NODES -> SUBSET (Hashes \X Headers) ]
+    /\ recv_header        \in [ NODES -> SUBSET HeadersWithHash ]
     /\ recv_operation     \in [ NODES -> SUBSET Operations ]
-
-TraceOK == trace \in Seq(Phases)
 
 MemOK == mem_size \in Nat
 
 TypeOK ==
     /\ MemOK
-    /\ TraceOK
     /\ BootstrappingOK
 
 \* [2] General safety properties
@@ -834,13 +772,13 @@ MonotonicFitness ==
 \* Liveness
 
 \* Bootstrapping node always learns about local major branches
-IfLocalMajorBranchExistsThenBootstrapppingWillHearAboutIt ==
-    LET curr_hd == current_head IN
-    \E hd \in major_headers :
-        <>( \/ hd = curr_hd
-            \/ hd.fitness < curr_hd.fitness )
+\* IfLocalMajorBranchExistsThenBootstrapppingWillHearAboutIt ==
+\*     LET curr_hd == current_head IN
+\*     \E hd \in major_headers :
+\*         <>( \/ hd = curr_hd
+\*             \/ hd.fitness < curr_hd.fitness )
 
-Liveness ==
-    /\ IfLocalMajorBranchExistsThenBootstrapppingWillHearAboutIt
+\* Liveness ==
+\*     /\ IfLocalMajorBranchExistsThenBootstrapppingWillHearAboutIt
 
 ==========================
