@@ -297,6 +297,8 @@ Check(hds, ops) ==
 GetCurrentBranchMessages == [ type : {"Get_current_branch"} ]
 GetBlockHeadersMessages  == [ type : {"Get_block_headers"}, hashes : NESet(HashLevels) ]
 GetOperationsMessages    == [ type : {"Get_operations"},    op_hashes : NESet(OperationHashes) ]
+\* GetCheckpointMessages    == [ type : {"Get_checkpoint"} ]
+\* GetPredHeaderMessages    == [ type : {"Get_predecessor_header"}, hash : Hashes, offset : Nat ]
 
 GetMessages == GetCurrentBranchMessages \cup GetBlockHeadersMessages \cup GetOperationsMessages
 
@@ -331,6 +333,8 @@ received_op_from     == { n \in NODES : has_received_operation(n) }
 CurrentBranchMessages == [ type : {"Current_branch"}, from : NODES, locator : Locators ]
 BlockHeaderMessages   == [ type : {"Block_header"},   from : NODES, header : Headers ]
 OperationsMessages    == [ type : {"Operation"},      from : NODES, operation : Operations ]
+\* CheckpointMessages    == [ type : {"Checkpoint"},    from : NODES, hash : Hashes ]
+\* PredHeaderMessages    == [ type : {"Pred_header"},   from : NODES, hash : Hashes, offset : Nat, header : Headers ]
 
 ResponseMessages == CurrentBranchMessages \cup BlockHeaderMessages \cup OperationsMessages
 
@@ -339,12 +343,21 @@ block_header_msg(n, hd)  == [ type |-> "Block_header",   from |-> n, header    |
 operation_msg(n, op)     == [ type |-> "Operation",      from |-> n, operation |-> op ]
 
 \* [3] P2p messages
-AdvertiseMessages   == [ type : {"Advertise"},    from : NODES, peers : NESet(NODES) ]
-DisconnectMessages  == [ type : {"Disconnect"},   from : NODES ]
-SwapRequestMessages == [ type : {"Swap_request"}, from : NODES, peer : NODES ]
-SwapAckMessages     == [ type : {"Swap_ack"},     from : NODES ]
+AdvertiseMessages   == [ type : {"Advertise"},  from : NODES, peers : NESet(NODES) ]
+DisconnectMessages  == [ type : {"Disconnect"}, from : NODES ]
+SwapAckMessages     == [ type : {"Swap_ack"},   from : NODES ]
+SwapRequestMessages == [ type : {"Swap_req"},   from : NODES, peer : NODES ]
 
 P2pMessages == AdvertiseMessages \cup DisconnectMessages \cup SwapRequestMessages \cup SwapAckMessages
+
+\* node p2p messages
+
+NodeAdvertiseMessages  == [ type : {"Advertise"}, peers : NESet(NODES) ]
+NodeDisconnectMessages == [ type : {"Disconnect"} ]
+NodeSwapAckMessages    == [ type : {"Swap_ack"},  peer : NODES ]
+NodeSwapReqMessages    == [ type : {"Swap_req"},  peer : NODES ]
+
+NodeP2pMessages == NodeAdvertiseMessages \cup NodeDisconnectMessages \cup NodeSwapAckMessages \cup NodeSwapReqMessages
 
 advertise_msgs(n)  == { msg \in messages[n] : msg.type = "Advertise" }
 disconnect_msgs(n) == { msg \in messages[n] : msg.type = "Disconnect" }
@@ -357,7 +370,7 @@ swap_req_msg(n, p)   == [ type |-> "Swap_request", from |-> n, peer |-> p ]
 swap_ack_msg(n)      == [ type |-> "Swap_ack",     from |-> n ]
 
 \* [4] All messages
-Messages          == GetMessages \cup ResponseMessages \cup P2pMessages
+Messages          == GetMessages \cup ResponseMessages \cup P2pMessages \cup NodeP2pMessages
 BranchMessages    == { msg \in Messages : msg.type = "Current_branch" }
 HeaderMessages    == { msg \in Messages : msg.type = "Block_header" }
 OperationMessages == { msg \in Messages : msg.type = "Operation" }
@@ -708,7 +721,7 @@ Spec == Init /\ [][Next]_vars /\ WF_vars(Next)
 BootstrappingOK ==
     /\ banned             \in SUBSET NODES
     /\ greylist           \in SUBSET NODES
-    /\ messages           \in [ NODES -> SUBSET ResponseMessages ]
+    /\ messages           \in [ NODES -> SUBSET (ResponseMessages \cup P2pMessages) ]
     /\ chain              \in Seq(Blocks)
     /\ connections        \in SUBSET NODES
     /\ current_head       \in Headers
