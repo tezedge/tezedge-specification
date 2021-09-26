@@ -7,7 +7,11 @@ CONSTANTS
     MIN_PEERS,          \* minimum number of peers
     MAX_PEERS,          \* maximum number of peers
     MAX_OPS,            \* maximum number of operations per block
-    MAX_SCORE           \* maximum peer score
+    MAX_SCORE,          \* maximum peer score
+    INIT_CHAIN,         \* initial chain
+    INIT_HEAD,          \* initial head
+    INIT_CONNECTIONS,   \* initial connections
+    NONE                \* null value
 
 VARIABLES
     banned,             \* set of banned peers
@@ -83,6 +87,8 @@ NESeq(s) == Seq(s) \ {<<>>}
 
 Pick(s) == CHOOSE x \in s : TRUE
 
+Option(s) == s \cup {NONE}
+
 Cons(x, seq) == <<x>> \o seq
 
 RECURSIVE map(_, _, _)
@@ -100,13 +106,7 @@ Forall(p(_), seq) ==
     \/ /\ p(Head(seq))
        /\ Forall(p, Tail(seq))
 
-\* extract each element
-Extract(seq) ==
-    CASE seq = <<>> -> <<>>
-      [] Forall(LAMBDA s : Card(s) = 1, seq) -> Map(Pick, seq)
-
 ToSet(seq)    == { seq[i] : i \in DOMAIN seq }
-DagToSet(dag) == UNION { dag[i] : i \in DOMAIN dag }
 
 RECURSIVE AppendAll(_, _)
 AppendAll(seq1, seq2) ==
@@ -150,12 +150,6 @@ Max_level_seq(seq) ==
 
 Max_level_set(s) == Max_level_seq(SetToSeq(s))
 
-Max_hd_set(s) ==
-    LET max_fit_hds  == { x \in s : \A y \in s : x.fitness >= y.fitness }
-        max_fit_lvls == { x \in max_fit_hds : \A y \in max_fit_hds : x.level >= y.level }
-    IN
-    Pick(max_fit_lvls)
-
 Max_set(s) == Pick({ x \in s : \A y \in s : x >= y })
 
 Min(a, b) == IF a <= b THEN a ELSE b
@@ -165,9 +159,6 @@ Max(a, b) == IF a >= b THEN a ELSE b
 \* [2] Spec-specific helpers
 
 N == Card(NODES)
-
-\* sets of connections
-ConnectionSets == { ps \in SUBSET NODES : Card(ps) >= MIN_PEERS /\ Card(ps) <= MAX_PEERS }
 
 \* block levels
 Levels  == Nat \ {0}
@@ -555,9 +546,9 @@ HandleOperation == \E n \in connections :
             /\ recv_operation' = [ recv_operation EXCEPT ![n] = @ \cup {op} ]
             /\ UNCHANGED <<greylist, non_recv_vars, recv_branch, recv_header>>
 
-\* [5] Block validation
+\* TODO P2p messages
 
-\* TODO segment validation before application
+\* [4] Block validation
 
 \* nodes form blocks from fetched headers and operations that have been enqueued in their respective pipes
 apply_block(hd, ops) ==
@@ -568,24 +559,21 @@ apply_block(hd, ops) ==
     /\ UNCHANGED non_pending_vars
 
 ApplyBlock ==
-    LET hds == Extract(pending_headers)
+    LET hds == pending_headers
         ops == pending_operations
     IN
     /\ hds /= <<>>
     /\ ops /= <<>>
+    /\ Check(hds, ops)
     /\ LET hd == Head(hds)
            op == Head(ops)
         IN
         /\ op.block_hash = hash(hd)
         /\ apply_block(hd, ops)
 
-\* [7] undesirable actions
+\* [5] undesirable actions
 
-\* [7.1] Byzantine actions
-
-\* TODO
-
-\* [7.2] Timeout actions
+\* [5.1] Timeout actions
 
 greylist_node(n) == greylist' = greylist \cup {n}
 
@@ -616,17 +604,18 @@ Timeout ==
         /\ ~has_received_operation(n)
         /\ greylist_timeout(n)
 
-\* [7.3] Greylist actions
+\* [5.2] Punative actions
 
+\* TODO
 Greylist ==
-    \/ \E n \in connections : \E msg \in messages[n] :
+    \E n \in connections : \E msg \in messages[n] :
         LET t == msg.type IN
         /\ n = msg.from
         /\ CASE t = "Current_branch" -> FALSE
              [] t = "Block_header" ->
                 LET hd == msg.header IN
                 \* send multiple headers at the same level
-                \/ \E h \in recv_header[n] : h[2].level = hd.level
+                \/ \E h \in recv_header[n] : h.header.level = hd.level
                 \* never requested header with that hash
                 \/ hash(hd) \notin sent_get_headers[n]
              [] t = "Operation" ->
@@ -639,9 +628,12 @@ Greylist ==
                 \/ \E hd \in fetched_headers :
                     /\ hash(hd) = h
                     /\ hd.ops_hash < op.op
-             [] t = "bad" -> TRUE
+            \* p2p messages
+              [] t = "Advertise" -> FALSE \* TODO
+              [] t = "Advertise" -> FALSE \* TODO
+              [] t = "Advertise" -> FALSE \* TODO
+              [] t = "Advertise" -> FALSE \* TODO
         /\ greylist_node(n)
-    \/ FALSE \* TODO fails cross validation
 
 \* ban a peer
 BanNode == \E n \in connections :
@@ -659,12 +651,14 @@ BootstrappingInit ==
     /\ banned             = {}
     /\ greylist           = {}
     /\ messages           = [ n \in NODES |-> {} ]
-    /\ chain              = <<genesis>>
-    /\ connections        = {}
-    /\ current_head       = gen_header
-    /\ peer_head          = [ n \in connections |-> gen_header ]
+    /\ chain              = INIT_CHAIN
+    /\ connections        = INIT_CONNECTIONS
+    /\ current_head       = INIT_HEAD
+    /\ peer_head          = [ n \in connections |-> INIT_HEAD ]
     /\ peer_score         = [ n \in connections |-> MAX_SCORE ]
     /\ earliest_hashes    = {}
+    /\ target_hash        = NONE
+    /\ target_level       = NONE
     /\ pending_headers    = <<>>
     /\ pending_operations = <<>>
     /\ sent_get_branch    = {}
@@ -728,6 +722,8 @@ BootstrappingOK ==
     /\ peer_head          \in [ NODES -> Headers ]
     /\ peer_score         \in [ NODES -> Nat ]
     /\ earliest_hashes    \in SUBSET Hashes
+    /\ target_hash        \in Option(Hashes)
+    /\ target_level       \in Option(Levels)
     /\ pending_headers    \in Seq(HeadersWithHash)
     /\ pending_operations \in Seq(Operations)
     /\ sent_get_branch    \in SUBSET NODES
@@ -754,7 +750,7 @@ MessageSafety == \A n \in NODES :
     \/ n \in connections
     \/ messages[n] = {}
 
-\* A majority of peers agree with a bootstrapping node's current head
+\* A quorum of peers agree with a bootstrapping node's current head
 CurrentHeadIsAlwaysMajor ==
     3 * Card({ n \in connections : current_head \in recv_header[n] }) > 2 * Card(connections)
 
