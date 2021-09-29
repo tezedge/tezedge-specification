@@ -2,12 +2,15 @@
 
 EXTENDS FiniteSets, Naturals, Sequences, TLC, Hash, Samples
 
+\* TODO should we make these variables
 CONSTANTS
     NODES,              \* set of node ids
     MIN_PEERS,          \* minimum number of peers
     MAX_PEERS,          \* maximum number of peers
     MAX_OPS,            \* maximum number of operations per block
     MAX_SCORE,          \* maximum peer score
+    INCR_SCORE,         \* increment score
+    DECR_SCORE,         \* decrement score
     INIT_CHAIN,         \* initial chain
     INIT_HEAD,          \* initial head
     INIT_CONNECTIONS,   \* initial connections
@@ -42,7 +45,7 @@ VARIABLES
 sent_vars    == <<sent_get_branch, sent_get_headers, sent_get_ops>>
 recv_vars    == <<recv_branch, recv_head, recv_header, recv_operation>>
 local_vars   == <<banned, greylist, messages, chain, connections, current_head>>
-peer_vars    == <<peer_head, peer_score, earliest_hashes>>
+peer_vars    == <<peer_head, peer_score, earliest_hashes, target_hash, target_level>>
 pending_vars == <<pending_headers, pending_operations>>
 
 \* exclusive variables
@@ -368,80 +371,6 @@ OperationMessages == { msg \in Messages : msg.type = "Operation" }
 
 ----
 
-\* TODO
-\* peer_score - metric for peer reliability
-\*   - max_score = 100 for example
-\*   - if score[peer] < max_score then incr_score(peer) when valid message received
-\*     else decr_score(peer) when timeout or disconnect
-\* incr_score(peer) == peer_score' = [ peer_score EXCEPT ![peer] = min(@ + incr_amt, max_score) ]
-\* decr_score(peer) == peer_score' = [ peer_score EXCEPT ![peer] = max(@ - decr_amt, 0) ]
-
-\* header_datum : [ header : HeadersWithHash, supporters : SUBSET Peers ]
-new_datum(peer, hdwh) == [ header |-> hdwh.header, hash |-> hdwh.hash, supporters |-> {peer} ]
-update_datum(peer, hdwh, sp) == [ header |-> hdwh.header, hash |-> hdwh.hash, supporters |-> sp \cup {peer} ]
-
-\* datum must be present otherwise this will trhow an error
-get_datum(hdwh, pending_hds) ==
-    LET phds == pending_hds[hdwh.header.level] IN
-    Pick({ phd \in phds : phd.hash = hdwh.hash })
-
-pending_header_hashes(phs) == { ph.hash : ph \in phs }
-
-\* add the support of [peers] to an existing header datum
-\* [phds] is the set of pending headers at a specified level
-add_support_to_datum(peers, datum, phds) ==
-    \* update supporters for the header
-    LET to_update == Pick({ hd \in phds : hd.hash = datum.hash })
-        updated   == {[ to_update EXCEPT !.supporters = @ \cup peers ]}
-    IN
-    updated \cup (phds \ {to_update})
-
-\* add a peer's support to a pending header
-add_support(peer, hdwh, pending_hds) ==
-    LET l == hdwh.header.level
-        phds == { phd \in pending_hds[l] : phd.hash = hdwh.hash }
-        phdwhs == { header_with_hash(phd.header, phd.hash) : phd \in phds }
-    IN
-    IF hdwh \notin phdwhs THEN
-        [ pending_hds EXCEPT ![l] = @ \cup {new_datum(peer, hdwh)} ]
-    ELSE
-        [ pending_hds EXCEPT ![l] = add_support_to_datum(peer, hdwh, @) ]
-
-\* add a pending header to the collection
-add_pending_header(peer, hdwh, pending_hds) ==
-    LET l == hdwh.header.level IN
-    IF l \notin DOMAIN pending_hds THEN
-        \* if no other headers at this level, increase the domain
-        pending_hds @@ l :> {new_datum(peer, hdwh)}
-    ELSE add_support(peer, hdwh, pending_hds)
-
-\* update supporters after adding a pending header
-RECURSIVE update_support(_, _)
-update_support(datum, pending_hds) ==
-    LET l == datum.header.level - 1 IN
-    IF l \notin DOMAIN pending_hds THEN pending_hds
-    ELSE
-        LET phds      == pending_hds[l]
-            phashes   == { hd.hash : hd \in phds }
-            pred_hash == datum.header.predecessor
-        IN
-        IF pred_hash \notin phashes THEN pending_hds
-        ELSE
-            LET pdatum      == Pick({ h \in phds : h.hash = pred_hash })     \* pending predecessor header
-                supps       == datum.supporters                              \* child supporters
-                new_pdatum  == [ pdatum EXCEPT !.supporters = @ \cup supps ] \* update supporters
-                new_phds    == add_support_to_datum(supps, pdatum, phds)     \* add child supporters to parent
-                new_pending == [ pending_hds EXCEPT ![l] = new_phds ]
-            IN
-            update_support(new_pdatum, new_pending)
-
-\* add datum to [pending_hds] and update support
-add_to_pending(peer, hdwh, pending_hds) ==
-    LET phds  == add_pending_header({peer}, hdwh, pending_hds)
-        datum == get_datum(hdwh, phds)
-    IN
-    update_support(datum, phds)
-
 (***********)
 (* Actions *)
 (***********)
@@ -457,6 +386,9 @@ Drop(msg) ==
 
 update_connections(ps)    == connections' = ps
 update_current_head(hdwh) == current_head' = hdwh
+
+incr_score(peer) == peer_score' = [ peer_score EXCEPT ![peer] = Min(@ + INCR_SCORE, MAX_SCORE) ]
+decr_score(peer) == peer_score' = [ peer_score EXCEPT ![peer] = Max(@ - DECR_SCORE, 0) ]
 
 \* [1] Request actions
 
@@ -550,6 +482,7 @@ HandleOperation == \E n \in connections :
 
 \* [4] Block validation
 
+\* TODO apply all at once?
 \* nodes form blocks from fetched headers and operations that have been enqueued in their respective pipes
 apply_block(hd, ops) ==
     LET b == block(hd, ops) IN
@@ -592,6 +525,7 @@ greylist_timeout(n) ==
     /\ remove_connection(n)
     /\ UNCHANGED non_conn_vars
 
+\* TODO
 \* timeout => greylist but keep data
 Timeout ==
     \/ \E n \in requested_branch_from :
@@ -606,7 +540,7 @@ Timeout ==
 
 \* [5.2] Punative actions
 
-\* TODO
+\* TODO peer_score = 0 => greylist
 Greylist ==
     \E n \in connections : \E msg \in messages[n] :
         LET t == msg.type IN
@@ -750,9 +684,10 @@ MessageSafety == \A n \in NODES :
     \/ n \in connections
     \/ messages[n] = {}
 
-\* A quorum of peers agree with a bootstrapping node's current head
+\* The node has seen a quorum of support for their current head
 CurrentHeadIsAlwaysMajor ==
-    3 * Card({ n \in connections : current_head \in recv_header[n] }) > 2 * Card(connections)
+    \/ current_head = INIT_HEAD
+    \/ 3 * Card({ n \in connections : current_head \in recv_header[n] }) > 2 * Card(connections)
 
 \* TODO properties
 
