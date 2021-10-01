@@ -4,6 +4,8 @@ import util.UniqueString;
 import java.io.*;
 import java.util.*;
 
+// import nodeActions.*;
+
 /**
  * Parser class
  */
@@ -21,11 +23,12 @@ public class Parser {
         if (!NodeActions.allActions().contains(lnarr[0])) {
           throw new IllegalArgumentException(lnarr[0].concat(" is not a node action"));
         }
-        if (lnarr.length < 2) {
-          String[] empty = new String[0];
+        if (lnarr.length == 1) {
+          // Only an action name was read, no params
           vals.add(new StringValue(lnarr[0]));
-          vals.add(dispatchDataParser(lnarr[0], empty));
+          vals.add(dispatchDataParser(lnarr[0], new String[0]));
         } else {
+          // Parameters were read
           vals.add(new StringValue(lnarr[0]));
           vals.add(dispatchDataParser(lnarr[0], lnarr[1].split(", ")));
         }
@@ -337,6 +340,9 @@ public class Parser {
       vals.add(parseAddress(data[0]));
       vals.add(parsePort(data[1]));
       vals.add(parseVersion(data[2]));
+      // if (true) {
+      //   throw new IllegalArgumentException(vals.toString());
+      // }
       vals.add(parsePubKey(data[3]));
     }
     return vals;
@@ -360,16 +366,15 @@ public class Parser {
   }
 
   private static Value parseVersion(String version) {
-    // TODO
     // [ chain : String, ddb : u16, p2p : u16 ]
     UniqueString[] fields = new UniqueString[] {
       UniqueString.uniqueStringOf("chain"),
       UniqueString.uniqueStringOf("ddb"),
       UniqueString.uniqueStringOf("p2p")
     };
-    String[] vals = version.split(".");
+    String[] vals = version.split("\\.");
     if (vals.length != 3) {
-      throw new IllegalArgumentException(Arrays.toString(vals));
+      throw new IllegalArgumentException("Version should have three values: chain, ddb, and p2p");
     }
     Value[] values = new Value[] {
       new StringValue(vals[0]),
@@ -390,7 +395,7 @@ public class Parser {
   private static List<Value> parseStorageData(String action, String[] data) {
     List<Value> vals = new ArrayList<>();
     if (action.equals(NodeActions.StorageBlockHeadersPut)) {
-      vals.add(parseBlockHeaders(data));
+      vals = parseBlockHeaders(data);
     } else if (action.equals(NodeActions.StorageBlockHeaderPutNextInit)) {
       if (data.length != 0) {
         throw new IllegalArgumentException("StorageBlockHeaderPutNextInit should have no values");
@@ -399,7 +404,7 @@ public class Parser {
       if (data.length != 1) {
         throw new IllegalArgumentException("StorageBlockHeaderPutNextPending should have one value: RequestId");
       }
-      vals.add(parseRequestId(data[0]));
+      vals = parseRequestId(data[0]);
     } else if (action.equals(NodeActions.StorageStateSnapshotCreate)) {
       if (data.length != 0) {
         throw new IllegalArgumentException("StorageStateSnapshotCreate should have no values");
@@ -413,12 +418,12 @@ public class Parser {
       if (data.length != 1) {
         throw new IllegalArgumentException("StorageRequestInit should have one value: RequestId");
       }
-      vals.add(parseRequestId(data[0]));
+      vals = parseRequestId(data[0]);
     } else if (action.equals(NodeActions.StorageRequestPending)) {
       if (data.length != 1) {
         throw new IllegalArgumentException("StorageRequestPending should have one value: RequestId");
       }
-      vals.add(parseRequestId(data[0]));
+      vals = parseRequestId(data[0]);
     } else if (action.equals(NodeActions.StorageRequestError)) {
       if (data.length != 2) {
         throw new IllegalArgumentException("StorageRequestError should have two values: RequestId and StorageResponseError");
@@ -435,42 +440,49 @@ public class Parser {
       if (data.length != 1) {
         throw new IllegalArgumentException("StorageRequestFinish should have one value: RequestId");
       }
-      vals.add(parseRequestId(data[0]));
+      vals = parseRequestId(data[0]);
     }
     return vals;
   }
 
-  private static Value parseBlockHeaders(String[] headers) {
+  private static List<Value> parseBlockHeaders(String[] headers) {
     Value[] vals = new Value[headers.length];
     for (int i = 0; i < headers.length; i++) {
       vals[i] = parseBlockHeader(headers[i]);
     }
-    return new TupleValue(vals);
+    return Arrays.asList(vals);
   }
 
   private static Value parseBlockHeader(String header) {
     // TODO
-    return new StringValue("TODO - BlockHeader");
+    return new StringValue("BlockHeader");
   }
 
-  private static Value parseRequestId(String id) {
-    // TODO
-    return new StringValue("TODO - RequestId");
+  private static List<Value> parseRequestId(String id) {
+    // assumes id has the form locator:counter
+    String[] arr = id.split(":");
+    if (arr.length != 2) {
+      throw new IllegalArgumentException("RequestId should have two values: locator and counter");
+    }
+    Value[] vals = new Value[arr.length];
+    vals[0] = parseIntValue(arr[0]);
+    vals[1] = parseIntValue(arr[1]);
+    return Arrays.asList(vals);
   }
 
   private static Value parsePayload(String payload) {
     // TODO
-    return new StringValue("TODO - Payload");
+    return new StringValue("Payload");
   }
 
   private static Value parseStorageError(String error) {
     // TODO
-    return new StringValue("TODO - StorageResponseError");
+    return new StringValue("StorageResponseError");
   }
 
   private static Value parseStorageSuccess(String success) {
     // TODO
-    return new StringValue("TODO - StorageResponseSuccess");
+    return new StringValue("StorageResponseSuccess");
   }
 
   // array tail

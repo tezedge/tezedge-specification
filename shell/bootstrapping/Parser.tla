@@ -2,10 +2,8 @@
 
 EXTENDS Naturals, Sequences
 
-Data == STRING \X STRING \X Seq(Nat)
+Data == STRING \X Seq(STRING \cup Nat)
 
 parse(path) == CHOOSE x \in Seq(Data) : TRUE
-
-parseActionTrace(path) == parse(path)
 
 =======================
