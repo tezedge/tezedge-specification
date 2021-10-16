@@ -7,7 +7,9 @@ CONSTANTS
     INIT_CONNECTIONS,
     INIT_PREDECESSOR,
     INIT_LIVE_BLOCKS,
-    INIT_LIVE_OPERATIONS
+    INIT_LIVE_OPERATIONS,
+    MIN_OPS_PER_BLOCK,
+    MAX_OPS_PER_BLOCK
 
 \* shell peers and messages
 VARIABLES
@@ -31,7 +33,7 @@ VARIABLES
     in_mempool,         \* set of operations which have been pre-applied and added to the mempool
     banned,             \* set of banned operation hashes
     advertisement,      \* set of operations to advertise
-    applied
+    applied             \* set of operations which have been applied to the mempool
 
 \* mempool
 VARIABLES
@@ -47,6 +49,12 @@ Nodes == STRING
 ToSet(seq) == { seq[i] : i \in DOMAIN seq }
 
 ----
+
+(* Operations *)
+
+INSTANCE Operations
+
+Mempool == [ known_valid : Seq(Operations), pending : SUBSET Operations ]
 
 Seen_ops == fetching \cup pending \cup banned \cup branch_delayed \cup branch_refused \cup refused \cup known_valid \cup mp_pending
 
@@ -69,28 +77,6 @@ The mempool manages a *validation state* based upon the current head chosen by t
             - those operations are reclassified only if the old head is not the predecessor of the new head
 *)
 
-(* Operations *)
-
-OpHashes == Int
-OpTypes == { "Endorsement", "Other" }
-Operations == [ type : OpTypes, hash : OpHashes ]
-
-\* seed_nonce_revelation level nonce
-\* endorsement_with_slot [endorsement shell protocol_data] slot
-\* double_endorsement_evidence [endorsement shell protocol_data] [endorsement shell protocol_data] slot
-\* double_baking_evidence block_header block_header
-\* activate_account id activation_code
-\* endorsement level
-\* proposals source period (proposals : Protocol_hash list)
-\* ballot source period (proposal : Protocol_hash) (ballot : Vote_repr.ballot)
-\* failing_noop string
-
-\* Manager operations
-\* reveal pub_key
-\* transaction amount ?parameters (entrypoint : string) (dest : Contract_repr.contract)
-\* origination delegate ?script credit (preorigination : Contract_repr.t option)
-\* delegation (pkh : Public_key_hash.t option)
-
 ----
 
 (* Assumptions *)
@@ -101,16 +87,7 @@ Operations == [ type : OpTypes, hash : OpHashes ]
 
 (* Messages *)
 
-\* Operation
-\* Advertisement request
-\* any others?
-
-MsgTypes == { "Advertise", "Operation" }
-AdvContents == {} \* TODO
-OpContents == {} \* TODO
-Messages ==
-    [ type : {"Advertise"}, contents : AdvContents ] \cup
-    [ type : {"Operation"}, contents : OpContents ]
+INSTANCE Messages
 
 \* TODO classify operation on top of current validation state
 \* do not want to advertise [refused] operations
@@ -241,11 +218,28 @@ Spec ==
 (* Properties *)
 
 TypeOK ==
-    /\ peers \in SUBSET Nodes
-    /\ connections \subseteq peers
-    /\ greylist \in (peers \ connections)
-    /\ outgoing \in [ connections -> Seq(Messages) ]
-    \* TODO
+    /\ peers           \in SUBSET Nodes
+    /\ connections     \subseteq peers
+    /\ greylist        \in (peers \ connections)
+    /\ outgoing        \in [ connections -> Seq(Messages) ]
+    /\ incoming        \in [ connections -> Seq(Messages) ]
+    /\ all_operations  \in { p \in Int \X SUBSET Operations : p[1] = Cardinality(p[2]) }
+
+    /\ predecessor     \in Int
+    /\ live_blocks     \subseteq Int
+    /\ live_operations \subseteq Int
+    /\ branch_delayed  \subseteq Operations
+    /\ branch_refused  \subseteq Operations
+    /\ refused         \subseteq Operations
+    /\ fetching        \subseteq OpHashes
+    /\ pending         \subseteq Operations
+    /\ in_mempool      \subseteq OpHashes
+    /\ banned          \subseteq OpHashes
+    /\ advertisement   \subseteq Operations
+    /\ applied         \subseteq Operations
+
+    /\ known_valid     \in Seq(Operations)
+    /\ mp_pending      \subseteq Operations
 
 PrevalidatorInvariant ==
     \* unclassified
