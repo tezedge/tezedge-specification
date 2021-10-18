@@ -48,10 +48,21 @@ min_set(set) ==
               [] OTHER ->
                 LET x == Pick(S) IN
                 _min_set(S \ {x}, min[x, curr])
-    IN CASE set /= {} ->
+    IN
+    CASE set /= {} ->
             LET x == Pick(set) IN
             _min_set(set\ {x}, x)
-         [] OTHER -> -1
+      [] OTHER -> -1
+
+ToSeq(set) ==
+    LET RECURSIVE to_seq(_, _)
+        to_seq(S, acc) ==
+            IF S = {} THEN acc
+            ELSE
+                LET x == Pick(S) IN
+                to_seq(S \ {x}, Append(acc, x))
+    IN
+    to_seq(set, <<>>)
 
 ----------------------------------------------------------------------------
 
