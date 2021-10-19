@@ -49,7 +49,7 @@ min_path_len(x, y, S, n) ==
     CASE n = 2 /\ y \in connections[x] -> 1
       [] n > Cardinality(S) -> NONE
       [] OTHER ->
-            IF \E p \in SeqOfLen(n, S) : connected_by_path(x, y, p) THEN n - 1
+            IF \E p \in SeqOfLen(S, n) : connected_by_path(x, y, p) THEN n - 1
             ELSE min_path_len(x, y, S, n + 1)
 
 Min_path_len(x, y) == min_path_len(x, y, Nodes, 2)
@@ -61,7 +61,7 @@ min_path(x, y, S) ==
     CASE n = NONE -> <<>>
       [] n = 0 -> <<x, y>>
       [] OTHER ->
-            LET inter == CHOOSE p \in SeqOfLen(n, S) : connected_by_path(x, y, Append(Cons(x, p), y)) IN
+            LET inter == CHOOSE p \in SeqOfLen(S, n) : connected_by_path(x, y, Append(Cons(x, p), y)) IN
             Append(Cons(x, inter), y)
 
 Min_path(x, y) ==
@@ -70,7 +70,7 @@ Min_path(x, y) ==
 
 \* maximum length of the minimal paths originating from x
 Max_path(x, S) ==
-    LET min_paths == { min_path_len(x, y, S, 2) : y \in S \ {x} } IN
+    LET min_paths == { Min_path_len(x, y) : y \in S } IN
     Max(min_paths)
 
 \* longest minimal path connecting any two points of S
