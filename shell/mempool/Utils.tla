@@ -21,6 +21,9 @@ NESubsets(S) == SUBSET S \ {{}}
 \* Subsets of size <= n
 Subsets_n(S, n) == { s \in SUBSET S : Cardinality(s) <= n }
 
+\* map over a set
+Map_set(S, f(_)) == { f(x) : x \in S }
+
 ----------------------------------------------------------------------------
 
 (* Common functions/operators *)
@@ -139,5 +142,19 @@ Exists(seq, test(_)) ==
 Cons(elem, seq) == <<elem>> \o seq
 
 Filter(seq, pred(_)) == SelectSeq(seq, pred)
+
+Map(f(_), seq) ==
+    LET RECURSIVE map(_, _, _)
+        map(ff(_), rem, acc) ==
+            IF rem = <<>> THEN acc
+            ELSE
+                map(ff, Tail(rem), Append(acc, ff(Head(rem))))
+    IN
+    map(f, seq, <<>>)
+
+Dom_drop(f, x) ==
+    LET dom == DOMAIN f IN
+    IF x \notin dom THEN f
+    ELSE [ _x \in dom \ {x} |-> f[_x] ]
 
 =============================================================================

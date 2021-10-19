@@ -2,7 +2,7 @@
 
 EXTENDS Sequences
 
-CONSTANT Nodes, Mempool, BlockHashes
+CONSTANT Nodes, Mempool, Blocks
 
 INSTANCE Operations
 
@@ -10,13 +10,12 @@ INSTANCE Operations
 \* Advertisement request/response
 \* any others?
 
-MsgTypes == { "Head", "GetHead", "Operation", "GetOperations" }
+MsgTypes == { "Head", "GetHead", "Operation" }
 AdvContents == Mempool
 OpContents == Operations
 Messages ==
-    [ type : {"Head"},          from : Nodes, contents : BlockHashes \X AdvContents ] \cup
-    [ type : {"GetHead"},       from : Nodes ] \cup
-    [ type : {"Operation"},     from : Nodes, contents : OpContents ] \cup
-    [ type : {"GetOperations"}, from : Nodes, contents : Seq(OpHashes) ]
+    [ type : {"Head"},      from : Nodes, contents : Blocks \X AdvContents ] \cup
+    [ type : {"GetHead"},   from : Nodes ] \cup
+    [ type : {"Operation"}, from : Nodes, contents : OpContents ]
 
 =========================
