@@ -24,4 +24,6 @@ OpHashes == Int
 OpTypes == { "Endorsement", "Other" }
 Operations == [ type : OpTypes, hash : OpHashes ]
 
+OperationsWithHash(h) == [ type : OpTypes, hash : {h} ]
+
 ===========================

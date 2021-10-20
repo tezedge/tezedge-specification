@@ -39,4 +39,6 @@ Min_connections == 1
 
 Max_connections == 4
 
+Min_endorsements == 2
+
 ==========================

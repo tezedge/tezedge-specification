@@ -9,18 +9,18 @@ CONSTANTS
     MAX_HOPS,           \* maximum number of hops between any nodes along the shortest path
     MIN_CONNECTIONS,    \* minimum number of connections
     MAX_CONNECTIONS,    \* maximum number of connections
+    MIN_ENDORSEMENTS,   \* minimum number of endorsements needed to bake a block
     NONE                \* null value
 
 \* shell
 VARIABLES
     peers,              \* set of each node's peers
     connections,        \* set of each node's connections
-    greylist,           \* set of each node's greylisted peers
     messages            \* queue of messages for each peer
 
-shell_vars == <<peers, connections, greylist, messages>>
+shell_vars == <<peers, connections, messages>>
 
-shell_non_msg_vars  == <<peers, connections, greylist>>
+shell_non_msg_vars  == <<peers, connections>>
 
 \* prevalidator
 VARIABLES
@@ -159,13 +159,13 @@ Connect == \E n \in Nodes : \E m \in peers[n] :
     /\ Cardinality(connections[m]) < MAX_CONNECTIONS
     /\ Cardinality(connections[n]) < MAX_CONNECTIONS
     /\ connect(m, n)
-    /\ UNCHANGED <<peers, greylist, pv_vars, mp_vars, aux_vars>>
+    /\ UNCHANGED <<peers, pv_vars, mp_vars, aux_vars>>
 
 Disconnect == \E n \in Nodes : \E m \in connections[n] :
     /\ Cardinality(connections[m]) > MIN_CONNECTIONS
     /\ Cardinality(connections[n]) > MIN_CONNECTIONS
     /\ disconnect(m, n)
-    /\ UNCHANGED <<peers, greylist, pv_vars, mp_vars, aux_vars>>
+    /\ UNCHANGED <<peers, pv_vars, mp_vars, aux_vars>>
 
 \* advertise current head
 Advertise == \E n \in Nodes :
@@ -286,18 +286,39 @@ PreapplyPending == \E n \in Nodes :
     /\ pending' = [ pending EXCEPT ![n] = {} ]
     /\ UNCHANGED <<shell_vars, known_valid, aux_vars>>
 
+apply(n, tfs) ==
+    LET RECURSIVE _apply(_, _, _)
+        _apply(ops, ttfs, acc) ==
+            IF ttfs = <<>> THEN acc
+            ELSE
+                LET op == Pick(ops) IN
+                IF Head(ttfs) THEN
+                    _apply(ops \ {op}, Tail(ttfs), Append(acc, op))
+                ELSE
+                    _apply(ops \ {op}, Tail(ttfs), acc)
+    IN
+    _apply(mp_pending[n], tfs, <<>>)
+
 \* apply pending mempool operations
 ApplyMempool == \E n \in Nodes :
     /\ mp_pending[n] /= {}
-    /\ mp_pending'  = [ mp_pending  EXCEPT ![n] = {} ]
-    /\ known_valid' = [ known_valid EXCEPT ![n] = @ \o ToSeq(mp_pending[n]) ]
+    /\ \E tfs \in SeqOfLen(BOOLEAN, Cardinality(mp_pending[n])) :
+            LET new_kv == apply(n, tfs) IN
+            /\ mp_pending'  = [ mp_pending  EXCEPT ![n] = {} ]
+            /\ known_valid' = [ known_valid EXCEPT ![n] = @ \o new_kv ]
     /\ UNCHANGED <<shell_vars, pv_vars, aux_vars>>
+
+get_hash(op) == op.hash
+num_endorsements(n) ==
+    LET mp_ends == Map_set(ToSet(known_valid[n]), isEndorsement) IN
+    Cardinality(mp_ends)
 
 \* a node bakes a new block
 BakeBlock == \E n \in Nodes :
-    LET ops == Map(LAMBDA x : x.hash, known_valid[n])
+    LET ops == Map(get_hash, known_valid[n])
         blk == block(all_blocks.next, ops)
     IN
+    /\ num_endorsements(n) >= MIN_ENDORSEMENTS
     /\ mp_pending[n] = {}
     /\ predecessor' = [ predecessor EXCEPT ![n] = blk ]
     /\ add_block(blk)
@@ -307,7 +328,7 @@ BakeBlock == \E n \in Nodes :
 
 \* a new operation is introduced into a node's pending collection
 NewOperation == \E n \in Nodes :
-    \E op \in [ hash : {all_operations.next}, type : OpTypes ] :
+    \E op \in OperationsWithHash(all_operations.next) :
         /\ add_op(op)
         /\ add_pending(n, op)
         /\ UNCHANGED <<shell_vars, pv_non_pending_vars, mp_vars, all_blocks>>
@@ -323,7 +344,6 @@ Init ==
     (* shell *)
     /\ peers           = INIT_PEERS
     /\ connections     = INIT_CONNECTIONS
-    /\ greylist        = EmptySet
     /\ messages        = [ n \in Nodes |-> [ m \in connections[n] |-> <<>> ] ]
     (* prevalidator *)
     /\ predecessor     = INIT_PREDECESSOR
@@ -353,14 +373,14 @@ Next ==
 (* Constraints *)
 
 \* all operations must have unique hashes
-OperationHashUniqueness ==
-    { ops \in all_operations.ops \X all_operations.ops :
-        ops[1].hash = ops[2].hash /\ ops[1] /= ops[2] } = {}
+\* OperationHashUniqueness ==
+\*     { ops \in all_operations.ops \X all_operations.ops :
+\*         ops[1].hash = ops[2].hash /\ ops[1] /= ops[2] } = {}
 
-\* all blocks must have unique hashes and sets of operations
-BlockHashUniqueness ==
-    { blks \in all_blocks.blocks \X all_blocks.blocks :
-        blks[1].hash = blks[2].hash /\ blks[1] /= blks[2] } = {}
+\* \* all blocks must have unique hashes and sets of operations
+\* BlockHashUniqueness ==
+\*     { blks \in all_blocks.blocks \X all_blocks.blocks :
+\*         blks[1].hash = blks[2].hash /\ blks[1] /= blks[2] } = {}
 
 \* on top of the same predecessor, the protocol makes consistent decisions
 ProtocolConsistency == \A m, n \in Nodes :
@@ -373,12 +393,16 @@ ProtocolConsistency == \A m, n \in Nodes :
             \/ c2 = "Pending"
             \/ c1 = c2
 
+Constraints ==
+    \* /\ []OperationHashUniqueness
+    \* /\ []BlockHashUniqueness
+    /\ []ProtocolConsistency
+
 Spec ==
     /\ Init
     /\ [][Next]_vars
     /\ WF_vars(Next)
-    /\ []OperationHashUniqueness
-    /\ []ProtocolConsistency
+    /\ Constraints
 
 ----
 
@@ -388,10 +412,8 @@ TypeOK ==
     (* shell *)
     /\ peers           \in [ Nodes -> SUBSET Nodes ]
     /\ connections     \in [ Nodes -> SUBSET Nodes ]
-    /\ greylist        \in [ Nodes -> SUBSET Nodes ]
     \* messages
-    /\ \A n \in Nodes : DOMAIN messages[n] = connections[n]
-    /\ \A n \in Nodes : \A m \in connections[n] : messages[n][m] \in Seq(Messages)
+    /\ \A n \in Nodes : messages[n] \in [ connections[n] -> Seq(Messages) ]
     (* prevalidator *)
     /\ predecessor     \in [ Nodes -> Blocks ]
     /\ branch_delayed  \in [ Nodes -> SUBSET Operations ]
@@ -406,6 +428,13 @@ TypeOK ==
     /\ all_operations  \in { r \in [ next : OpHashes, ops : SUBSET Operations ] : r.next = Cardinality(r.ops) }
     /\ all_blocks      \in { r \in [ next : BlockHashes, blocks : SUBSET Blocks ] : r.next = Cardinality(r.blocks) }
 
+\* connection symmetry
+ConnectionSymmetry == \A m, n \in Nodes : n \in connections[m] <=> m \in connections[n]
+
 \* TODO
+
+\* Progress - bakers don't want to miss endorsements
+\* Prioritize endorsement propagation
+\* Smart contracts?
 
 ===============================
