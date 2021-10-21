@@ -1,4 +1,4 @@
----- MODULE MC_global ----
+---- MODULE MC_liveness ----
 
 EXTENDS Mempool_global, TLC
 
@@ -41,4 +41,24 @@ Max_connections == 4
 
 Min_endorsements == 2
 
-==========================
+View == [
+    shell |-> [
+        peers |-> peers,
+        connections |-> connections,
+        messages |-> messages
+    ],
+    pv |-> [
+        predecessor |-> predecessor,
+        branch_delayed |-> branch_delayed,
+        branch_refused |-> branch_refused,
+        refused |-> refused,
+        pending |-> pending,
+        advertisement |-> advertisement
+    ],
+    mp |-> [
+        known_valid |-> known_valid,
+        mp_pending |-> mp_pending
+    ]
+]
+
+============================
