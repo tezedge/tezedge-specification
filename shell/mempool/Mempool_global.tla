@@ -25,9 +25,9 @@ shell_non_msg_vars  == <<peers, connections>>
 \* prevalidator
 VARIABLES
     predecessor,        \* the current head on which a dummy block is baked
-    branch_delayed,     \* set of operations which have this classification
-    branch_refused,     \* set of operations which have this classification
-    refused,            \* set of operations which have this classification
+    branch_delayed,     \* set of operations which are for a future block on this branch
+    branch_refused,     \* set of operations which are for a different branch
+    refused,            \* set of operations which are not valid on any branch
     pending,            \* set of pending operations
     advertisement       \* set of operations to advertise
 
@@ -73,6 +73,8 @@ mempool(kv, p) == [ known_valid |-> kv, pending |-> p ]
 
 set_of_mempool(mp) == ToSet(mp.known_valid) \cup mp.pending
 
+empty_mempool == mempool(<<>>, {})
+
 INSTANCE Blocks
 
 INSTANCE Messages
@@ -84,10 +86,10 @@ head_msg(n) ==
       contents |->
         <<predecessor[n], mempool(known_valid[n], advertisement[n] \cup mp_pending[n])>> ]
 
-new_head_msg(n) ==
+new_head_msg(n, blk) ==
     [ type |-> "Head",
       from |-> n,
-      contents |-> <<predecessor'[n], mempool(<<>>, {})>> ]
+      contents |-> <<blk, empty_mempool>> ]
 
 get_head_msg(n) == [ type |-> "GetHead", from |-> n ]
 
@@ -189,15 +191,16 @@ flush(n) ==
     /\ advertisement'  = [ advertisement  EXCEPT ![n] = {} ]
     /\ UNCHANGED refused
 
+\* [mp] operations are included into [n]'s mempool and all other operations are  moved back to pending
 declassify(n, mp) ==
+    /\ flush(n)
     /\ known_valid' = [ known_valid EXCEPT ![n] = mp.known_valid ]
     /\ mp_pending'  = [ mp_pending  EXCEPT ![n] = mp.pending ]
-    /\ flush(n)
-    /\ pending' = [ pending EXCEPT ![n] = @ \cup live_operations(n) ]
+    /\ pending'     = [ pending EXCEPT ![n] = @ \cup live_operations(n) ]
 
 reclassify(n) ==
     LET p == branch_delayed[n] \cup branch_refused[n] IN
-    /\ pending' = [ pending EXCEPT ![n] = @ \cup p ]
+    /\ pending'        = [ pending        EXCEPT ![n] = @ \cup p ]
     /\ branch_delayed' = [ branch_delayed EXCEPT ![n] = {} ]
     /\ branch_refused' = [ branch_refused EXCEPT ![n] = {} ]
     /\ advertisement'  = [ advertisement  EXCEPT ![n] = @ \cup ToSet(known_valid[n]) \cup mp_pending[n] ]
@@ -205,13 +208,22 @@ reclassify(n) ==
     /\ known_valid'    = [ known_valid    EXCEPT ![n] = <<>> ]
     /\ UNCHANGED refused
 
+\* a node requests the head of a peer
+RequestHead == \E n \in Nodes :
+    \E m \in connections[n] :
+        LET msg == get_head_msg(n) IN
+        /\ Send(msg, m)
+        /\ UNCHANGED <<shell_non_msg_vars, pv_vars, mp_vars, aux_vars>>
+
+\* [n] handles to an advertised head
 HandleHead(n, from, pmp) ==
     LET pred == pmp[1]
         mp   == pmp[2]
     IN
     /\ Drop(n, from)
     /\ CASE pred.hash = predecessor[n].hash ->
-                /\ pending' = [ pending EXCEPT ![n] = @ \cup set_of_mempool(mp) ]
+                LET new_ops == set_of_mempool(mp) \ live_operations(n) IN
+                /\ pending' = [ pending EXCEPT ![n] = @ \cup new_ops ]
                 /\ UNCHANGED <<pv_non_pending_vars, mp_vars>>
          [] pred.hash > predecessor[n].hash ->
                 /\ predecessor' = [ predecessor EXCEPT ![n] = pred ]
@@ -219,17 +231,21 @@ HandleHead(n, from, pmp) ==
          [] pred.hash < predecessor[n].hash -> UNCHANGED <<pv_vars, mp_vars>>
     /\ UNCHANGED <<shell_non_msg_vars, aux_vars>>
 
+\* [n] responds to a head request
 HandleGetHead(n, from) ==
     LET msg == head_msg(n) IN
     /\ Send(msg, from)
     /\ UNCHANGED <<shell_non_msg_vars, pv_vars, mp_vars, aux_vars>>
 
-\* consume message and add operation to [pending]
+\* consume message and add operation to [pending] unless outdated
 HandleOperation(n, from, op) ==
     /\ Drop(n, from)
-    /\ add_pending(n, op)
+    /\ \/ /\ op \notin live_operations(n)
+          /\ add_pending(n, op)
+       \/ UNCHANGED pending
     /\ UNCHANGED <<shell_non_msg_vars, pv_non_pending_vars, mp_vars, aux_vars>>
 
+\* a node handles one of their messages
 HandleMessage == \E n \in Nodes : \E m \in connections[n] :
     /\ messages[n][m] /= <<>>
     /\ LET msg == Head(messages[n][m])
@@ -239,6 +255,7 @@ HandleMessage == \E n \in Nodes : \E m \in connections[n] :
          [] t = "GetHead"   -> HandleGetHead(n, m)
          [] t = "Operation" -> HandleOperation(n, m, msg.contents)
 
+\* pending operations are preapplied and classified
 RECURSIVE preapply(_, _, _, _, _, _, _, _)
 preapply(n, ops, cs, app, brd, brr, ref, adv) ==
     IF ops = {} THEN <<app, brd, brr, ref, adv>>
@@ -272,7 +289,7 @@ preapply(n, ops, cs, app, brd, brr, ref, adv) ==
                 LET new_ref == [ ref EXCEPT ![n] = @ \cup {op} ] IN
                 preapply(n, rem_ops, rem_cs, app, brd, brr, new_ref, adv)
 
-\* a node preapplies all pending operations
+\* a node preapplies all pending operations and moves some to the mempool
 PreapplyPending == \E n \in Nodes :
     /\ pending[n] /= {}
     /\ \E cs \in SeqOfLen(1..4, Cardinality(pending[n])) :
@@ -287,31 +304,35 @@ PreapplyPending == \E n \in Nodes :
     /\ UNCHANGED <<shell_vars, known_valid, aux_vars>>
 
 apply(n, tfs) ==
-    LET RECURSIVE _apply(_, _, _)
-        _apply(ops, ttfs, acc) ==
-            IF ttfs = <<>> THEN acc
+    LET RECURSIVE _apply(_, _, _, _)
+        _apply(ops, ttfs, acc_t, acc_f) ==
+            IF ttfs = <<>> THEN <<acc_t, acc_f>>
             ELSE
                 LET op == Pick(ops) IN
                 IF Head(ttfs) THEN
-                    _apply(ops \ {op}, Tail(ttfs), Append(acc, op))
+                    _apply(ops \ {op}, Tail(ttfs), Append(acc_t, op), acc_f)
                 ELSE
-                    _apply(ops \ {op}, Tail(ttfs), acc)
+                    _apply(ops \ {op}, Tail(ttfs), acc_t, acc_f \cup {op})
     IN
-    _apply(mp_pending[n], tfs, <<>>)
+    _apply(mp_pending[n], tfs, <<>>, {})
 
-\* apply pending mempool operations
+\* a node applies their pending mempool operations
+\* - some are added to [known_valid]
+\* - some are returned to [pending]
 ApplyMempool == \E n \in Nodes :
     /\ mp_pending[n] /= {}
     /\ \E tfs \in SeqOfLen(BOOLEAN, Cardinality(mp_pending[n])) :
-            LET new_kv == apply(n, tfs) IN
+            LET res    == apply(n, tfs)
+                new_kv == res[1]
+                pnd    == res[2]
+            IN
+            /\ pending'     = [ pending     EXCEPT ![n] = @ \cup pnd ]
             /\ mp_pending'  = [ mp_pending  EXCEPT ![n] = {} ]
             /\ known_valid' = [ known_valid EXCEPT ![n] = @ \o new_kv ]
-    /\ UNCHANGED <<shell_vars, pv_vars, aux_vars>>
+    /\ UNCHANGED <<shell_vars, pv_non_pending_vars, aux_vars>>
 
 get_hash(op) == op.hash
-num_endorsements(n) ==
-    LET mp_ends == Map_set(ToSet(known_valid[n]), isEndorsement) IN
-    Cardinality(mp_ends)
+num_endorsements(n) == Cardinality(Map_set(ToSet(known_valid[n]), isEndorsement))
 
 \* a node bakes a new block
 BakeBlock == \E n \in Nodes :
@@ -323,7 +344,7 @@ BakeBlock == \E n \in Nodes :
     /\ predecessor' = [ predecessor EXCEPT ![n] = blk ]
     /\ add_block(blk)
     /\ reclassify(n)
-    /\ Broadcast(new_head_msg(n))
+    /\ Broadcast(new_head_msg(n, blk))
     /\ UNCHANGED <<shell_non_msg_vars, all_operations>>
 
 \* a new operation is introduced into a node's pending collection
@@ -364,23 +385,14 @@ Next ==
     \/ Connect
     \/ Disconnect
     \/ Advertise
+    \/ RequestHead
     \/ HandleMessage
     \/ PreapplyPending
     \/ ApplyMempool
-    \/ BakeBlock
     \/ NewOperation
+    \/ BakeBlock
 
 (* Constraints *)
-
-\* all operations must have unique hashes
-\* OperationHashUniqueness ==
-\*     { ops \in all_operations.ops \X all_operations.ops :
-\*         ops[1].hash = ops[2].hash /\ ops[1] /= ops[2] } = {}
-
-\* \* all blocks must have unique hashes and sets of operations
-\* BlockHashUniqueness ==
-\*     { blks \in all_blocks.blocks \X all_blocks.blocks :
-\*         blks[1].hash = blks[2].hash /\ blks[1] /= blks[2] } = {}
 
 \* on top of the same predecessor, the protocol makes consistent decisions
 ProtocolConsistency == \A m, n \in Nodes :
@@ -393,10 +405,7 @@ ProtocolConsistency == \A m, n \in Nodes :
             \/ c2 = "Pending"
             \/ c1 = c2
 
-Constraints ==
-    \* /\ []OperationHashUniqueness
-    \* /\ []BlockHashUniqueness
-    /\ []ProtocolConsistency
+Constraints == []ProtocolConsistency
 
 Spec ==
     /\ Init
@@ -431,10 +440,41 @@ TypeOK ==
 \* connection symmetry
 ConnectionSymmetry == \A m, n \in Nodes : n \in connections[m] <=> m \in connections[n]
 
-\* TODO
+\* operations have unique classifications
+ClassificationDisjointness == \A n \in Nodes :
+    disjoint_n(<<pending[n], branch_delayed[n], branch_refused[n], refused[n], mp_pending[n], ToSet(known_valid[n])>>)
 
-\* Progress - bakers don't want to miss endorsements
-\* Prioritize endorsement propagation
-\* Smart contracts?
+\* nodes with the same predecessors will eventually classify operations the same way
+OperationClassification == \A m, n \in Nodes :
+    predecessor[m] = predecessor[n] ~>
+        \/ predecessor[m] /= predecessor[n]
+        \/ \A op \in live_operations(m) \cap live_operations(n) :
+                classification(m, op) = classification(n, op)
+
+\* classification sets are monotone increasing until predecessor changes
+
+BranchDelayedMonotonicity == [][ \A n \in Nodes :
+    \/ predecessor[n] /= predecessor'[n]
+    \/ branch_delayed[n] \subseteq branch_delayed'[n] ]_vars
+
+BranchRefusedMonotonicity == [][ \A n \in Nodes :
+    \/ predecessor[n] /= predecessor'[n]
+    \/ branch_refused[n] \subseteq branch_refused'[n] ]_vars
+
+RefusedMonotonicity == [][ \A n \in Nodes : refused[n] \subseteq refused'[n] ]_vars
+
+\* endorsements are propagated to all nodes
+EndorsementPropagation ==
+    LET endorsements == { op \in all_operations : isEndorsement(op) } IN
+    \A n \in Nodes, op \in endorsements : <>(op \in pending[n])
+
+\* fittest blocks are propagated to all nodes
+BlockPropagation ==
+    LET Max_hash_block(blks) == CHOOSE b \in blks : b.hash > Max({ bb \in blks \ {b} : bb.hash })
+        preds == { predecessor[m] : m \in Nodes }
+        blk   == Max_hash_block(preds)
+    IN
+    <>( \/ Max_hash_block({ predecessor[m] : m \in Nodes }) /= blk
+        \/ \A n \in Nodes : predecessor[n] = blk )
 
 ===============================

@@ -15,6 +15,13 @@ ToSet(f) == { f[i] : i \in DOMAIN f }
 
 disjoint(S, T) == S \cap T = {}
 
+RECURSIVE disjoint_n(_)
+disjoint_n(seq) ==
+    \/ Len(seq) <= 1
+    \/ LET t == Tail(seq) IN
+       /\ disjoint(Head(seq), UNION { t[i] : i \in DOMAIN t })
+       /\ disjoint_n(t)
+
 \* Nonempty subsets of S
 NESubsets(S) == SUBSET S \ {{}}
 
