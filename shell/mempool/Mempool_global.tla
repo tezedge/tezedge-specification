@@ -67,6 +67,8 @@ INSTANCE Operations
 
 live_operations(n) == branch_delayed[n] \cup branch_refused[n] \cup refused[n] \cup ToSet(known_valid[n]) \cup mp_pending[n]
 
+nonrefused_operations(n) == branch_delayed[n] \cup branch_refused[n] \cup advertisement[n] \cup ToSet(known_valid[n]) \cup mp_pending[n]
+
 Mempool == [ known_valid : Seq(Operations), pending : SUBSET Operations ]
 
 mempool(kv, p) == [ known_valid |-> kv, pending |-> p ]
@@ -191,12 +193,12 @@ flush(n) ==
     /\ advertisement'  = [ advertisement  EXCEPT ![n] = {} ]
     /\ UNCHANGED refused
 
-\* [mp] operations are included into [n]'s mempool and all other operations are  moved back to pending
+\* [mp] operations are included into [n]'s mempool and all other operations are moved back to pending
 declassify(n, mp) ==
     /\ flush(n)
     /\ known_valid' = [ known_valid EXCEPT ![n] = mp.known_valid ]
     /\ mp_pending'  = [ mp_pending  EXCEPT ![n] = mp.pending ]
-    /\ pending'     = [ pending EXCEPT ![n] = @ \cup live_operations(n) ]
+    /\ pending'     = [ pending     EXCEPT ![n] = @ \cup nonrefused_operations(n) ]
 
 reclassify(n) ==
     LET p == branch_delayed[n] \cup branch_refused[n] IN
@@ -415,7 +417,7 @@ Spec ==
 
 ----
 
-(* Properties *)
+(* Safety properties *)
 
 TypeOK ==
     (* shell *)
@@ -444,6 +446,10 @@ ConnectionSymmetry == \A m, n \in Nodes : n \in connections[m] <=> m \in connect
 ClassificationDisjointness == \A n \in Nodes :
     disjoint_n(<<pending[n], branch_delayed[n], branch_refused[n], refused[n], mp_pending[n], ToSet(known_valid[n])>>)
 
+----
+
+(* Liveness properties *)
+
 \* nodes with the same predecessors will eventually classify operations the same way
 OperationClassification == \A m, n \in Nodes :
     predecessor[m] = predecessor[n] ~>
@@ -464,17 +470,23 @@ BranchRefusedMonotonicity == [][ \A n \in Nodes :
 RefusedMonotonicity == [][ \A n \in Nodes : refused[n] \subseteq refused'[n] ]_vars
 
 \* endorsements are propagated to all nodes
-EndorsementPropagation ==
-    LET endorsements == { op \in all_operations : isEndorsement(op) } IN
-    \A n \in Nodes, op \in endorsements : <>(op \in pending[n])
+EndorsementPropagation == \A n \in Nodes :
+    LET endorsements == { op \in all_operations.ops : isEndorsement(op) } IN
+    \A op \in endorsements : <>(op \in pending[n])
 
-\* fittest blocks are propagated to all nodes
+\* "fittest" blocks are propagated to all nodes
 BlockPropagation ==
-    LET Max_hash_block(blks) == CHOOSE b \in blks : b.hash > Max({ bb \in blks \ {b} : bb.hash })
+    LET Max_hash_block(blks) == CHOOSE b \in blks :
+            \/ blks = {b}
+            \/ b.hash > Max({ bb.hash : bb \in blks \ {b} })
         preds == { predecessor[m] : m \in Nodes }
         blk   == Max_hash_block(preds)
     IN
-    <>( \/ Max_hash_block({ predecessor[m] : m \in Nodes }) /= blk
+    <>( \/ Max_hash_block({ predecessor[m] : m \in Nodes }).hash > blk.hash
         \/ \A n \in Nodes : predecessor[n] = blk )
+
+
+\* Tuesday - Emmy* & mempool spec presentation
+\* Zura - use & review new architecture
 
 ===============================

@@ -2,6 +2,8 @@
 
 EXTENDS Mempool_global, TLC
 
+NN == 2
+
 char(n) ==
     CASE n = 1 -> "a"
       [] n = 2 -> "b"
@@ -16,7 +18,7 @@ int_of_char(c) ==
       [] c = "d" -> 4
       [] c = "e" -> 5
 
-Ns == Map_set(1..5, char)
+Ns == Map_set(1..NN, char)
 
 exclude(n) == {n, char((int_of_char(n) % Cardinality(Ns)) + 1)}
 
@@ -24,12 +26,15 @@ exclude(n) == {n, char((int_of_char(n) % Cardinality(Ns)) + 1)}
 
 Init_peers[ n \in Ns ] == Ns \ {n}
 
-Init_connections[ n \in Ns ] ==
-    CASE n = "a" -> {"b", "c"}
-      [] n = "b" -> {"a", "c"}
-      [] n = "c" -> {"a", "b", "d"}
-      [] n = "d" -> {"c", "e"}
-      [] n = "e" -> {"d"}
+Init_connections[ n \in Ns ] == Ns \ {n}
+
+\* NN = 5
+\* Init_connections[ n \in Ns ] ==
+\*     CASE n = "a" -> {"b", "c"}
+\*       [] n = "b" -> {"a", "c"}
+\*       [] n = "c" -> {"a", "b", "d"}
+\*       [] n = "d" -> {"c", "e"}
+\*       [] n = "e" -> {"d"}
 
 Init_predecessor[ n \in Ns ] == block(0, <<>>)
 
