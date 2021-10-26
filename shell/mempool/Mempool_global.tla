@@ -24,6 +24,7 @@ shell_non_msg_vars  == <<peers, connections>>
 
 \* prevalidator
 VARIABLES
+    block_ops,          \* sequence of each node's blocks
     predecessor,        \* the current head on which a dummy block is baked
     branch_delayed,     \* set of operations which are for a future block on this branch
     branch_refused,     \* set of operations which are for a different branch
@@ -31,10 +32,10 @@ VARIABLES
     pending,            \* set of pending operations
     advertisement       \* set of operations to advertise
 
-pv_vars == <<predecessor, branch_delayed, branch_refused, refused, pending, advertisement>>
+pv_vars == <<block_ops, predecessor, branch_delayed, branch_refused, refused, pending, advertisement>>
 
-pv_non_pending_vars   == <<predecessor, branch_delayed, branch_refused, refused, advertisement>>
-pv_non_advertise_vars == <<predecessor, branch_delayed, branch_refused, refused, pending>>
+pv_non_pending_vars   == <<block_ops, predecessor, branch_delayed, branch_refused, refused, advertisement>>
+pv_non_advertise_vars == <<block_ops, predecessor, branch_delayed, branch_refused, refused, pending>>
 
 \* mempool
 VARIABLES
@@ -65,9 +66,11 @@ INSTANCE Topology WITH connections <- INIT_CONNECTIONS
 
 INSTANCE Operations
 
-live_operations(n) == branch_delayed[n] \cup branch_refused[n] \cup refused[n] \cup ToSet(known_valid[n]) \cup mp_pending[n]
+live_operations(n) ==
+    branch_delayed[n] \cup branch_refused[n] \cup refused[n] \cup ToSet(known_valid[n]) \cup mp_pending[n]
 
-nonrefused_operations(n) == branch_delayed[n] \cup branch_refused[n] \cup advertisement[n] \cup ToSet(known_valid[n]) \cup mp_pending[n]
+nonrefused_operations(n) ==
+    branch_delayed[n] \cup branch_refused[n] \cup advertisement[n] \cup ToSet(known_valid[n]) \cup mp_pending[n]
 
 Mempool == [ known_valid : Seq(Operations), pending : SUBSET Operations ]
 
@@ -191,7 +194,7 @@ flush(n) ==
     /\ branch_delayed' = [ branch_delayed EXCEPT ![n] = {} ]
     /\ branch_refused' = [ branch_refused EXCEPT ![n] = {} ]
     /\ advertisement'  = [ advertisement  EXCEPT ![n] = {} ]
-    /\ UNCHANGED refused
+    /\ UNCHANGED <<block_ops, refused>>
 
 \* [mp] operations are included into [n]'s mempool and all other operations are moved back to pending
 declassify(n, mp) ==
@@ -208,7 +211,7 @@ reclassify(n) ==
     /\ advertisement'  = [ advertisement  EXCEPT ![n] = @ \cup ToSet(known_valid[n]) \cup mp_pending[n] ]
     /\ mp_pending'     = [ mp_pending     EXCEPT ![n] = {} ]
     /\ known_valid'    = [ known_valid    EXCEPT ![n] = <<>> ]
-    /\ UNCHANGED refused
+    /\ UNCHANGED <<block_ops, refused>>
 
 \* a node requests the head of a peer
 RequestHead == \E n \in Nodes :
@@ -228,6 +231,7 @@ HandleHead(n, from, pmp) ==
                 /\ pending' = [ pending EXCEPT ![n] = @ \cup new_ops ]
                 /\ UNCHANGED <<pv_non_pending_vars, mp_vars>>
          [] pred.hash > predecessor[n].hash ->
+                /\ block_ops'   = [ block_ops   EXCEPT ![n] = @ \cup block_ops[from] ]
                 /\ predecessor' = [ predecessor EXCEPT ![n] = pred ]
                 /\ declassify(n, mp)
          [] pred.hash < predecessor[n].hash -> UNCHANGED <<pv_vars, mp_vars>>
@@ -303,7 +307,7 @@ PreapplyPending == \E n \in Nodes :
             /\ advertisement'  = res[5]
             /\ UNCHANGED predecessor
     /\ pending' = [ pending EXCEPT ![n] = {} ]
-    /\ UNCHANGED <<shell_vars, known_valid, aux_vars>>
+    /\ UNCHANGED <<shell_vars, block_ops, known_valid, aux_vars>>
 
 apply(n, tfs) ==
     LET RECURSIVE _apply(_, _, _, _)
@@ -343,6 +347,7 @@ BakeBlock == \E n \in Nodes :
     IN
     /\ num_endorsements(n) >= MIN_ENDORSEMENTS
     /\ mp_pending[n] = {}
+    /\ block_ops'   = [ block_ops   EXCEPT ![n] = @ \cup ToSet(ops) ]
     /\ predecessor' = [ predecessor EXCEPT ![n] = blk ]
     /\ add_block(blk)
     /\ reclassify(n)
@@ -369,6 +374,7 @@ Init ==
     /\ connections     = INIT_CONNECTIONS
     /\ messages        = [ n \in Nodes |-> [ m \in connections[n] |-> <<>> ] ]
     (* prevalidator *)
+    /\ block_ops       = [ n \in Nodes |-> ToSet(INIT_PREDECESSOR[n].ops) ]
     /\ predecessor     = INIT_PREDECESSOR
     /\ branch_delayed  = EmptySet
     /\ branch_refused  = EmptySet
@@ -426,6 +432,7 @@ TypeOK ==
     \* messages
     /\ \A n \in Nodes : messages[n] \in [ connections[n] -> Seq(Messages) ]
     (* prevalidator *)
+    /\ block_ops       \in [ Nodes -> SUBSET OpHashes ]
     /\ predecessor     \in [ Nodes -> Blocks ]
     /\ branch_delayed  \in [ Nodes -> SUBSET Operations ]
     /\ branch_refused  \in [ Nodes -> SUBSET Operations ]
@@ -471,8 +478,12 @@ RefusedMonotonicity == [][ \A n \in Nodes : refused[n] \subseteq refused'[n] ]_v
 
 \* endorsements are propagated to all nodes
 EndorsementPropagation == \A n \in Nodes :
-    LET endorsements == { op \in all_operations.ops : isEndorsement(op) } IN
-    \A op \in endorsements : <>(op \in pending[n])
+    LET endorsements == { op \in all_operations.ops :
+            /\ isEndorsement(op)
+            /\ \E m \in Nodes : op \in block_ops[m] }
+    IN
+    \A op \in [ type : {"Endorsement"}, hash : 0..100 ] :
+        op \in endorsements ~> op \in block_ops[n]
 
 \* "fittest" blocks are propagated to all nodes
 BlockPropagation ==
