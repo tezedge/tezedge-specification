@@ -75,19 +75,26 @@ MerkleTree == [ n \in Good_nodes |->
     ]
 ]
 
-Validator == [ b \in AllBlocks |-> "unknown" ]
+Validator == [ b \in Blocks |->
+    CASE b \in All_good_node_blocks -> "known_valid"
+      [] hash(b) > Cardinality(BlockHashes) \div 2 -> "known_invalid"
+      [] OTHER -> "unknown" ]
 
-\* Node_samples == [
-\*     n \in Good_nodes |->
-\*         LET length  == Cardinality(BLOCKS[n]) - 1
-\*             levels  == Pick({ s \in Seq(Good_node_levels) :
-\*                                 /\ Len(s) >= length \div 2
-\*                                 /\ Len(s) <= length
-\*                                 /\ \A i \in DOMAIN s \ {1} : s[i - 1] < s[i] })
-\*         IN
-\*         [ bn \in Bootstrapping_nodes |->
-\*             Map(LAMBDA l : MerkleTree[n][Good_node_max_level][l + 1], levels)
-\*     ]
-\* ]
+Node_samples == [
+    n \in Good_nodes |->
+        LET length  == Cardinality(BLOCKS[n]) - 1
+            levels  == Pick({ s \in Seq(Good_node_levels) :
+                                /\ Len(s) >= length \div 2
+                                /\ Len(s) <= length
+                                /\ \A i \in DOMAIN s \ {1} : s[i - 1] < s[i] })
+        IN
+        [ bn \in Bootstrapping_nodes |->
+            Map(LAMBDA l : MerkleTree[n][Good_node_max_level][l + 1], levels)
+    ]
+]
+
+Merkle_hashes == [ n \in Good_nodes |->
+    [ l \in Good_node_levels[n] |-> Head(MerkleTree[n][l]) ]
+]
 
 ==========================

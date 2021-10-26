@@ -1,4 +1,4 @@
----- MODULE Bootstrap_pipeline ----
+---- MODULE Bootstrap ----
 
 EXTENDS FiniteSets, Naturals, Sequences, TLC
 
@@ -32,9 +32,7 @@ CONSTANTS
     \* @type: BLOCK -> Str;
     VALIDATOR,          \* each block's validity status
     \* @type: (NODE, NODE) -> Seq(LEVEL);
-    SAMPLES,            \* GOOD_NODES \X Bootstrapping_nodes -> Seq_hd(BlockHashes)
-    \* @type: HASH -> HEADER;
-    HASH_BLOCK_MAP      \* returns header with given hash
+    SAMPLES             \* GOOD_NODES \X Bootstrapping_nodes -> Seq_hd(BlockHashes)
 
 VARIABLES
     \* each good bootstrapping node's set of blacklisted peers
@@ -1450,4 +1448,4 @@ Liveness ==
     /\ EventuallyApply
     /\ IfLocalMajorBranchExistsThenBootstrapppingWillHearAboutIt
 
-===================================
+==========================
