@@ -6,8 +6,8 @@ import java.util.*;
 
 public class Samples {
     
-  public static Value Samples(IntValue good_node, IntValue bs_node, TupleValue hash_seq) {
-    int x = (int) Math.pow(2, good_node.val) * (int) Math.pow(3, bs_node.val);
+  public static Value Samples(IntValue good_node, TupleValue hash_seq) {
+    int x = (int) Math.pow(2, good_node.val);
     Random rng = new Random(x);
     List<IntValue> values = new ArrayList<>();
     values.add((IntValue) hash_seq.getElem(0));
