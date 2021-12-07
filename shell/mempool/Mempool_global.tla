@@ -498,8 +498,4 @@ BlockPropagation ==
     <>( \/ Max_hash_block({ predecessor[m] : m \in Nodes }).hash > blk.hash
         \/ \A n \in Nodes : predecessor[n] = blk )
 
-
-\* Tuesday - Emmy* & mempool spec presentation
-\* Zura - use & review new architecture
-
 ===============================
