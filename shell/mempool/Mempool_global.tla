@@ -74,6 +74,8 @@ live_operations(n) ==
 nonrefused_operations(n) ==
     branch_delayed[n] \cup branch_refused[n] \cup advertisement[n] \cup ToSet(known_valid[n]) \cup mp_pending[n]
 
+nonrefused_operations(n) == branch_delayed[n] \cup branch_refused[n] \cup advertisement[n] \cup ToSet(known_valid[n]) \cup mp_pending[n]
+
 Mempool == [ known_valid : Seq(Operations), pending : SUBSET Operations ]
 
 mempool(kv, p) == [ known_valid |-> kv, pending |-> p ]
