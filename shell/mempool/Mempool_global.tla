@@ -12,6 +12,10 @@ CONSTANTS
     MIN_ENDORSEMENTS,   \* minimum number of endorsements needed to bake a block
     NONE                \* null value
 
+\* to bound the models
+CONSTANTS
+    MAX_HASH
+
 \* shell
 VARIABLES
     peers,              \* set of each node's peers
@@ -19,7 +23,6 @@ VARIABLES
     messages            \* queue of messages for each peer
 
 shell_vars == <<peers, connections, messages>>
-
 shell_non_msg_vars  == <<peers, connections>>
 
 \* prevalidator
@@ -33,7 +36,6 @@ VARIABLES
     advertisement       \* set of operations to advertise
 
 pv_vars == <<block_ops, predecessor, branch_delayed, branch_refused, refused, pending, advertisement>>
-
 pv_non_pending_vars   == <<block_ops, predecessor, branch_delayed, branch_refused, refused, advertisement>>
 pv_non_advertise_vars == <<block_ops, predecessor, branch_delayed, branch_refused, refused, pending>>
 
@@ -392,8 +394,8 @@ Init ==
                            blocks |-> { INIT_PREDECESSOR[n] : n \in Nodes } ]
 
 Next ==
-    \/ Connect
-    \/ Disconnect
+    \* \/ Connect
+    \* \/ Disconnect
     \/ Advertise
     \/ RequestHead
     \/ HandleMessage
@@ -484,7 +486,7 @@ EndorsementPropagation == \A n \in Nodes :
             /\ isEndorsement(op)
             /\ \E m \in Nodes : op \in block_ops[m] }
     IN
-    \A op \in [ type : {"Endorsement"}, hash : 0..100 ] :
+    \A op \in [ type : {"Endorsement"}, hash : 0..MAX_HASH ] :
         op \in endorsements ~> op \in block_ops[n]
 
 \* "fittest" blocks are propagated to all nodes

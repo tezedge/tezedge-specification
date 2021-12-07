@@ -2,7 +2,7 @@
 
 EXTENDS Mempool_global, TLC
 
-NN == 2
+NN == 3
 
 char(n) ==
     CASE n = 1 -> "a"
@@ -26,7 +26,12 @@ exclude(n) == {n, char((int_of_char(n) % Cardinality(Ns)) + 1)}
 
 Init_peers[ n \in Ns ] == Ns \ {n}
 
-Init_connections[ n \in Ns ] == Ns \ {n}
+\* NN = 2
+\* Init_connections[ n \in Ns ] == Ns \ {n}
+
+\* NN = 3
+\* a --- b --- c
+Init_connections[ n \in Ns ] == IF n /= "b" THEN {"b"} ELSE {"a", "c"}
 
 \* NN = 5
 \* Init_connections[ n \in Ns ] ==
@@ -45,6 +50,8 @@ Min_connections == 1
 Max_connections == 4
 
 Min_endorsements == 2
+
+Max_hash == 25
 
 View == [
     shell |-> [
