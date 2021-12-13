@@ -779,8 +779,9 @@ Propose(p) ==
         eR  == endorsable_round[p]
     IN
     \E v \in proposals(p, l, r) :
-        /\ p = PROPOSER[l][r]
-        /\ phase[p] = "P"
+        /\ \/ p \in FAULTY_PROCS
+           \/ /\ p = PROPOSER[l][r]
+              /\ phase[p] = "P"
         /\ phase' = [ phase EXCEPT ![p] = "P_" ]
         \* broadcasts Propose message to everyone
         /\ events' = broadcast(events, Procs, Event("NewMessage", propose_msg(v, <<eQC, u, eR, pQC>>)))
@@ -789,16 +790,18 @@ Propose(p) ==
 \* [p] handles an event while in the PROPOSE phase
 \* and either stays in the PROPOSE phase or transitions to PREENDORSE
 Propose_handle(p) == \E np \in {"P_", "PE"}, ev \in events[p] :
-    /\ p \in COMMITTEE[level[p]]
-    /\ phase[p] \in {"P", "P_"}
+    /\ \/ p \in FAULTY_PROCS
+       \/ /\ p \in COMMITTEE[level[p]]
+          /\ phase[p] \in {"P", "P_"}
     /\ phase' = [ phase EXCEPT ![p] = np ]
     /\ HandleEvent(p, ev)
 
 \* whether or not [p] has events, they can progress directly to the PREENDORSE phase
 Propose_(p) ==
-    /\ p \in COMMITTEE[level[p]]
-    /\ events[p] = {}
-    /\ phase[p] \in {"P", "P_"}
+    /\ \/ p \in FAULTY_PROCS
+       \/ /\ p \in COMMITTEE[level[p]]
+          /\ events[p] = {}
+          /\ phase[p] \in {"P", "P_"}
     /\ phase' = [ phase EXCEPT ![p] = "PE" ]
     /\ UNCHANGED vars_no_phase
 
@@ -808,8 +811,9 @@ Propose_(p) ==
 \*  - otherwise, advertise their "better" locked value
 Preendorse(p) == \E msg \in proposal_msgs(p) :
     LET eR == msg.payload[3] IN
-    /\ p \in COMMITTEE[level[p]]
-    /\ phase[p] = "PE"
+    /\ \/ p \in FAULTY_PROCS
+       \/ /\ p \in COMMITTEE[level[p]]
+          /\ phase[p] = "PE"
     /\ phase' = [ phase EXCEPT ![p] = "PE_" ]
     /\ IF \/ locked_value[p] = msg.payload[2]
           \/ /\ locked_round[p] < eR
@@ -832,16 +836,18 @@ Preendorse(p) == \E msg \in proposal_msgs(p) :
 \*  - [p] handles an incoming event
 \*  - [p] either stays in the PREENDORSE phase or transitions to ENDORSE
 Preendorse_handle(p) == \E ev \in events[p], np \in {"PE_", "E"} :
-    /\ p \in COMMITTEE[level[p]]
-    /\ phase[p] \in { "PE", "PE_" }
+    /\ \/ p \in FAULTY_PROCS
+       \/ /\ p \in COMMITTEE[level[p]]
+          /\ phase[p] \in { "PE", "PE_" }
     /\ phase' = [ phase EXCEPT ![p] = np ]
     /\ HandleEvent(p, ev)
 
 \* [p] is currently in the PREENDORSE phase
 \* [p] either stays in the PREENDORSE phase or transitions to ENDORSE
 Preendorse_(p) ==
-    /\ p \in COMMITTEE[level[p]]
-    /\ phase[p] \in {"PE", "PE_"}
+    /\ \/ p \in FAULTY_PROCS
+       \/ /\ p \in COMMITTEE[level[p]]
+          /\ phase[p] \in {"PE", "PE_"}
     /\ phase' = [ phase EXCEPT ![p] = "E" ] 
     /\ UNCHANGED vars_no_phase
 
@@ -851,8 +857,9 @@ Preendorse_(p) ==
 \* - otherwise, maybe handle some events
 Endorse(p) == \E msg \in preendorse_msgs_for_pQC(p) :
     LET pre == preendorse_msgs_for_pQC(p) IN
-    /\ p \in COMMITTEE[level[p]]
-    /\ phase[p] = "E"
+    /\ \/ p \in FAULTY_PROCS
+       \/ /\ p \in COMMITTEE[level[p]]
+          /\ phase[p] = "E"
     /\ phase' = [ phase EXCEPT ![p] = "E_" ]
     /\ IF card(pre) >= 2 * f + 1 THEN
             LET u == proposed_value(p)
@@ -876,74 +883,81 @@ Endorse(p) == \E msg \in preendorse_msgs_for_pQC(p) :
 \* [p] is in the ENDORSE phase, has events to handle, and handles one
 \* [p] stays in the ENDORSE phase until they advance
 Endorse_handle(p) == \E ev \in events[p], np \in {"E", "E_"} :
-    /\ p \in COMMITTEE[level[p]]
-    /\ phase[p] \in {"E", "E_"}
+    /\ \/ p \in FAULTY_PROCS
+       \/ /\ p \in COMMITTEE[level[p]]
+          /\ phase[p] \in {"E", "E_"}
     /\ phase' = [ phase EXCEPT ![p] = np ]
     /\ HandleEvent(p, ev)
 
 \* [p] advances to the next round/level depending on whether a decision has been made
 \* [p] does not handle any events
 Endorse_advance(p) ==
-    /\ p \in COMMITTEE[level[p]]
-    /\ phase[p] \in {"E", "E_"}
+    /\ \/ p \in FAULTY_PROCS
+       \/ /\ p \in COMMITTEE[level[p]]
+          /\ phase[p] \in {"E", "E_"}
     /\ advance(p, get_decision(p))
 
 \* PROPOSE - observer
 ObserveP_handle(p) == \E ev \in events[p] :
-    /\ p \notin COMMITTEE[level[p]]
-    /\ phase[p] = "P_"
+    /\ \/ p \in FAULTY_PROCS
+       \/ /\ p \notin COMMITTEE[level[p]]
+          /\ phase[p] = "P_"
     /\ HandleEvent(p, ev)
     /\ UNCHANGED phase
 
 ObserveP_PE_handle(p) == \E ev \in events[p] :
-    /\ p \notin COMMITTEE[level[p]]
-    /\ phase[p] = "P_"
+    /\ \/ p \in FAULTY_PROCS
+       \/ /\ p \notin COMMITTEE[level[p]]
+          /\ phase[p] = "P_"
     /\ HandleEvent(p, ev)
     /\ phase' = [ phase EXCEPT ![p] = "PE_" ]
 
 ObserveP_PE(p) ==
-    /\ p \notin COMMITTEE[level[p]]
-    /\ phase[p] = "P_"
+    /\ \/ p \in FAULTY_PROCS
+       \/ /\ p \notin COMMITTEE[level[p]]
+          /\ phase[p] = "P_"
     /\ phase' = [ phase EXCEPT ![p] = "PE_" ]
     /\ UNCHANGED vars_no_phase
 
 \* PREENDORSE - observer
 ObservePE_handle(p) == \E ev \in events[p] :
-    /\ p \notin COMMITTEE[level[p]]
-    /\ phase[p] = "PE_"
+    /\ \/ p \in FAULTY_PROCS
+       \/ /\ p \notin COMMITTEE[level[p]]
+          /\ phase[p] = "PE_"
     /\ HandleEvent(p, ev)
     /\ UNCHANGED phase
 
 ObservePE_E_handle(p) == \E ev \in events[p] :
-    /\ p \notin COMMITTEE[level[p]]
-    /\ phase[p] = "PE_"
+    /\ \/ p \in FAULTY_PROCS
+       \/ /\ p \notin COMMITTEE[level[p]]
+          /\ phase[p] = "PE_"
     /\ HandleEvent(p, ev)
     /\ phase' = [ phase EXCEPT ![p] = "E_" ]
 
 ObservePE_E(p) ==
-    /\ p \notin COMMITTEE[level[p]]
-    /\ phase[p] = "PE_"
+    /\ \/ p \in FAULTY_PROCS
+       \/ /\ p \notin COMMITTEE[level[p]]
+          /\ phase[p] = "PE_"
     /\ phase' = [ phase EXCEPT ![p] = "E_" ]
     /\ UNCHANGED vars_no_phase
 
 \* ENDORSE - observer
 ObserveE(p) == \E ev \in events[p] :
-    /\ p \notin COMMITTEE[level[p]]
-    /\ phase[p] = "E_"
+    /\ \/ p \in FAULTY_PROCS
+       \/ /\ p \notin COMMITTEE[level[p]]
+          /\ phase[p] = "E_"
     /\ phase' = [ phase EXCEPT ![p] = "E_" ]
     /\ HandleEvent(p, ev)
 
 ObserveE_advance(p) ==
-    /\ p \notin COMMITTEE[level[p]]
-    /\ phase[p] = "E_"
+    /\ \/ p \in FAULTY_PROCS
+       \/ /\ p \notin COMMITTEE[level[p]]
+          /\ phase[p] = "E_"
     /\ advance(p, get_decision(p))
 
 OnTimeoutPullChain(p) ==
     /\ pullChain(p, events[p], Procs)
     /\ UNCHANGED <<messages, chain_vars, state_vars, locked_vars, endorsable_vars>>
-
-\* Faulty process actions
-\* TODO
 
 (*****************)
 (* Specification *)
@@ -963,28 +977,26 @@ Init ==
     /\ preendorsement_qc = [ p \in Procs |-> {} ]
     /\ events            = [ p \in Procs |-> {} ]
 
-Next ==
-    \* correct process actions
-    \/ \E p \in CORRECT_PROCS :
-        \/ Propose(p)
-        \/ Propose_handle(p)
-        \/ Preendorse(p)
-        \/ Preendorse_handle(p)
-        \/ Endorse(p)
-        \/ Endorse_handle(p)
-        \/ Endorse_advance(p)
-        \/ ObserveP_handle(p)
-        \/ ObserveP_PE_handle(p)
-        \/ ObserveP_PE(p)
-        \/ ObservePE_handle(p)
-        \/ ObservePE_E_handle(p)
-        \/ ObservePE_E(p)
-        \/ ObserveE(p)
-        \/ ObserveE_advance(p)
-        \/ OnTimeoutPullChain(p)
-    \* faulty node actions
-    \/ \E p \in FAULTY_PROCS :
-        \/ FALSE
+Next == \E p \in Procs :
+    \* committee member actions
+    \/ Propose(p)
+    \/ Propose_handle(p)
+    \/ Preendorse(p)
+    \/ Preendorse_handle(p)
+    \/ Endorse(p)
+    \/ Endorse_handle(p)
+    \/ Endorse_advance(p)
+    \* noncommittee member actions
+    \/ ObserveP_handle(p)
+    \/ ObserveP_PE_handle(p)
+    \/ ObserveP_PE(p)
+    \/ ObservePE_handle(p)
+    \/ ObservePE_E_handle(p)
+    \/ ObservePE_E(p)
+    \/ ObserveE(p)
+    \/ ObserveE_advance(p)
+    \* any process can timeout
+    \/ OnTimeoutPullChain(p)
 
 Fairness == SF_vars(Next)
 
