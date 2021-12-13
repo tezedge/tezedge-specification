@@ -40,8 +40,15 @@ Each round consists of *three* phases:
 - `ENDORSE`
   - if a baker has a preendorsement quorum for a value `v`, they endorse `v`
   - `Endorse` messages are broadcast to committee members along with the pQC justifying the endorsement
-  - if a baker has an endorsement quorum for  value `v`, they decide `v`
+  - if a baker has an endorsement quorum for value `v`, they decide `v`
 
 ## Messages
 
-Message types and corresponding payloads
+There is a message type and corresponding payload for each phase. The message types and corresponding payloads are:
+
+| Type | Payload |
+|------|---------|
+| Propose         | 4-tuple of endorsement quorum certificate, endorsable value, endorsable round, and preendorsement quorum certificate |
+| Preendorse      | value |
+| Preendorsements | preendorsement quorum certificate |
+| Endorse         | endorsed value |
