@@ -15,3 +15,7 @@ This project contains a specification and models of the shell's distributed data
 ## high_level
 
 This project contains a high-level specification and models of the handshaking and bootstrapping processes.
+
+## mempool
+
+This project contains a specification and models of the shell's mempool propagation and maintanence processes.
