@@ -71,15 +71,16 @@ This project contains specifications and models related to the p2p overlay netwo
 
 This project contains specifications and models related to the shell:
 
-- bootstrapping
+- [bootstrapping](./shell/bootstrapping)
 - distributed_db
+- [mempool](./shell/mempool)
 
 ### consensus
 
 This project contains specifications and models related to consensus:
 
-- Emmy/Emmy+/Emmy★
-- Tenderbake
+- [Emmy/Emmy+/Emmy★](./consensus/Emmy)
+- [Tenderbake](./consensus/Tenderbake)
 
 ### utils
 
