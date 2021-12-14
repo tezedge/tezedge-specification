@@ -1,3 +1,8 @@
+(************************************************************)
+(* This spec takes a global point of reference and controls *)
+(* the behavior of all nodes in the network.                *)
+(************************************************************)
+
 ---- MODULE Mempool_global ----
 
 EXTENDS FiniteSets, Integers, Sequences, Utils
@@ -73,8 +78,6 @@ live_operations(n) ==
 
 nonrefused_operations(n) ==
     branch_delayed[n] \cup branch_refused[n] \cup advertisement[n] \cup ToSet(known_valid[n]) \cup mp_pending[n]
-
-nonrefused_operations(n) == branch_delayed[n] \cup branch_refused[n] \cup advertisement[n] \cup ToSet(known_valid[n]) \cup mp_pending[n]
 
 Mempool == [ known_valid : Seq(Operations), pending : SUBSET Operations ]
 
